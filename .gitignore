@@ -1,0 +1,14 @@
+_build/
+.rebar3/
+_checkouts/
+rebar3.crashdump
+
+# Dependency versions are pinned in rebar.config, which is the provenance record.
+# A lockfile would be a second, silently disagreeing source of truth.
+rebar.lock
+
+*.beam
+*.plt
+.eunit
+erl_crash.dump
+doc/

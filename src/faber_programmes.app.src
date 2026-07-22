@@ -1,0 +1,18 @@
+{application, faber_programmes, [
+    {description, "Experiment runners for the faber research programmes"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        faber_tweann
+    ]},
+    {env, []},
+    {modules, []},
+    {licenses, ["Apache-2.0"]},
+    {links, [
+        {"Codeberg", "https://codeberg.org/rgfaber/faber-programmes"},
+        {"Engine", "https://codeberg.org/rgfaber/faber-tweann"},
+        {"Corpus", "https://codeberg.org/rgfaber/faber-ecosystem"}
+    ]}
+]}.
