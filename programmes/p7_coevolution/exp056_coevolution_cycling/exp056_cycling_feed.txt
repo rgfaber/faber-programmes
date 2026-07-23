@@ -1,0 +1,13 @@
+== EXP-056 cycling: is a fixed benchmark FOOLED by structural cycling? ==
+config: mu=30 lambda=30 sigma=0.30 tau=0.30 K_save=5 R=200 n=20
+pilot: intransitive rotation 48.15 rad (7.7 turns); transitive escalation confirmed
+
+[intransitive] benchmark end-minus-start delta median=-0.017 CI[-0.035,0.009] (osc.range=0.557); intransitive-triples median=1055.0 CI[1037.5,1092.0]; later-loses frac=0.465; cofit=0.507
+
+[transitive (control)] benchmark end-minus-start delta median=0.375 CI[0.367,0.379] (osc.range=0.469); intransitive-triples median=0.0 CI[0.0,0.0]; later-loses frac=0.000; cofit=0.507
+
+-- Verdict --
+transitive control OK (no triples, rising benchmark delta>0.05): true (ctrl delta=0.375)
+cycling confirmed (intransitive triples > control, disjoint): true (intrLB=1037.0 > ctrlUB=0.0)
+intransitive benchmark: rises=false flat=true (delta CI[-0.035,0.009])
+RESULT=BENCHMARK HONEST-BUT-BLIND: under confirmed structural cycling (intransitive triples, later centroids lose to earlier) the fixed benchmark shows NO net rise -- it oscillates, correctly reporting no progress -- so it is NOT fooled by cycling, but it cannot reveal the cyclic structure; only the master-tournament can. Co-fitness lies (053), the benchmark measures progress (054-055) and is honest under cycling, and the master-tournament is the tool for cycling.
