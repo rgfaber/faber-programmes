@@ -15,7 +15,7 @@
 -module(exp057_embodied_pursuit_evasion_tests).
 
 -export([calibrate/0, representability/1, representability/0, verify_benchmark/0, coevo_pilot/0,
-         run/0, run/1, run_coupling/0, run_coupling/1, run_brackets/0, run_brackets/1]).
+         run/0, run/1, run_coupling/0, run_coupling/1, run_brackets/0, run_brackets/1, verify_benchmark/1]).
 
 -define(W, 9).
 -define(T, 40).
@@ -30,11 +30,9 @@
 %% Refined into the razor-thin transition zone near s=1.0 (calibration showed the crossover
 %% between evader-wins and pursuer-wins is a knife-edge just above equal speed).
 speed_grid() ->
-    [{none, 1.0}, {40, 1.026}, {30, 1.034}, {24, 1.043}, {20, 1.053}, {16, 1.067},
+    [{none, 1.0}, {40, 1.026}, {30, 1.034}, {24, 1.043}, {20, 1.053}, {18, 1.059}, {16, 1.067},
      {15, 1.071}, {14, 1.077}, {13, 1.083}, {12, 1.091}, {11, 1.10}, {10, 1.111},
      {9, 1.125}, {8, 1.143}].
-
-sstar() -> element(2, lists:keyfind(?SSTAR_M, 1, speed_grid())).
 
 %% Starts: pursuer at {0,0} (torus is translation-invariant), evader at every cell not
 %% already within capture range -> a fine, deterministic catch-rate for hand-coded policies.
@@ -134,10 +132,10 @@ co_starts() -> [St || {I, St} <- lists:zip(lists:seq(1, length(starts())), start
 %% Binary catch-rate saturates near the ceiling at s* (the 054 demon); capture-speed (pscore) does
 %% not. Show both per rung, and the probe's aggregate on each -- the continuous aggregate must NOT
 %% sit at a ceiling/floor (else no headroom to measure progress).
-verify_benchmark() ->
-    M = ?SSTAR_M,
+verify_benchmark() -> verify_benchmark(?SSTAR_M).
+verify_benchmark(M) ->
     BM = build_benchmark(M),
-    io:format("== EXP-057 benchmark grading (s*=~.3f, m=~p), FROZEN ladder ==~n", [sstar(), M]),
+    io:format("== EXP-057 benchmark grading (s=~.3f, m=~p), FROZEN ladder ==~n", [m_speed(M), M]),
     io:format("pursuer benchmark: pure-greedy probe capture-speed (pscore) per evader rung "
               "(higher = easier rung):~n"),
     Pc = [{rung_label(R), mean([pscore(match(greedy, R, St, M)) || St <- bench_starts()])}
@@ -281,17 +279,22 @@ run_at(Fd, M, Tag, N, R) ->
 %% unresolved m=14-vs-m=13 evader difference into a trend). Coevolution + master-tournament only (the
 %% coupling question is settled); focuses on whether the evader's marginal sustainment declines
 %% monotonically as the pursuer's speed edge grows, with a resolvable m=14-vs-m=12 extreme pair.
-run_brackets() -> run_brackets(#{n => 40, r => 30}).
+run_brackets() -> run_brackets(#{n => 60, r => 30}).
 
+%% FOUR brackets spanning the crossover on TWO catch-rate plateaus: m=18 & m=14 on the 0.389 (evader-
+%% favoured) plateau, m=13 & m=12 on the 0.667 (pursuer-favoured) plateau. m=18 is deep evader-favoured,
+%% giving the widest extreme pair (m=18 vs m=12) to RESOLVE the evader balance-contingency the adjacent
+%% brackets could not. Larger n for power.
 run_brackets(#{n := N, r := R}) ->
     {ok, Fd} = file:open("exp057_brackets_feed.txt", [write]),
-    emit(Fd, "== EXP-057 THREE brackets: evader-marginality trend (m=14, 13, 12) ==~n"),
+    emit(Fd, "== EXP-057 FOUR brackets: evader balance-contingency (m=18, 14 | 13, 12) ==~n"),
     emit(Fd, "config: net=[2,6,4] mu=~p K=~p R=~p n=~p; frozen graded HoF; master-tournament per run~n",
          [?CMU, ?CK, R, N]),
     Collected = [{M, run_trend(Fd, M, Tag, N, R)}
-                 || {M, Tag} <- [{14, "s=1.077 EVADER-favoured (catch 0.389)"},
+                 || {M, Tag} <- [{18, "s=1.059 EVADER-favoured (catch 0.389, deep)"},
+                                  {14, "s=1.077 EVADER-favoured (catch 0.389)"},
                                   {13, "s=1.083 PURSUER-favoured (catch 0.667)"},
-                                  {12, "s=1.091 PURSUER-favoured+ (catch 0.667, +1 step)"}]],
+                                  {12, "s=1.091 PURSUER-favoured (catch 0.667, deep)"}]],
     cross_bracket(Fd, Collected),
     file:close(Fd),
     ok.

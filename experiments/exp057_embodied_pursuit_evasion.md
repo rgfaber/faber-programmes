@@ -215,9 +215,11 @@ a DIVERSE random static opponent (a n=60 pursuer hint did not reproduce at n=80)
 strong one (pursuer, reproduced) but that is curriculum-DIVERSITY (avoiding overfitting to a narrow
 target), which the random baseline shares -- NOT reciprocal coupling. So "arms race" / coevolutionary
 coupling REFUSED over a diverse opponent. Reproduction caught the n=60 single-run "coupling" as a fluke.
-THIRD BRACKET m=12 (s=1.091, one step more pursuer-favoured; n=40): no cycling at all three brackets;
-PURSUER sustains monotonically MORE with speed edge (0.151->0.189->0.238, extreme-pair m=14-vs-m=12
-RESOLVED -0.088 CI[-0.146,-0.015]); EVADER is a STEP not a gradient (sustains evader-fav m=14, marginal
-on BOTH pursuer-fav m=13/m=12), and the cross-crossover evader difference stays UNRESOLVED (m=12 sits on
-the same 0.667 catch-rate plateau as m=13, so it replicated rather than extended the trend). Next:
-larger n + a lower catch-rate plateau (m=16-20) to resolve the evader contingency.
+FOUR-BRACKET n=60 span (m=18/14/13/12, both catch-rate plateaus; m=18 deep evader-favoured, benchmark
+verified un-saturated): no cycling at any of the four brackets. The evader balance-contingency is
+REFUTED as unresolvable at this scale -- evader NET is roughly FLAT and weakly positive (~0.06-0.10)
+across all four; widest extreme pair m=18-vs-m=12 = +0.028 CI[-0.042,0.111] includes 0. Both the earlier
+evader "step" (m=14 +0.153 was high-side noise; n=60 gives +0.097) and the pursuer speed-edge trend did
+NOT reproduce. Robust core: no cycling, pursuer sustains more than evader (~0.15-0.23 vs ~0.06-0.10),
+both across the crossover, no arms race. Caveat: evader benchmark saturates high at deep evader-favoured
+speeds, capping measurable evader NET. Next: richer world (Flatland, P5/P6) for a real two-sided gradient.
