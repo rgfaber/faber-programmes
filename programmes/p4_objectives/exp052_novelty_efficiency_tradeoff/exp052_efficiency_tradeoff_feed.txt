@@ -1,0 +1,18 @@
+== EXP-052 efficiency tradeoff: what novelty trades where objective wins ==
+config: maze=E(non-deceptive) grid=11x11 T=60 net=[6,10,4] mu=20 lambda=20 sigma=0.15 E=15000 n=120 checkpoints=[2000,
+                                                                                                                 6000,
+                                                                                                                 15000]
+EFG objective-EA: solved 118/120 (censored 2); all-runs median EFG=305.5 95%CI[262.5,378.0]; solved-only median=301.0
+EFG novelty-EA[final-pos]: solved 120/120 (censored 0); all-runs median EFG=268.0 95%CI[203.0,321.5]; solved-only median=268.0
+EFG random: solved 120/120 (censored 0); all-runs median EFG=689.5 95%CI[543.0,872.0]; solved-only median=689.5
+COV objective-EA: @2000=63.0[63.0,65.0]  @6000=67.0[65.0,71.0]  @15000=79.0[74.5,85.0]
+COV novelty-EA[final-pos]: @2000=66.0[66.0,68.0]  @6000=103.0[95.0,104.5]  @15000=112.0[112.0,112.0]
+COV random: @2000=66.0[66.0,66.0]  @6000=66.0[66.0,66.0]  @15000=68.0[66.0,71.0]
+
+-- Verdict (maze E, budget 15000, coverage at E; two-sample tests) --
+objective solves E (rate>0.9): true (0.983); EFG medians obj=305.5 nov=268.0 rnd=689.5
+floor gate median(obj-rnd)<0 (CI[-589.0,-232.0]): true
+speed median(obj-nov) (CI[-36.0,132.0]) tax=false reversal=false equiv(+/-76.4)=false
+coverage nov>obj & nov>rnd (novLB=112.0 > objUB=85.0, rndUB=71.0): true
+SPEED=INCONCLUSIVE (unsigned): median-difference CI spans the equivalence margin -> underpowered
+COVERAGE=NOVELTY WINS: distinct-visited-cell coverage exceeds objective AND random (disjoint CIs)
