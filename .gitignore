@@ -12,3 +12,6 @@ rebar.lock
 .eunit
 erl_crash.dump
 doc/
+
+# Transient runner feeds at repo root (the signed copy lives in programmes/pN_*/)
+/exp*_feed.txt
