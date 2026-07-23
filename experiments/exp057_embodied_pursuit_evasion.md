@@ -164,6 +164,50 @@ so power is not the constraint). Findings, exploratory:
   where neither dominates. The overfit-winner dynamic is real and robust; the confound blocks the
   two-sided claim. NEXT UNIT: fix the benchmark grading, re-run, then sign.
 
+## Benchmark-grading FIX (2026-07-23) — the four moves that de-confounded it
+
+1. **Continuous metric where binary saturates (pursuer).** Binary catch-rate pins at ~1.0 at s* (the
+   054 demon). Replaced with CAPTURE-SPEED (pscore = 1 - capture_step/T): a strong pursuer catches
+   FAST even where it always catches. Pursuer benchmark now grades 0.288..0.867 (agg 0.632, off ceiling).
+2. **The right axis per role (asymmetric).** At the catch-rate crossover capture happens LATE, so
+   survival-TIME saturates for the evader (a random evader survives ~0.85 of the episode). The evader's
+   skill lives in WHETHER it escapes -> measure ESCAPE-RATE (fraction not caught) vs STRONG pursuers
+   only. Evader benchmark grades 0.083..0.333 (agg 0.222, off floor/ceiling, low ceiling = headroom).
+3. **Frozen graded HoF.** Seed-fixed (identical across all runs): the graded tunable greedy/flee family
+   PLUS 2 strong evolved-net pursuers + 2 strong evolved-net evaders harvested once. A fixed ruler.
+4. **SUSTAINED = end-vs-start** (not peak-vs-start): a transient peak that collapses back to start is
+   NOT sustained progress. Rise (peak-start) + gave-back (peak-end) + NET (end-start), bootstrap CIs.
+
+## CLAIM gate verdict (faber-adversary / Fable, 2026-07-23) — REFUTE-as-worded; four fixes applied
+
+The gate confirmed the metric fixes SURVIVE (the asymmetric axes do not bias direction: the evader's
+escape-rate registered a real rise AND give-back, so its net~0 is a true trajectory, not truncation;
+frozen HoF is a fixed ruler, not circular). But it REFUTED the headline for four reasons, all now fixed:
+- **Master-tournament was pre-registered but never scored** (`run_metrics` discarded the saved pops).
+  Cycling is a live outcome and an evader ending exactly at its start is also cycling's signature. FIX:
+  implemented the cross-generation dominance tournament (intransitive-triple count + later-vs-earlier
+  dominance, noise band 0.15), scored every run. Disengagement is only licensed if triples ~0.
+- **Both sides' peak-progress is disjoint from 0** = the pre-registered BRIEF-ARMS-RACE cell; the
+  NET-sustained criterion is POST-HOC (added after the n=20 look). FIX: reworded to "brief two-sided
+  rise then breakaway"; NET-sustained + its 0.03 threshold declared post-hoc in the feed.
+- **s\* was misplaced.** Calibration catch-rate is a coarse step function; the nearest point to 0.5 is
+  0.389 (m=14..20, evader-favoured), NOT the hardcoded m=13's 0.667 (pursuer-favoured). The true 50/50
+  is a plateau bracketed by m=14 and m=13. FIX: run BOTH brackets; if the direction FLIPS with the
+  bracket it is calibration-placed (drop "toward pursuer", keep the no-sustained-race half).
+- **"even at the 50/50 balance" is false** (it is 0.667 at m=13). FIX: reworded to "near-crossover".
+
+Final study: n=40 per bracket, R=30, at m=14 (evader-favoured) AND m=13 (pursuer-favoured), each with
+the master-tournament. Signable claim depends on (a) triples ~0 at both (disengagement not cycling) and
+(b) whether the breakaway direction is consistent (dynamics) or flips (calibration-placed).
+
 ## Result
 
-<one line once signed>
+SIGNED as insight 057 (n=40/bracket, R=30, both brackets m=14 and m=13). Real neural pursuit-evasion
+coevolves MONOTONICALLY with NO cycling (master-tournament intransitive-triples=0 at bands 0.05-0.15,
+25-38/45 edges decisive, later-dominates-earlier 25-29 vs 0-1, both brackets). On the verified-graded
+frozen benchmark the PURSUER sustains net progress at both brackets (+0.151, +0.189, disjoint from 0);
+the EVADER is MARGINAL (+0.153 disjoint at m=14, +0.042 CI-includes-0 at m=13, and the between-bracket
+difference 0.111 CI[-0.000,0.194] is NOT resolved). Clear non-cyclic two-sided PROGRESS, but a sustained
+two-sided arms race is NOT cleanly established and reciprocal driving is untested (needs a decoupled solo
+control). Two CLAIM-gate passes deflated the headline from "arms race / fragile / replicates N&F" (all
+overreach) to this. Next: decoupled control + third bracket (m=12) + larger n.
