@@ -125,10 +125,50 @@ Determinism is FINE (preferable), but scope claims to the "single-start behaviou
 Status: REDESIGNED, build-ready. (Session paused here after opening P4; the redesigned runner is
 the next build.)
 
+## CLAIM gate verdict, run 1 (Fable, 2026-07-23) — "QD beats objective" REFUTED
+
+The E=40k run fired ILLUMINATES + QD-BEATS-OBJECTIVE, but the CLAIM gate refuted the second
+half from the feed's own pre-run: **random genomes already hit survival 501** (line 6). So
+random (501), MAP-Elites (501), CMA (501) ALL reach the cap; only the single-start greedy
+hill-climb fails (21, below random median 22). The "QD beats objective" comparison pitted a
+~100-thread portfolio (100 random init + sample-from-archive restart) against the WEAKEST
+possible baseline (one greedy thread on a plateau fitness). It is a portfolio/restart artifact,
+not diversity. Verified + accepted.
+
+Also: coverage_rel=2.81 divides a 40,100-eval archive by a 3,000-eval random probe (13x budget)
+-> budget-mismatched, not a coverage measure. And Spearman was computed over BALANCER cells only
+(quality range-restricted [100,501]), biasing the validity gate toward PASS -> must recompute
+over ALL filled cells (could void the descriptor). QD-score ~= coverage x near-constant cap
+(quality plateaus at 501), so it restates coverage. Single seed {50,50,50} = n=1, no variance.
+
+**Required controls (added, all cheap, share the operator+budget):**
+1. PURE RANDOM SEARCH at 40k evals (fair coverage + peak comparator; if it matches MAP-Elites,
+   the coverage + free-lunch claims die).
+2. MULTI-RESTART (1+15) hill-climb at 40k (if it reaches 501, "stepping stones" collapses to
+   "restarts help").
+3. Spearman over ALL filled cells, not just balancers.
+Re-run with these; sign only the honest result (expected: machinery works, task too easy to
+show a QD ADVANTAGE because random already solves it).
+
 ## Provenance
 
 *Stamped manually (erl -noshell; eunit swallows the feed).*
 
+### Run 2026-07-23 (corrected, with CLAIM-gate controls; the signed record)
+
+| Field | Value |
+|---|---|
+| Runner | `experiments/exp050_map_elites_illumination_tests.erl` |
+| Archive | `exp050_archive.eterm` (129 cells) |
+| Engine commit (built == pin) | `9bb43e6b974bd2b62b8e35687e4aea164f0a31d9` |
+| OTP / rebar3 | 28 / 3.25.1 |
+| Entry | `run/0` (E=40000; MAP-Elites + random + multi-restart + fair-greedy + CMA) |
+| Raw feed | `faber-ecosystem/insights/050-raw-map-elites.txt` (+ `050-raw-run1-single-greedy-artifact.txt`) |
+
 ## Result
 
-<one line once signed>
+SIGNED 050 (2026-07-23). MAP-Elites ILLUMINATES (104 balancer cells vs random search's 74 at
+equal 40k budget) with a VALID orthogonal descriptor (Spearman 0.076/0.007 over all cells), but
+NO peak advantage (MAP-Elites/random/multi-restart/CMA all reach the 501 cap; task too easy).
+Run-1 "QD beats objective 23.9x" was a single-greedy-baseline artifact, caught + retracted at the
+CLAIM gate. First QD machinery on faber. P4 opened.
