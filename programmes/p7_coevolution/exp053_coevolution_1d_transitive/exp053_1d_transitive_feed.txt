@@ -1,0 +1,13 @@
+== EXP-053 stochastic 1D transitive: the Red Queen (co-fitness ~0.5 while x escalates) ==
+config: mu=30 lambda=30 sigma=0.30 tau=0.30 x0=50.0 R=150 n=30
+pilot final champion x=87.2 -> ladder [50.0 .. 174.4] (20 refs)
+
+-- Results (n=30, R=150) --
+champion x: first median=50.6 CI[50.5,50.7] -> last median=85.7 CI[85.4,85.8]
+escalation Spearman(gen,x): median=1.000 (min 1.000)
+co-fitness: mean=0.4937 (across-run range [0.053,0.914])
+co-fitness trend Spearman(gen,cofit): median=-0.058 CI[-0.587,0.473]
+benchmark smoke test: monotone-in-x all runs=true; median unsaturated fraction=1.00
+arms race (lastX>firstX disjoint & Spearman(gen,x)>0.9): true
+co-fitness flat (~0.5 in [.45,.55] & trend CI spans 0): true
+RESULT=RED QUEEN DEMONSTRATED: the champion trait x escalates unboundedly (real, observable progress) while co-fitness stays ~0.5 with no trend (blind to it) -> co-fitness misleads; the fixed-benchmark instrument earns its first real test at rung 054 (>=2D).
