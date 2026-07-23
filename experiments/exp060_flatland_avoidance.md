@@ -97,13 +97,12 @@ binary.
 
 ## Result
 
-SIGNED as insight 060 (CLAIM gate DO-NOT-SIGN-as-is -> reproduce + descope). The 059 foraging collapse is
-AT LEAST PARTLY avoidance: on the interventional probe the PRESSURED prey steps away from a near (d=2)
-predator above chance (avoid_near 0.500 vs the analytic chance 0.250 for both the naive forager and the
-capture-disabled proximity-control; PRESSURED-minus-PROXIMITY +0.250, RESOLVED and REPRODUCED across two
-runs; raw per-champion values a genuine upward shift). Because the proximity-control (predator-sensor
-exposure, no avoidance incentive) sits at chance, it is avoidance not sensor exposure. NARROWLY SCOPED:
-single-step static-probe REPULSION, NOT whole-episode fleeing (059's flee, never learned) -- reconciles
-with 059; the pre-registered forage sanity gate TRIPPED (naive forage_aligned ~chance -> forage readouts
-dropped, no plant-abandonment claim); mediation (how much of the collapse) unquantified. Runner is
-`exp060_flatland_avoidance_tests.erl`.
+SIGNED as insight 060 (CLAIM gate DO-NOT-SIGN-as-is -> reproduce + descope; RE-GATED after corrections ->
+SIGN-WITH-CHANGES, title de-linked from the collapse). EARNED: the PRESSURED prey steps away from a near
+(d=2) predator above chance (avoid_near 0.500 vs the analytic chance 0.250 for both the naive forager and
+the capture-disabled proximity-control; PRESSURED-minus-PROXIMITY +0.250, RESOLVED and REPRODUCED across
+two runs; raw per-champion values a genuine upward shift) -- a real anti-predator behaviour requiring the
+CAPTURE gradient (the proximity-control with the same sensor exposure stays at chance), NOT whole-episode
+fleeing (reconciles with 059). NOT earned: any link from this repulsion to the 059 foraging collapse
+(measured separately, no mediation; in-episode forage read invalid since the forage sanity gate TRIPPED) --
+whether the repulsion drives the collapse is UNTESTED. Runner is `exp060_flatland_avoidance_tests.erl`.
