@@ -146,6 +146,24 @@ noise band; n powered from pilot variance. Widen to a sweep only after s\* is ch
 Next: harvest + VERIFY a difficulty-graded HoF at s\*, then coevolve at s\* with population-level
 master-tournament and full-trajectory (peak-vs-start) progress, n powered from pilot variance.
 
+## Coevolution exploratory run (2026-07-23) — NOT signed; benchmark-saturation confound confirmed
+
+Built the coevolution at s\* + a graded tunable-greedy/flee benchmark and ran n=20 (each run ~2.6s,
+so power is not the constraint). Findings, exploratory:
+- **The EVADER clearly OVERFITS** (robust): its frozen-benchmark competence rises to a peak (~0.77)
+  then CRASHES back to its start (~0.22). It wins head-to-head against the coevolving pursuers but
+  loses GENERAL competence -- the overfit-winner signature. No sustained evader progress.
+- **The PURSUER benchmark SATURATES** (start ~0.86, near the ceiling) because s\*=1.083 is slightly
+  pursuer-favoured (greedy catches 0.667 there); so pursuer peak-progress/overfit are tiny and noisy,
+  and the classification flips between OVERFIT/DISENGAGEMENT and DISENGAGEMENT-toward-pursuer run to
+  run. This is exactly the DESIGN gate's benchmark-grading (054 saturation) concern MATERIALISING: at
+  the knife-edge crossover, one side's benchmark saturates, confounding a clean two-sided verdict.
+- **Not signable as-is.** A clean signed result needs the benchmark grading FIXED so neither side
+  saturates: harder benchmark opponents (harvest evolved evaders from an evader-dominated pilot at
+  equal speed + evolved pursuers from a pursuer-dominated pilot) OR measure at the exact crossover
+  where neither dominates. The overfit-winner dynamic is real and robust; the confound blocks the
+  two-sided claim. NEXT UNIT: fix the benchmark grading, re-run, then sign.
+
 ## Result
 
 <one line once signed>
