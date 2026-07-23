@@ -208,6 +208,9 @@ coevolves MONOTONICALLY with NO cycling (master-tournament intransitive-triples=
 frozen benchmark the PURSUER sustains net progress at both brackets (+0.151, +0.189, disjoint from 0);
 the EVADER is MARGINAL (+0.153 disjoint at m=14, +0.042 CI-includes-0 at m=13, and the between-bracket
 difference 0.111 CI[-0.000,0.194] is NOT resolved). Clear non-cyclic two-sided PROGRESS, but a sustained
-two-sided arms race is NOT cleanly established and reciprocal driving is untested (needs a decoupled solo
-control). Two CLAIM-gate passes deflated the headline from "arms race / fragile / replicates N&F" (all
-overreach) to this. Next: decoupled control + third bracket (m=12) + larger n.
+two-sided arms race is NOT cleanly established. Two CLAIM-gate passes deflated the headline from "arms
+race / fragile / replicates N&F" (all overreach) to this. Then the DECOUPLED CONTROL was run (coevolution
+vs frozen gen-0 static opponent, same benchmark, n=40): coevolution's NET does NOT exceed the static
+control on any side at either bracket (all four diff CIs include 0) -> "arms race" REFUSED, not merely
+unproven; the progress is consistent with adapting to any opponent gradient, not reciprocal escalation.
+Next: stronger static baseline + third bracket (m=12) + larger n.

@@ -234,7 +234,49 @@ run_at(Fd, M, Tag, N, R) ->
     report_side(Fd, "EVADER ", [maps:get(e, X) || X <- Runs]),
     report_mt(Fd, [maps:get(mt, X) || X <- Runs]),
     verdict(Fd, Runs),
+    Ctrl = [side_traj(control_run(M, R, BM)) || _ <- lists:seq(1, N)],
+    report_coupling(Fd, Runs, Ctrl),
     Runs.
+
+%%%============================================================================
+%%% DECOUPLED CONTROL (earns/refuses "arms race"): evolve each side against a FROZEN gen-0 opponent
+%%% (static target, no co-adaptation), measured on the SAME held-out graded benchmark. If coevolution's
+%%% NET progress EXCEEDS the static control's, the co-adapting (moving) opponent drove extra progress =
+%%% coevolutionary coupling. If not, agents improved merely from having any opponent gradient.
+%%%============================================================================
+control_run(M, R, BM) ->
+    PP = [rand_genome() || _ <- lists:seq(1, ?CMU)],
+    PE = [rand_genome() || _ <- lists:seq(1, ?CMU)],
+    ctrl_loop(1, R, PP, PE, PP, PE, M, BM, []).   %% FP=PP0, FE=PE0 frozen as static targets
+
+ctrl_loop(_G, R, _PP, _PE, _FP, _FE, _M, _BM, Traj) when length(Traj) >= R -> lists:reverse(Traj);
+ctrl_loop(G, R, PP, PE, FP, FE, M, BM, Traj) ->
+    PP1 = sel(pursuer, PP ++ mut(PP), FE, M),   %% pursuers evolve vs FROZEN evaders (static)
+    PE1 = sel(evader, PE ++ mut(PE), FP, M),    %% evaders evolve vs FROZEN pursuers (static)
+    Frame = {G, bench_pursuer(hd(PP1), M, BM), bench_evader(hd(PE1), M, BM)},
+    ctrl_loop(G + 1, R, PP1, PE1, FP, FE, M, BM, [Frame | Traj]).
+
+side_traj(Traj) ->
+    Ps = [Pp || {_, Pp, _} <- Traj], Es = [Ep || {_, _, Ep} <- Traj],
+    #{p => side(Ps), e => side(Es)}.
+
+report_coupling(Fd, Coevo, Ctrl) ->
+    emit(Fd, "~n-- Coupling control (coevolution vs FROZEN static opponent, same benchmark, matched n) --~n"),
+    couple_side(Fd, "PURSUER", p, Coevo, Ctrl),
+    couple_side(Fd, "EVADER ", e, Coevo, Ctrl),
+    emit(Fd, "=> 'coevolutionary coupling / arms race' licensed for a side iff its coevo NET EXCEEDS its "
+             "static-control NET (difference CI > 0).~n").
+
+couple_side(Fd, Label, Side, Coevo, Ctrl) ->
+    Co = net_of(Side, Coevo), St = net_of(Side, Ctrl),
+    {DLo, DHi} = boot_ci_diff(Co, St),
+    emit(Fd, "~s NET: coevo median=~.3f vs static median=~.3f | coevo-minus-static=~.3f CI[~.3f,~.3f] -> ~s~n",
+         [Label, median(Co), median(St), median(Co) - median(St), DLo, DHi,
+          coupling_verdict(DLo, DHi)]).
+
+coupling_verdict(Lo, _Hi) when Lo > 0.0 -> "COUPLED (coevo > static)";
+coupling_verdict(_Lo, Hi) when Hi < 0.0 -> "ANTI (static > coevo)";
+coupling_verdict(_, _) -> "UNRESOLVED (CI includes 0)".
 
 %% The gate's REQUIRED test: is the between-bracket difference in each side's NET-sustained progress
 %% actually resolved, or do the per-bracket CIs merely straddle the threshold? "Contingent on balance"
