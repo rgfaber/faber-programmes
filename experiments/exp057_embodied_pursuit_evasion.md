@@ -215,4 +215,9 @@ a DIVERSE random static opponent (a n=60 pursuer hint did not reproduce at n=80)
 strong one (pursuer, reproduced) but that is curriculum-DIVERSITY (avoiding overfitting to a narrow
 target), which the random baseline shares -- NOT reciprocal coupling. So "arms race" / coevolutionary
 coupling REFUSED over a diverse opponent. Reproduction caught the n=60 single-run "coupling" as a fluke.
-Next: third bracket (m=12) + larger n for the evader sustainment boundary.
+THIRD BRACKET m=12 (s=1.091, one step more pursuer-favoured; n=40): no cycling at all three brackets;
+PURSUER sustains monotonically MORE with speed edge (0.151->0.189->0.238, extreme-pair m=14-vs-m=12
+RESOLVED -0.088 CI[-0.146,-0.015]); EVADER is a STEP not a gradient (sustains evader-fav m=14, marginal
+on BOTH pursuer-fav m=13/m=12), and the cross-crossover evader difference stays UNRESOLVED (m=12 sits on
+the same 0.667 catch-rate plateau as m=13, so it replicated rather than extended the trend). Next:
+larger n + a lower catch-rate plateau (m=16-20) to resolve the evader contingency.

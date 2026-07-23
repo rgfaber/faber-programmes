@@ -15,7 +15,7 @@
 -module(exp057_embodied_pursuit_evasion_tests).
 
 -export([calibrate/0, representability/1, representability/0, verify_benchmark/0, coevo_pilot/0,
-         run/0, run/1, run_coupling/0, run_coupling/1]).
+         run/0, run/1, run_coupling/0, run_coupling/1, run_brackets/0, run_brackets/1]).
 
 -define(W, 9).
 -define(T, 40).
@@ -277,6 +277,35 @@ run_at(Fd, M, Tag, N, R) ->
     report_coupling(Fd, Runs, Ctrl),
     Runs.
 
+%% THREE-bracket trend (adds m=12, one speed-step MORE pursuer-favoured than m=13, to turn the
+%% unresolved m=14-vs-m=13 evader difference into a trend). Coevolution + master-tournament only (the
+%% coupling question is settled); focuses on whether the evader's marginal sustainment declines
+%% monotonically as the pursuer's speed edge grows, with a resolvable m=14-vs-m=12 extreme pair.
+run_brackets() -> run_brackets(#{n => 40, r => 30}).
+
+run_brackets(#{n := N, r := R}) ->
+    {ok, Fd} = file:open("exp057_brackets_feed.txt", [write]),
+    emit(Fd, "== EXP-057 THREE brackets: evader-marginality trend (m=14, 13, 12) ==~n"),
+    emit(Fd, "config: net=[2,6,4] mu=~p K=~p R=~p n=~p; frozen graded HoF; master-tournament per run~n",
+         [?CMU, ?CK, R, N]),
+    Collected = [{M, run_trend(Fd, M, Tag, N, R)}
+                 || {M, Tag} <- [{14, "s=1.077 EVADER-favoured (catch 0.389)"},
+                                  {13, "s=1.083 PURSUER-favoured (catch 0.667)"},
+                                  {12, "s=1.091 PURSUER-favoured+ (catch 0.667, +1 step)"}]],
+    cross_bracket(Fd, Collected),
+    file:close(Fd),
+    ok.
+
+run_trend(Fd, M, Tag, N, R) ->
+    emit(Fd, "~n#### m=~p  s=~.3f  [~s] ####~n", [M, m_speed(M), Tag]),
+    BM = build_benchmark(M),
+    Runs = [run_metrics(M, coevo_run(M, R, BM)) || _ <- lists:seq(1, N)],
+    report_side(Fd, "PURSUER", [maps:get(p, X) || X <- Runs]),
+    report_side(Fd, "EVADER ", [maps:get(e, X) || X <- Runs]),
+    report_mt(Fd, [maps:get(mt, X) || X <- Runs]),
+    verdict(Fd, Runs),
+    Runs.
+
 %%%============================================================================
 %%% DECOUPLED CONTROL (earns/refuses "arms race"): evolve each side against a FROZEN gen-0 opponent
 %%% (static target, no co-adaptation), measured on the SAME held-out graded benchmark. If coevolution's
@@ -334,20 +363,29 @@ coupling_verdict(_Lo, Hi) when Hi < 0.0 -> "ANTI (static > coevo)";
 coupling_verdict(_, _) -> "UNRESOLVED (CI includes 0)".
 
 %% The gate's REQUIRED test: is the between-bracket difference in each side's NET-sustained progress
-%% actually resolved, or do the per-bracket CIs merely straddle the threshold? "Contingent on balance"
-%% is licensed ONLY if the evader's between-bracket NET difference CI excludes 0.
-cross_bracket(Fd, [{M1, R1}, {M2, R2}]) ->
-    Pe1 = net_of(e, R1), Pe2 = net_of(e, R2),
-    Pp1 = net_of(p, R1), Pp2 = net_of(p, R2),
-    {EdLo, EdHi} = boot_ci_diff(Pe1, Pe2),
-    {PdLo, PdHi} = boot_ci_diff(Pp1, Pp2),
-    emit(Fd, "~n-- Cross-bracket (m=~p minus m=~p) --~n", [M1, M2]),
-    emit(Fd, "EVADER NET difference: median=~.3f CI[~.3f,~.3f] -> ~s~n",
-         [median(Pe1) - median(Pe2), EdLo, EdHi, resolved(EdLo, EdHi)]),
-    emit(Fd, "PURSUER NET difference: median=~.3f CI[~.3f,~.3f] -> ~s~n",
-         [median(Pp1) - median(Pp2), PdLo, PdHi, resolved(PdLo, PdHi)]),
-    emit(Fd, "=> 'contingent on balance' licensed only if the EVADER between-bracket difference "
-             "EXCLUDES 0 (CI both same sign).~n").
+%% actually resolved, or do the per-bracket CIs merely straddle the threshold? With 3+ brackets this
+%% becomes a TREND: report each side's NET median per bracket and the extreme-pair difference CI (the
+%% widest, most resolvable). "Balance-contingent evader sustainment" needs a monotone decline AND a
+%% resolved extreme-pair difference. Handles any N>=2 brackets.
+cross_bracket(Fd, Collected) ->
+    Ms = [M || {M, _} <- Collected],
+    PMeds = [median(net_of(p, Rs)) || {_, Rs} <- Collected],
+    EMeds = [median(net_of(e, Rs)) || {_, Rs} <- Collected],
+    emit(Fd, "~n-- Cross-bracket trend (NET-sustained medians by bracket) --~n"),
+    emit(Fd, "  m:           ~s~n", [row(Ms, fun(M) -> io_lib:format("m=~p", [M]) end)]),
+    emit(Fd, "  pursuer NET: ~s~n", [row(PMeds, fun(X) -> io_lib:format("~.3f", [X]) end)]),
+    emit(Fd, "  evader  NET: ~s~n", [row(EMeds, fun(X) -> io_lib:format("~.3f", [X]) end)]),
+    {M1, R1} = hd(Collected), {Mn, Rn} = lists:last(Collected),
+    {EdLo, EdHi} = boot_ci_diff(net_of(e, R1), net_of(e, Rn)),
+    {PdLo, PdHi} = boot_ci_diff(net_of(p, R1), net_of(p, Rn)),
+    emit(Fd, "  EVADER  extreme-pair NET (m=~p minus m=~p): ~.3f CI[~.3f,~.3f] -> ~s~n",
+         [M1, Mn, median(net_of(e, R1)) - median(net_of(e, Rn)), EdLo, EdHi, resolved(EdLo, EdHi)]),
+    emit(Fd, "  PURSUER extreme-pair NET (m=~p minus m=~p): ~.3f CI[~.3f,~.3f] -> ~s~n",
+         [M1, Mn, median(net_of(p, R1)) - median(net_of(p, Rn)), PdLo, PdHi, resolved(PdLo, PdHi)]),
+    emit(Fd, "  => balance-contingent evader sustainment needs a monotone evader decline AND a "
+             "resolved extreme-pair difference.~n").
+
+row(Xs, F) -> lists:flatten(lists:join("  ", [lists:flatten(F(X)) || X <- Xs])).
 
 net_of(Side, Runs) ->
     [maps:get('end', maps:get(Side, X)) - maps:get(start, maps:get(Side, X)) || X <- Runs].
