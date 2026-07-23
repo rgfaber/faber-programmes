@@ -1,0 +1,18 @@
+== EXP-051 deception test: novelty vs objective on a deceptive maze ==
+config: grid=11x11 T=60 net=[6,10,4] mu=20 lambda=20 sigma=0.15 E=15000 n=40
+sensors: normalised (x,y) + 4 wall-legality bits, NO goal sensor
+
+mutation-effectiveness on D: 0.227 of single mutations change the final cell
+EXP051 objective-EA on N (competence): solved 40/40 (rate=1.000, 95%CI[0.912,1.000])
+EXP051 objective-EA on D (deception stall): solved 1/40 (rate=0.025, 95%CI[0.004,0.129])
+EXP051 sep-CMA-ES objective on D (landscape): solved 0/40 (rate=0.000, 95%CI[0.000,0.088])
+EXP051 random search on D (floor): solved 4/40 (rate=0.100, 95%CI[0.040,0.231])
+EXP051 novelty-EA[trajectory] on D: solved 24/40 (rate=0.600, 95%CI[0.446,0.737])
+EXP051 novelty-EA[final-pos] on D (advantage): solved 34/40 (rate=0.850, 95%CI[0.709,0.929])
+
+-- Verdict (deception certified if 1-3; 4 = final-position novelty advantage) --
+1 objective competent on twin N (LB>0.8): true (LB=0.912)
+2 objective stalls on D (UB<0.2): true (UB=0.129)
+3 CMA (strong) ALSO stalls on D (UB<0.3): true (UB=0.088)
+4 final-position novelty beats objective on D: true (fpNovLB=0.709 > objUB=0.129; trajectory-nov LB=0.446)
+RESULT=DECEPTION CONFIRMED: objective solves N, both objective-EA and strong CMA are trapped on D, and novelty-EA solves D with disjoint CIs -> novelty beats objective under genuine landscape deception (Lehman & Stanley replicated).
