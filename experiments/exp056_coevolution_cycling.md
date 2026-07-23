@@ -1,14 +1,13 @@
-# EXP-056 — rung 4: when progress goes in CIRCLES, can a fixed benchmark be fooled, and does it take a master-tournament to see it?
+# EXP-056 — rung 4: under structural cycling, is a fixed benchmark FOOLED (false rise) or merely honest-but-blind?
 
-Pre-registration. Written BEFORE the runner. DESIGN gate runs against this first.
-Rung 4 of the P7 ladder. 053-055 built the fixed-benchmark instrument (not co-fitness;
-graded; aligned). All of that assumes progress CLIMBS. This rung breaks that assumption:
-an INTRANSITIVE game where the population cycles (A beats B beats C beats A), so there is
-no monotone progress to measure. The question: does the fixed benchmark mislead, and is a
-champion-vs-champion-across-time tournament (CIAO / Stanley's dominance tournament) the
-tool that actually detects cycling?
+Pre-registration. DESIGN gate REDESIGNED a first draft (incoherent FOOLED/ROBUST rule;
+"master-tournament detects cycling" is textbook instrument, not a finding; champion
+ill-defined under intransitivity; the Watson-Pollack rule risked diagonal collapse).
+This is the gate's prescribed redesign: a game that RELIABLY produces structural cycling,
+a centroid measurement, a coherent decision rule hinging on the one open question (does
+the benchmark show a FALSE monotone rise), intransitive-triple structural proof, and a pilot.
 
-- **Programme:** P7 (Coevolution / self-play) — rung 4
+- **Programme:** P7 (Coevolution / self-play) — rung 4 (the last numbers-game methodology rung)
 - **Opened:** 2026-07-23
 - **Engine pin at open:** `9bb43e6b974bd2b62b8e35687e4aea164f0a31d9` (numbers game; no net/NIF)
 - **Runner:** `experiments/exp056_coevolution_cycling_tests.erl` (once built)
@@ -17,121 +16,115 @@ tool that actually detects cycling?
 
 ## The claim under test
 
-The fixed-benchmark methodology (053-055) presumes a monotone quality: progress is a climb, and
-a good benchmark tracks it. But coevolution's third failure mode (after Red Queen and disengagement)
-is CYCLING: on an intransitive game the population chases its own tail forever, with no real progress.
-The open, non-obvious questions: (1) does an intransitive game actually produce SUSTAINED cycling in
-this coevolution (or does it converge)? (2) during that cycling, is the fixed benchmark FOOLED --
-does it report apparent progress or oscillation where there is none -- or is it robust (stays flat)?
-(3) is a master-tournament (champion of generation i vs champion of generation j) the tool that
-reliably detects the cycling that a single fixed benchmark cannot? Report as replication of Watson &
-Pollack 2001 (intransitive numbers game) and Cliff & Miller / Stanley (CIAO / dominance tournaments).
+053-055 built the fixed-benchmark instrument (not co-fitness; graded; aligned) -- all assuming
+progress CLIMBS. Coevolution's third failure mode is CYCLING: on an intransitive game the population
+goes in circles, with no real progress. "A master-tournament detects cycling" is a textbook result
+(Cliff & Miller 1995) and is our INSTRUMENT, not a finding. The one genuinely open, signable question:
+under confirmed STRUCTURAL cycling, is the fixed benchmark FOOLED (does it report a FALSE monotone
+rise, as if there were progress) or merely HONEST-BUT-BLIND (it oscillates / stays flat, correctly
+showing no net progress, but cannot reveal the cyclic structure -- only the master-tournament can)?
+The expected answer is honest-but-blind; a false rise would be the surprise. Report as replication of
+Watson & Pollack 2001 (intransitive coevolution) and Cliff & Miller / Stanley (CIAO / dominance).
 
-## The games (a matched pair: intransitive vs transitive control)
+## The games (a matched pair; the intransitive one RELIABLY cycles)
 
-Players are 2D vectors (x1, x2). Two coevolving (mu+lambda) populations, mu=lambda=30, mutation
-sigma=0.3 both dims. Stochastic win rules, softened by logistic (tau=0.3):
-- **Intransitive (Watson-Pollack):** the deciding dimension is the one of LARGEST absolute
-  difference, k = argmax_i |A_i - B_i|; P(A beats B) = logistic((A_k - B_k)/tau). This is
-  intransitive -- it can produce A>B>C>A -- so the population should cycle.
-- **Transitive control:** P(A beats B) = logistic((sum(A) - sum(B))/tau). Monotone; the population
-  should escalate the sum (a genuine arms race), NOT cycle. The SAME tools applied here must show
-  the opposite readings (benchmark rises, no intransitivity), which is what makes the intransitive
-  result non-tautological.
-R=120 generations, n=20 runs per game.
+Two coevolving (mu+lambda) populations, mu=lambda=30, mutation sigma=0.3, softness tau=0.3.
+- **Intransitive (cyclic dominance):** a strategy is an angle theta. A beats B when it is "just
+  ahead" on the circle: P(A beats B) = logistic(sin(theta_A - theta_B)/tau). This is rock-paper-
+  scissors on the circle (intransitive), and selection favours being slightly ahead, so the
+  population ROTATES around the circle without bound -- sustained structural cycling by construction
+  of the dynamics (verified in the pilot), not diagonal noise.
+- **Transitive control:** a strategy is a scalar x. P(A beats B) = logistic((x_A - x_B)/tau) -- the
+  053 "bigger wins" game. The population escalates x (a genuine arms race), does NOT cycle. The SAME
+  measurements applied here must show the opposite readings (benchmark rises, no intransitivity),
+  which is what makes the intransitive result non-tautological.
+R and the champion-save interval K are set from the pilot (below) to capture several full rotations.
+
+## The measurement point: the CENTROID (not an argmax champion)
+
+Under intransitivity there is no dominant individual (argmax over ~0.5 win-rates wanders), so all
+measurements use the population CENTROID: mean x (transitive) / the population's mean angle
+(intransitive, tracked as an unwrapped running mean so rotation is monotone in the raw theta).
 
 ## The three measurements (per game, per run)
 
-1. **Fixed benchmark:** the champion's mean win-probability against a FROZEN, graded set of 2D
-   reference players spanning the space, per generation. (Under the intransitive rule, "champion" =
-   the current population's best against its own population.)
-2. **Co-fitness:** the champion's win-probability against the CURRENT opponent population.
-3. **Master-tournament (CIAO):** save the champion of every Kth generation; play champion of gen i
-   vs champion of gen j for all pairs. **Intransitivity score** = the fraction of pairs (i < j) where
-   the LATER champion (j) LOSES to the EARLIER champion (i) by more than a noise band -- on a truly
-   progressing game this is ~0 (later beats earlier); under cycling it is substantial.
+1. **Fixed benchmark:** the centroid's mean win-probability against a FROZEN, graded set of reference
+   strategies (a graded half-circle ARC for the cyclic game, so a rotating centroid's win-rate
+   OSCILLATES visibly; a graded x-ladder for the transitive). Trend by MAGNITUDE: the end-minus-start
+   delta (mean of the last fifth minus mean of the first fifth), NOT Spearman. Validation caught that
+   Spearman(gen, benchmark) reads a spurious ~0.36 on a benchmark that is constant up to float noise
+   (rank correlation of float-noise); the magnitude delta is the honest test (same lesson as 054).
+2. **Co-fitness:** the centroid vs the current opponent population (expected ~0.5).
+3. **Master-tournament (CIAO):** save the centroid every K generations; for all pairs (i, j) play
+   centroid_i vs centroid_j. **Structural cycling** is proven by (a) intransitive TRIPLES: saved
+   centroids A, B, C with A beats B beats C beats A, each margin beyond the noise band (win-prob
+   outside [0.45, 0.55]); and (b) a BANDED CIAO pattern (later beats earlier for a partial rotation,
+   then loses past a half-rotation) rather than a triangular (monotone-progress) pattern. Report the
+   intransitive-triple count and the fraction of (i<j) pairs where the LATER centroid LOSES.
 
 ## Hypothesis (with direction)
 
-Intransitive game: high intransitivity score (later champions lose to earlier ones -- the population
-cycles), while the fixed benchmark does NOT rise monotonically (it is flat, oscillating, or
-misleadingly non-zero) and co-fitness looks unremarkable. Transitive control: ~zero intransitivity
-score, a monotonically rising benchmark, confirming the tools distinguish the two. The sharpest
-sub-claim, and the one that is genuinely open: whether the fixed benchmark is FOOLED (reports
-apparent progress/oscillation during pure cycling) or ROBUST (stays flat, correctly showing no
-progress). Both outcomes are signable and both are informative.
+Intransitive game: the population rotates (mean angle climbs steadily); the master-tournament shows
+many intransitive triples and a banded pattern (structural cycling confirmed); co-fitness ~0.5; and
+the fixed benchmark OSCILLATES with NO net upward trend (Spearman ~0) -- honest-but-blind, NOT fooled.
+Transitive control: zero intransitive triples, a triangular CIAO, a monotonically RISING benchmark
+(Spearman clearly > 0). Surprise (the real finding if it occurs): the benchmark shows a clean
+monotone RISE under confirmed cycling (FOOLED).
 
 ## Controls + validity (pre-committed)
 
-- **Transitive positive control** run with identical tools; it MUST show a rising benchmark and
-  ~zero intransitivity, else the tools/operators are broken (INVALID).
-- **Cycling reachability:** the intransitive game must actually cycle (intransitivity score clearly
-  above the transitive control's); if it converges (score ~0), that is a signed negative about THIS
-  intransitive game producing cycling in this coevolution -- report it, do not force a cycling claim.
-- **Master-tournament noise band** pre-committed: a "loss" counts only if the win-probability is
-  below 0.5 minus a margin (e.g. < 0.45), so ordinary softness is not miscounted as intransitivity.
-- **Benchmark graded** (per 054) so a saturation artifact cannot masquerade as flatness/progress.
-- **n = 20 runs per game**; intransitivity score, benchmark trend (Spearman gen vs reading), and
-  co-fitness aggregated (median + bootstrap CI).
+- **PILOT (run and reported first):** confirm the intransitive game ROTATES (raw mean angle increases
+  roughly linearly, not converging) and the transitive game escalates; measure the rotation speed to
+  set R (>= 4 full rotations) and K (>= 40 saved centroids). If the intransitive game does NOT rotate
+  (converges / diagonal-collapses), STOP and retune tau/sigma before the main run.
+- **Transitive positive control** with identical tools: MUST show a rising benchmark and zero
+  intransitive triples, else INVALID.
+- **Noise band [0.45, 0.55]** for counting a CIAO "win/loss" so softness is not miscounted.
+- **Benchmark graded** (per 054) so saturation cannot masquerade as flatness.
+- **n = 20 runs per game**; benchmark Spearman, intransitive-triple count, and co-fitness aggregated
+  (median + bootstrap CI).
 
-## Decision rule (pre-committed, all outcomes reachable)
+## Decision rule (pre-committed; coherent partition on the ONE open question)
 
-Over n=20, R=120, per game:
-- **CYCLING, BENCHMARK FOOLED** iff the intransitive game's intransitivity score CI is disjoint above
-  the transitive control's (~0) AND its fixed-benchmark trend is NOT a clean monotone rise (Spearman
-  gen-vs-benchmark not clearly positive, or the reading oscillates) -> a fixed benchmark can be fooled
-  by cycling; a master-tournament is required to detect it.
-- **CYCLING, BENCHMARK ROBUST** iff the intransitivity score is high (disjoint from control) BUT the
-  fixed benchmark stays flat (Spearman ~0, no false rise) -> the benchmark is robust to cycling (shows
-  no false progress); the master-tournament confirms the cycling but the benchmark is not misled.
-- **NO CYCLING** iff the intransitive game's intransitivity score is not clearly above the control's
-  -> the game converged; a signed negative about this intransitive game.
-- **INVALID** iff the transitive control fails (no rising benchmark or non-zero intransitivity) ->
-  tools/operators broken; fix first.
+Cycling must first be CONFIRMED on the intransitive game: intransitive-triple count CI disjoint above
+the transitive control's (~0). Given confirmed cycling:
+- **BENCHMARK FOOLED** iff the benchmark end-minus-start DELTA bootstrap CI is entirely > 0 (a clean
+  net rise, like the transitive control's) -> a fixed benchmark can report false progress under
+  cycling; the surprise.
+- **BENCHMARK HONEST-BUT-BLIND** iff the benchmark delta CI INCLUDES 0 (no net rise; it oscillates,
+  confirmed by a non-trivial oscillation range) -> the benchmark is not fooled by cycling (no false
+  progress) but cannot reveal the cyclic structure; only the master-tournament can. Expected outcome,
+  and a real signed result.
+- **NO CYCLING** iff the intransitive game does not produce intransitive triples above the control ->
+  it converged; a signed negative, retune the game.
+- **INVALID** iff the transitive control fails (no rising benchmark, or non-zero intransitive triples)
+  -> tools/operators broken; fix first.
 
 ## Fallback interpretation (committed in advance)
 
-If CYCLING is present: P7's methodology gains its fourth and final measurement rule -- when the game
-is intransitive the population cycles, and the fixed benchmark alone [is fooled / is robust]; a
-champion-vs-champion-across-time master-tournament is the instrument that reveals cycling. Together
-053-056 give the full toolkit (co-fitness lies; use a graded, aligned fixed benchmark for progress;
-use a master-tournament for cycling) needed to honestly measure the embodied pursuit-evasion rung,
-where any of the three failure modes can occur. If no cycling, a signed negative and a redesign of
-the intransitive game before the embodied rung.
+Whichever way the benchmark goes, P7's methodology gains its fourth rule: co-fitness lies (053); use a
+graded (054), aligned (055) fixed benchmark for PROGRESS; and for CYCLING the fixed benchmark is
+[honest-but-blind / fooled], so a master-tournament is [necessary to see structure / necessary to
+avoid false progress]. Together 053-056 are the full toolkit to honestly measure the embodied
+pursuit-evasion rung, where Red Queen, disengagement, OR cycling can each occur. Validated here
+against KNOWN ground truth -- the last place such an oracle exists.
 
 ## Kill criterion
 
-If the transitive control does not produce a rising benchmark with ~zero intransitivity, STOP and fix
-the tools/operators before interpreting the intransitive game.
+If the pilot shows the intransitive game NOT rotating (converges), or the transitive control not
+escalating, STOP and retune before the main run.
 
-## DESIGN gate verdict (faber-adversary / Fable, 2026-07-23) — REDESIGN (pending a strategic fork)
+## DESIGN gate verdict (faber-adversary / Fable, 2026-07-23) — REDESIGN accepted; kept per Raf's fork choice
 
-The gate found the rung, as drafted, mostly cannot fail and mostly cannot teach:
-- **"A master-tournament detects cycling" is INSTRUMENT, not a finding** (textbook Cliff-Miller 1995).
-  It must not be signed as a result.
-- **The FOOLED/ROBUST decision rule is INCOHERENT:** a flat benchmark (Spearman ~0) satisfies both
-  buckets, and labelling a flat-during-cycling benchmark "fooled" inverts the semantics (a flat
-  benchmark is CORRECT -- no false progress). Oscillation is the HONEST signature of a population
-  rotating past a fixed panel, not fooling.
-- **The only signable, open content:** (a) does this operator SUSTAIN structural cycling (vs collapse
-  to the diagonal where the deciding dimension is tau-noise), and (b) does the fixed benchmark show a
-  FALSE MONOTONE RISE under confirmed cycling.
-- **Champion is ill-defined under intransitivity** (argmax over ~50% win-rates wanders); use
-  population-vs-population or the centroid for both the benchmark and the CIAO matrix.
-- **Prove STRUCTURE** (intransitive triples A>B>C>A beyond the band; banded vs triangular CIAO), not
-  mere non-monotonicity (a random walk also yields later-loses-to-earlier).
-- **Pilot the operator first** (confirm separation, not diagonal collapse); justify K/R for the cycle
-  period (R=120 with ~10 saved champions is too thin).
-
-Required redesign (if kept): FOOLED = clean monotone benchmark RISE under confirmed cycling; HONEST =
-flat OR oscillating, no net rise; centroid/pop-vs-pop measurement; structural-triple cycling proof;
-a pilot; reframed insight (the false-rise question, not "CIAO detects cycling").
-
-**Strategic fork the gate raised (attack 6):** this is the LAST place to validate the cycling-detector
-against KNOWN ground truth (the embodied pursuit-evasion has no is-it-cycling oracle), which argues to
-KEEP it -- but only if it tests the one open question (the false rise). Otherwise carry 053-055
-straight to the EMBODIED pursuit-evasion rung (the workbench already shows it DISENGAGES; a signed
-experiment would characterise that with the graded/aligned instruments). Awaiting Raf's choice.
+Gate found the first draft mostly could not fail/teach: "master-tournament detects cycling" is textbook
+INSTRUMENT not a finding; the FOOLED/ROBUST rule was incoherent (a flat benchmark satisfied both, and
+flat-during-cycling is CORRECT not fooled); champion ill-defined under intransitivity; the Watson-
+Pollack rule risked diagonal collapse (tau-noise, not structural cycling). Redesign adopted in full: a
+cyclic-dominance game that reliably rotates (structural cycling by construction), CENTROID measurement,
+a coherent decision rule hinging on the ONE open question (a false monotone benchmark rise under
+confirmed cycling), intransitive-TRIPLE + banded-CIAO structural proof, and a PILOT gate. Raf chose to
+finish this rung before the embodied one (it is the last place to validate the cycling-detector against
+a ground-truth oracle).
 
 ## Result
 
