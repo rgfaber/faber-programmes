@@ -131,6 +131,21 @@ if degenerate; a tunable greedy family as fallback); score progress on the full 
 start) with an explicit overfit-winner cell; population-level master-tournament with a game-specific
 noise band; n powered from pilot variance. Widen to a sweep only after s\* is characterised.
 
+## Kill-gate results (2026-07-23) — both PASS; coevolution step is next
+
+- **Calibration (greedy pursuer vs optimal-flee evader, 72 starts, fine speed grid):** the transition
+  from evader-wins to pursuer-wins is a KNIFE-EDGE just above equal speed, exactly as the gate warned.
+  At s=1.0 catch-rate 0.000 (evader escapes always); it rises through 0.389 (s~1.07) and 0.667 (s~1.09)
+  to 0.94+ (s>=1.14). **s\* ~ 1.08 (m=13/14)** is the competent-play crossover (catch-rate ~0.5). The
+  whole two-sided window lives in s in [1.05, 1.10]. This is the balance the coevolution runs at.
+- **Representability (evolve a [2,6,4] net per role vs the hand-coded opponent at s\*):** PASS. The
+  evolved net PURSUER reaches catch-rate 0.857 (> greedy's 0.667); the net EVADER reaches survival
+  0.286 (~86% of optimal-flee's 0.333). The net class expresses competent pursuit AND evasion, so any
+  disengagement is a DYNAMICS result, not a capacity limit. INVALID branch closed.
+
+Next: harvest + VERIFY a difficulty-graded HoF at s\*, then coevolve at s\* with population-level
+master-tournament and full-trajectory (peak-vs-start) progress, n powered from pilot variance.
+
 ## Result
 
 <one line once signed>
