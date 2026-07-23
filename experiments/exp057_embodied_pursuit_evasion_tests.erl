@@ -14,7 +14,8 @@
 %%%-------------------------------------------------------------------
 -module(exp057_embodied_pursuit_evasion_tests).
 
--export([calibrate/0, representability/1, representability/0, verify_benchmark/0, coevo_pilot/0, run/0, run/1]).
+-export([calibrate/0, representability/1, representability/0, verify_benchmark/0, coevo_pilot/0,
+         run/0, run/1, run_coupling/0, run_coupling/1]).
 
 -define(W, 9).
 -define(T, 40).
@@ -210,6 +211,44 @@ coevo_pilot() ->
 %%%============================================================================
 run() -> run(#{n => 20, r => 30}).
 
+%% Focused COUPLING study (the gate's stronger-baseline follow-up): compare coevolution's benchmark NET
+%% against TWO static baselines -- a frozen RANDOM opponent and a frozen STRONG opponent (disjoint from
+%% the benchmark) -- at larger n, both brackets. "Arms race / coupling" for a side is licensed iff coevo
+%% NET exceeds the static NET (difference CI > 0). No tournament here (053-056 dynamics already signed).
+run_coupling() -> run_coupling(#{n => 60, r => 30}).
+
+run_coupling(#{n := N, r := R}) ->
+    {ok, Fd} = file:open("exp057_coupling_feed.txt", [write]),
+    emit(Fd, "== EXP-057 COUPLING: coevolution vs static baselines (RANDOM + STRONG), n=~p R=~p ==~n", [N, R]),
+    emit(Fd, "coupling licensed for a side iff coevo NET EXCEEDS the static NET (coevo-minus-static CI > 0)~n"),
+    [coupling_at(Fd, M, Tag, N, R) || {M, Tag} <- [{14, "EVADER-favoured (catch 0.389)"},
+                                                   {13, "PURSUER-favoured (catch 0.667)"}]],
+    file:close(Fd),
+    ok.
+
+coupling_at(Fd, M, Tag, N, R) ->
+    emit(Fd, "~n#### m=~p  s=~.3f  [~s] ####~n", [M, m_speed(M), Tag]),
+    BM = build_benchmark(M),
+    {SFP, SFE} = build_strong_opponents(M),
+    Coevo = [side_traj(element(1, coevo_run(M, R, BM))) || _ <- lists:seq(1, N)],
+    Rand = [side_traj(control_run(M, R, BM)) || _ <- lists:seq(1, N)],
+    Strong = [side_traj(control_vs(M, R, BM, SFP, SFE)) || _ <- lists:seq(1, N)],
+    emit(Fd, "coevo NET median: pursuer=~.3f  evader=~.3f~n",
+         [median(net_of(p, Coevo)), median(net_of(e, Coevo))]),
+    couple2(Fd, "vs STATIC-RANDOM", Coevo, Rand),
+    couple2(Fd, "vs STATIC-STRONG", Coevo, Strong).
+
+couple2(Fd, Tag, Coevo, Static) ->
+    emit(Fd, "  ~s (static NET | coevo-minus-static):~n", [Tag]),
+    couple_side2(Fd, "pursuer", p, Coevo, Static),
+    couple_side2(Fd, "evader ", e, Coevo, Static).
+
+couple_side2(Fd, Label, Side, Coevo, Static) ->
+    Co = net_of(Side, Coevo), St = net_of(Side, Static),
+    {DLo, DHi} = boot_ci_diff(Co, St),
+    emit(Fd, "    ~s: static=~.3f | diff=~.3f CI[~.3f,~.3f] -> ~s~n",
+         [Label, median(St), median(Co) - median(St), DLo, DHi, coupling_verdict(DLo, DHi)]).
+
 %% Run BOTH brackets of the coarse catch-rate crossover plateau: m=14 (s=1.077, catch 0.389,
 %% evader-favoured) and m=13 (s=1.083, catch 0.667, pursuer-favoured). If the disengagement
 %% direction is CONSISTENT across both, it is dynamics; if it FLIPS with the bracket, it is
@@ -244,10 +283,26 @@ run_at(Fd, M, Tag, N, R) ->
 %%% NET progress EXCEEDS the static control's, the co-adapting (moving) opponent drove extra progress =
 %%% coevolutionary coupling. If not, agents improved merely from having any opponent gradient.
 %%%============================================================================
-control_run(M, R, BM) ->
+control_run(M, R, BM) ->                          %% static baseline = frozen gen-0 RANDOM opponents
+    FP = [rand_genome() || _ <- lists:seq(1, ?CMU)],
+    FE = [rand_genome() || _ <- lists:seq(1, ?CMU)],
+    control_vs(M, R, BM, FP, FE).
+
+%% Train each side against a GIVEN fixed opponent set (FP fixed pursuers for the evader-in-training,
+%% FE fixed evaders for the pursuer-in-training); measure on the held-out benchmark BM.
+control_vs(M, R, BM, FP, FE) ->
     PP = [rand_genome() || _ <- lists:seq(1, ?CMU)],
     PE = [rand_genome() || _ <- lists:seq(1, ?CMU)],
-    ctrl_loop(1, R, PP, PE, PP, PE, M, BM, []).   %% FP=PP0, FE=PE0 frozen as static targets
+    ctrl_loop(1, R, PP, PE, FP, FE, M, BM, []).
+
+%% STRONG fixed opponents, harvested with a seed DISJOINT from the benchmark HoF (so training against
+%% them is not teaching-to-the-test). A strong but NARROW static target: overfitting to it should
+%% generalise worse to the graded benchmark than coevolution's varied curriculum -- IF coupling exists.
+build_strong_opponents(M) ->
+    _ = rand:seed(exsss, {202, 303, 404}),
+    FP = [evolve_genome(pursuer, M, 30) || _ <- lists:seq(1, 5)],
+    FE = [evolve_genome(evader, M, 30) || _ <- lists:seq(1, 5)],
+    {FP, FE}.
 
 ctrl_loop(_G, R, _PP, _PE, _FP, _FE, _M, _BM, Traj) when length(Traj) >= R -> lists:reverse(Traj);
 ctrl_loop(G, R, PP, PE, FP, FE, M, BM, Traj) ->
