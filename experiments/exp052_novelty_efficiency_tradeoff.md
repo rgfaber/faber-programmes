@@ -1,0 +1,147 @@
+# EXP-052 — the price of ignoring the objective: what does novelty search trade away where goal-chasing already wins?
+
+Pre-registration. Written BEFORE the runner. DESIGN gate ran against it and forced a
+REDESIGN (below); this is the amended, PROCEED-approved version. Closes the open
+efficiency thread insight 051 named. The last P4 characterisation before P7 opens.
+
+- **Programme:** P4 (Objectives / selection pressure)
+- **Opened:** 2026-07-23
+- **Engine pin at open:** `9bb43e6b974bd2b62b8e35687e4aea164f0a31d9`
+- **Runner:** `experiments/exp052_novelty_efficiency_tradeoff_tests.erl` (once built)
+- **Raw feed:** `faber-ecosystem/insights/052-raw-efficiency-tradeoff.txt`
+- **Insight:** `faber-ecosystem/insights/052-*.md` (once signed)
+
+## The claim under test
+
+051 established the up-side of abandoning the objective: under genuine landscape
+deception, novelty search solves where goal-chasing and a strong optimiser are trapped.
+Most tasks are NOT deceptive. The complement (Lehman & Stanley's own caveat, and the
+"no free lunch" intuition): where the objective gradient DOES lead to the goal, rewarding
+novelty instead of proximity should cost something. This measures WHAT novelty trades,
+and how much, on a non-deceptive task where goal-chasing wins outright. Framed as a
+TRADE, not a one-sided tax: goal-chasing buys speed-to-goal; novelty buys behavioural
+coverage. Both sides get measured, and both are separately falsifiable.
+
+## The task — maze E (non-deceptive, non-degenerate), matched to D
+
+Reuse the EXP-051 engine unchanged (11x11 grid, position-only Markov sensors, `[6,10,4]`
+net, one (mu+lambda) EA, mu=lambda=20, sigma=0.15). **Maze E:** the SAME wall+gap as the
+deceptive maze D (wall at y=5, gap at x=9-10) but the goal moved to G=(9,9); start
+S=(1,1). Because the gap now sits ON the greedy right-then-up route to G, closeness-to-goal
+descends monotonically to the goal (non-deceptive), and objective-EA solves it reliably.
+D and E are thus a matched pair differing only in goal placement (D deceptive, E not).
+
+### Why E, not the old twin N (DESIGN-gate fix 2, frozen pre-run validity check)
+
+The originally-planned twin N (gap at x=1, straight-up route) is DEGENERATE: an
+always-north constant policy solves it, and a random genome solves it 20% of the time, so
+the shared mu=20 init population contains a solver in 98.8% of runs and EFG floors for
+every search. Retired. Frozen validity probe (20000 random genomes / 30 EA runs, engine pin above):
+
+| maze | random single-genome solve | P(mu=20 init has a solver) | constant-north solves | objective-EA solve | objective median EFG | random-search median EFG |
+|---|---|---|---|---|---|---|
+| N (retired, degenerate) | 0.199 | 0.988 | YES | (floored) | (floored) | (floored) |
+| **E (adopted)** | 0.0006 | 0.012 | no | 30/30 | 436 | 864 |
+| D (051 deceptive) | 0.000 | 0.000 | no | 1/40 (051) | — | — |
+
+E passes the pre-committed floor gate: objective median EFG (436) < random median EFG
+(864), i.e. selection is genuinely accelerating the search, not riding a random floor.
+
+## The two measurements (per search, per run)
+
+1. **Evaluations-to-first-reach-goal (EFG)** = the 1-based index, in evaluation order, of
+   the first evaluated genome whose rollout reaches G. Evaluation order is: the mu init
+   genomes (1..mu), then each generation's lambda offspring in generation order. Metric
+   resolution is +/- lambda (=20); CI separation is only interpreted beyond that granularity.
+   Fair to both arms: novelty reaches G incidentally while exploring, objective by converging;
+   EFG is a neutral "when is the goal first reached" clock, not an assumption that either is trying.
+2. **Behavioural coverage** = the number of distinct **visited cells** (union of all
+   trajectories) reached by a fixed budget E, reported as a curve at several budgets
+   (e.g. 2k / 6k / 15k). Visited-cells is chosen deliberately (DESIGN-gate fix 3):
+   final-position novelty is selected BY final-cell dispersion, so distinct-final-cells is
+   a MANIPULATION CHECK, not a finding; distinct-visited-cells is a good novelty does not
+   directly optimise, so a novelty advantage there is a real traded good.
+
+## The searches (equal operator + budget)
+
+- **objective-EA** (score = closeness to G). Expected: small EFG, low coverage.
+- **novelty-EA[final-pos]** (score = final-position k-NN novelty, the 051 winner). Expected:
+  larger EFG, higher coverage.
+- **random search** (floor for BOTH metrics; in the decision rule, not just present).
+
+## Hypothesis (with direction)
+
+On non-deceptive maze E: objective-EA reaches G in FEWER evaluations than novelty-EA (a
+speed tax on novelty), while novelty-EA achieves HIGHER distinct-visited-cell coverage than
+objective-EA at matched budget. The two trade. Surprises / nulls: novelty reaches G as fast
+as objective (no speed tax -> free lunch here); OR objective's coverage matches novelty's
+(no coverage gain); OR novelty is FASTER than objective (reversal).
+
+## Controls + validity (pre-committed)
+
+- **Floor gate (fix 2):** the speed comparison is interpreted only if objective-EA's EFG CI
+  lies strictly below random-search's EFG CI on E (probe: 436 < 864, holds). Re-checked in the
+  main run; if it fails at n>=40, the maze is refloored and nothing is signed about the tax.
+- **Coverage floor (fix 4):** a novelty coverage gain is signable only if novelty's coverage
+  CI exceeds RANDOM's coverage CI at the same budget (random may saturate the ~110-cell
+  reachable set); report the coverage curve so ceiling effects are visible.
+- **Censoring (fix 5):** primary EFG estimator = median over ALL runs with censored (never
+  solved within E) assigned EFG=+infinity (well-defined whenever solve rate > 50%). If any
+  search's solve rate on E is <= 50%, switch to Kaplan-Meier P(solved by budget b) curves
+  compared by logrank. Solved-only median = secondary descriptive only (survivorship-biased).
+  Report solve rate and censored fraction per search.
+- **Matched operator, budget, population** across all three searches. **n >= 40** runs/search.
+
+## Decision rule (pre-committed, all outcomes reachable)
+
+Over n >= 40 runs/search on E, EFG via the all-runs estimator, coverage at matched budget:
+- **TRADE CONFIRMED** iff objective median EFG < novelty median EFG (non-overlapping bootstrap
+  CIs) AND novelty visited-cell coverage > objective coverage AND > random coverage (both CIs
+  disjoint) AND objective EFG < random EFG (floor gate holds).
+- **NO SPEED TAX** iff novelty's median-EFG CI lies entirely BELOW 1.25x objective's median
+  (a pre-committed equivalence margin) -> novelty is not meaningfully slower even here.
+- **REVERSAL** iff novelty median EFG < objective median EFG (disjoint CIs) -> novelty is
+  FASTER on a non-deceptive task; a signed surprise.
+- **NO COVERAGE GAIN** iff novelty coverage CI overlaps objective's or random's -> novelty
+  bought no coverage here; signed negative.
+- **INCONCLUSIVE (unsigned)** iff EFG CIs overlap without meeting the equivalence margin
+  (indistinguishable from low power at n=40, +/- lambda granularity).
+- **INVALID** iff objective-EA solve rate on E is not high (contradicts the probe -> harness
+  regression) OR the floor gate fails.
+
+## Fallback interpretation (committed in advance)
+
+If TRADE CONFIRMED: P4 closes with the full picture. Novelty is not a free lunch; it is
+insurance whose premium is speed-to-goal on non-deceptive tasks, paid for in behavioural
+coverage. This motivates P7 / Flatland: once the task is open-ended (no single goal), the
+"tax" is not a tax, because coverage IS the objective.
+
+## Scope (fix 7)
+
+Any finding is scoped to this maze family and representation (one 11x11 grid pair,
+position-only sensors, one net shape, sigma=0.15). No general "efficiency tax" claim; a
+representation/sigma sweep or P7 would be needed to generalise.
+
+## Kill criterion
+
+If objective-EA fails to solve E at a high rate, or the floor gate fails at n>=40, STOP and
+find the regression before any interpretation.
+
+## DESIGN gate verdict (faber-adversary / Fable, 2026-07-23) — REDESIGN, then PROCEED
+
+REDESIGN accepted; all fixes applied. Fatal flaw caught: the twin N was DEGENERATE (fix 2),
+empirically confirmed (random solves N 20%; init-floor 98.8%) and replaced by maze E, which
+passes the floor gate (objective EFG 436 < random EFG 864). Other fixes applied: EFG defined
+as 1-based eval-order index with +/- lambda resolution (fix 1); coverage = distinct-visited-
+cells, with distinct-final-cells demoted to a manipulation check (fix 3); random added to the
+decision rule for coverage, with a coverage curve (fix 4); censoring via all-runs median with
++infinity for censored and a Kaplan-Meier/logrank fallback below 50% solve rate (fix 5);
+decision rule extended with a REVERSAL outcome and a 1.25x equivalence margin for NO SPEED TAX,
+overlap-without-margin = INCONCLUSIVE (fix 6); claim scoped (fix 7). Recorded engine note
+(fix 8): the exp051 runner's `?ARCH_CAP` macro (300) is DEAD (the archive is unbounded
+append-only); it must not be cited as an archive bound anywhere. With these, the gate's
+verdict is PROCEED.
+
+## Result
+
+<one line once signed>
