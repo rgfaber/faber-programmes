@@ -116,15 +116,20 @@ Built `faber-tweann/src/flatland_sim.erl` (pure world engine) + `exp058_flatland
   over all layouts the net matches greedy. So the net class expresses both capabilities; any later
   failure to produce dynamics is DYNAMICS, not an instrument/capacity limit. INVALID branch closed.
 
-**INSTRUMENT VALIDATED at the kill-gate level.** Remaining for a signed rung 1: the DECOMPOSED,
-verified-graded benchmark (foraging-skill / fleeing-skill / capture-skill, each graded + un-saturated)
-and the RE-BASELINE of 057's decoupled coupling control on it (rule out that 057's refusal was binary-
-capture saturation). That is the next build unit; then rung 1 signs, and exp059 (rung 2) asks the
-energy-economy coupling question.
+**INSTRUMENT VALIDATED at the kill-gate level.**
+
+- **Deliverable 3 -- decomposed graded benchmark + re-baseline 057: DONE** (`exp058_flatland_benchmark_tests`).
+  The benchmark reads foraging / fleeing / capture ORTHOGONALLY, each verified graded + un-saturated
+  (predator capture-speed 0.29..0.88 agg 0.65; prey escape-rate agg 0.31). Foraging and fleeing are
+  DISTINCT axes: a pure-FORAGER scores forage 27.6 / flee 0.31, a pure-FLEER forage 3.5 / flee 0.69. And
+  057's decoupled coupling control, re-run on PURE pursuit-evasion (plants OFF) with this graded metric
+  (n=40, R=30), REPRODUCES the no-coupling refusal (predator -0.023 CI[-0.105,0.069]; prey -0.069
+  CI[-0.139,0.056]) -- so 057's refusal was not a binary-capture-saturation artifact.
 
 ## Result
 
-<one line once signed — pending the decomposed-benchmark + re-baseline deliverable>
-
-Kill gates 0a/0b PASS -> the Flatland instrument is validated (scape works; a [5,6,4] net forages AND
-hunts). Full rung-1 signing awaits the decomposed graded benchmark + re-baselined 057.
+SIGNED as insight 058 (instrument rung). The Flatland scape works (0a), a [5,6,4] net FORAGES and HUNTS
+(0b representability), the benchmark DECOMPOSES foraging from fleeing (graded + orthogonal), and 057's
+no-coupling refusal REPRODUCES on the graded instrument (plants off) -- so it is 057-consistent and rung
+2's head-to-head is clean. No dynamics claim. Next: exp059 (rung 2) turns plants ON and asks, symmetrically,
+whether the energy economy CHANGES the coupling verdict on the decomposed pursuit-evasion sub-metric.
