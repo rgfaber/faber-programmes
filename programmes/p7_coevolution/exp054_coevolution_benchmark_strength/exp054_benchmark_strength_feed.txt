@@ -1,0 +1,12 @@
+== EXP-054 benchmark strength: a fixed-but-weak benchmark goes blind ==
+config: mu=30 lambda=30 sigma=0.30 tau=0.30 x0=50.0 R=150 n=30
+pilot final champion x=85.1 -> graded ladder [50.0..170.2], weak ladder [50.0..55.0]
+
+-- Results (n=30, R=150; late window = 2nd half) --
+GRADED benchmark: unsaturated frac median=1.00; late-window reading RANGE median=0.1304 CI[0.1228,0.1386]
+WEAK   benchmark: unsaturated frac median=0.13; late-window reading RANGE median=0.0000 CI[0.0000,0.0000]
+blindness gap (true x climbed AFTER the weak benchmark saturated): median=30.8
+graded resolves progress (late range>0.03 & unsat>0.9): true
+weak blind (late range<0.01 & unsat<0.3): true
+graded>weak late-range disjoint CIs: true
+RESULT=STRENGTH MATTERS: a fixed-but-too-weak benchmark saturates early and reports NO progress during a large ongoing arms race (late-window tracking collapses to ~0), while a graded benchmark of adequate range keeps tracking. 'Fixed' is not enough; the benchmark must be graded. This is the fix the deferred pursuit-evasion rung needs.
