@@ -1,0 +1,14 @@
+== EXP-055 misaligned selection proxy: does selecting on sum decouple from true min? ==
+config: mu=30 lambda=30 sig1=0.30 sig2(sym)=0.30 sig2(asym)=0.03 tau=0.30 x0=50.0 R=150 n=30
+unit test (not signed): min-vs-mean discordant ordered pairs in 36-panel = 30; mean ranks (110,10) above (50,50) while min ranks below = true
+cell aligned/symmetric: true min-quality first=50.3 -> last=73.7 CI[73.4,74.2]; lopsidedness=0.3
+cell proxy/symmetric: true min-quality first=50.3 -> last=74.9 CI[74.4,75.4]; lopsidedness=3.4
+cell aligned/asymmetric: true min-quality first=50.1 -> last=53.5 CI[53.5,53.6]; lopsidedness=1.5
+cell proxy/asymmetric: true min-quality first=50.1 -> last=50.6 CI[50.5,50.7]; lopsidedness=34.5
+
+-- Verdict (aligned vs proxy selection, per cost regime) --
+aligned escalates true min (both regimes): true
+SYMMETRIC true min: aligned med=73.7 [73.4,74.2] vs proxy med=74.9 [74.4,75.4] -> aligned strictly higher=false
+ASYMMETRIC true min: aligned CI-lo=53.5 > proxy CI-hi=50.7 -> aligned higher=true
+ASYMMETRIC lopsided: proxy CI-lo=34.3 > aligned CI-hi=1.8 -> proxy more lopsided=true
+RESULT=PROXY MISALIGNMENT BITES (asymmetric only): a sum-proxy is BENIGN under symmetric costs (aligned does not outperform it -- true min is comparable or the proxy is marginally better) but under asymmetric costs it reaches LOWER true min with far more lopsided champions -- selecting on a compensatory proxy decouples from conjunctive true quality when improvement costs are uneven. The graded aligned benchmark reveals the decoupling the proxy's own reading hides.
