@@ -7,7 +7,8 @@ INSTRUMENT rung -- it makes NO ecology/coupling claim. The energy-economy coupli
 
 - **Programme:** P7 (Coevolution) x P5/P6 convergence — the Flatland/ALife front, rung 1 (instrument)
 - **Opened:** 2026-07-23
-- **Engine pin at open:** `9bb43e6b974bd2b62b8e35687e4aea164f0a31d9`
+- **Engine pin at open:** `eaf10819a37781c28caa098779d0f4027487ae77` (adds `flatland_sim.erl`; additive
+  child of 057's `9bb43e6b`)
 - **Builds:** `faber-tweann/src/flatland_sim.erl` (new `scape` behaviour callback) + a forager morphology;
   runner `experiments/exp058_flatland_instrument_tests.erl`
 - **Raw feed / insight:** `faber-ecosystem/insights/058-*` (once built + signed)
@@ -100,6 +101,30 @@ partly foregone, and prescribed this redesign:
   for pairwise pursuit-evasion). Rung 2 reframes symmetrically: "does an energy economy CHANGE the
   coupling verdict, in either direction, on which decomposed sub-metric". (Adopted for exp059.)
 
+## Kill-gate results (2026-07-23) — both PASS; instrument VALIDATED
+
+Built `faber-tweann/src/flatland_sim.erl` (pure world engine) + `exp058_flatland_instrument_tests.erl`
+(process-free runner, the 057 path). 9x9 torus, plants=8, E0=20, Em=1, Ep=4, T=40; net `[5,6,4]`.
+
+- **0a — the scape works: PASS.** A hand-coded greedy-forager eats 34.4 plants, ends energy ~118, survives
+  12/12 layouts; a random agent eats ~2.4, starves (energy 0), survives ~1/12. Energy accounting, eating,
+  death and plant regrowth all behave; clean separation (greedy ~14x random).
+- **0b — representability: PASS (both capabilities).** A `[5,6,4]` net EVOLVES competent FORAGING
+  (33.7 plants eaten ~= the near-optimal greedy 34.4, ~12x random) AND competent HUNTING (capture-rate
+  1.000 = greedy, ~24x random, at the pursuer-favoured hunt speed). First foraging pass under-shot the
+  60%-of-greedy bar (9.75) at 30 gens / pop 14 -- pure EA underpower, not capacity: at 80 gens / pop 20
+  over all layouts the net matches greedy. So the net class expresses both capabilities; any later
+  failure to produce dynamics is DYNAMICS, not an instrument/capacity limit. INVALID branch closed.
+
+**INSTRUMENT VALIDATED at the kill-gate level.** Remaining for a signed rung 1: the DECOMPOSED,
+verified-graded benchmark (foraging-skill / fleeing-skill / capture-skill, each graded + un-saturated)
+and the RE-BASELINE of 057's decoupled coupling control on it (rule out that 057's refusal was binary-
+capture saturation). That is the next build unit; then rung 1 signs, and exp059 (rung 2) asks the
+energy-economy coupling question.
+
 ## Result
 
-<one line once signed>
+<one line once signed — pending the decomposed-benchmark + re-baseline deliverable>
+
+Kill gates 0a/0b PASS -> the Flatland instrument is validated (scape works; a [5,6,4] net forages AND
+hunts). Full rung-1 signing awaits the decomposed graded benchmark + re-baselined 057.
