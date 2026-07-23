@@ -42,16 +42,18 @@ Both frozen before the run, both "fixed" (never drawn from the evolving populati
 
 Both benchmarks report the champion's mean win-prob against their reference set, per generation.
 
-## The metric (a late-window test, NOT a full-run time-correlation)
+## The metric (a late-window MAGNITUDE test)
 
 The DESIGN gate's fix: comparing a monotone-in-time benchmark to monotone-in-time truth is
-tautological (both rise with the generation counter). The strength failure shows only AFTER
-saturation, so the metric is measured in the LATE window:
+tautological. Validation then caught that a late-window Spearman ALSO fails: a saturated benchmark
+still creeps up infinitesimally (0.999 -> 0.9999), so its rank order keeps rising and Spearman reads
+1.0 despite being flat and blind. The correct measure is MAGNITUDE, not rank. Metrics, in the LATE
+window (generations R/2 .. R) where true x is still climbing strongly:
 1. **Unsaturated fraction** per benchmark = fraction of generations where its reading < 0.99. Graded
    ~1.0; weak ~small (saturates early).
-2. **Late-window tracking** = Spearman(benchmark reading, champion x) over the SECOND HALF of the run
-   (generations R/2 .. R), where true x is still climbing strongly. Graded should stay high; weak
-   should collapse to ~0 (flat at its ceiling, no longer moving with x).
+2. **Late-window range** = max(reading) - min(reading) over the second half = how much the reading
+   can still MOVE while real progress continues. Graded should be substantial; weak ~0 (pinned at
+   its ceiling, unable to resolve any further progress).
 3. **Blindness gap** = (champion x at R) - (champion x at the generation where the weak benchmark
    first saturated): how much real progress the weak benchmark was blind to.
 
@@ -76,12 +78,12 @@ ladder), or both track equally (no strength effect -> investigate).
 ## Decision rule (pre-committed, all outcomes reachable)
 
 Over n=30, R=150:
-- **STRENGTH MATTERS** iff the graded benchmark's late-window Spearman(reading, x) is high (median
-  > 0.8) AND the weak benchmark's is low (median < 0.3, i.e. flat/blind), CIs disjoint, AND the weak
-  benchmark's median unsaturated fraction < 0.3 while the graded's > 0.9. A fixed-but-weak benchmark
-  goes blind to real progress.
-- **NO STRENGTH EFFECT** iff both late-window Spearmans are comparably high (the weak ladder never
-  saturated) -> a signed note; narrow the weak ladder or lengthen R before concluding.
+- **STRENGTH MATTERS** iff the graded benchmark's late-window range is substantial (median > 0.03)
+  with unsaturated fraction > 0.9, AND the weak benchmark's late-window range is ~0 (median < 0.01,
+  flat/blind) with unsaturated fraction < 0.3, and the two ranges have disjoint bootstrap CIs. A
+  fixed-but-weak benchmark goes blind to real progress.
+- **NO STRENGTH EFFECT** iff the weak benchmark's late-window range is comparable to the graded one
+  (it never saturated) -> a signed note; narrow the weak ladder or lengthen R before concluding.
 - **INVALID** iff the arms race does not escalate (operator too weak, contradicts 053) -> fix first.
 
 ## Fallback interpretation (committed in advance)
