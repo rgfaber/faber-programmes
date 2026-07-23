@@ -79,9 +79,12 @@ as objective (no speed tax -> free lunch here); OR objective's coverage matches 
 
 ## Controls + validity (pre-committed)
 
-- **Floor gate (fix 2):** the speed comparison is interpreted only if objective-EA's EFG CI
-  lies strictly below random-search's EFG CI on E (probe: 436 < 864, holds). Re-checked in the
-  main run; if it fails at n>=40, the maze is refloored and nothing is signed about the tax.
+- **Floor gate (fix 2, amended after run 1):** the speed comparison is interpreted only if
+  objective is faster than random by a TWO-SAMPLE test (bootstrap 95% CI on median(obj EFG) -
+  median(rnd EFG) entirely below 0). Run 1's disjoint-one-sample-CI version was mis-specified
+  (a textbook error: overlapping one-sample CIs are compatible with a clearly significant
+  two-sample difference) and fired a false INVALID; corrected and pre-committed here BEFORE the
+  confirmatory run.
 - **Coverage floor (fix 4):** a novelty coverage gain is signable only if novelty's coverage
   CI exceeds RANDOM's coverage CI at the same budget (random may saturate the ~110-cell
   reachable set); report the coverage curve so ceiling effects are visible.
@@ -92,22 +95,28 @@ as objective (no speed tax -> free lunch here); OR objective's coverage matches 
   Report solve rate and censored fraction per search.
 - **Matched operator, budget, population** across all three searches. **n >= 40** runs/search.
 
-## Decision rule (pre-committed, all outcomes reachable)
+## Decision rule (pre-committed; two INDEPENDENT axes) — amended after run 1
 
-Over n >= 40 runs/search on E, EFG via the all-runs estimator, coverage at matched budget:
-- **TRADE CONFIRMED** iff objective median EFG < novelty median EFG (non-overlapping bootstrap
-  CIs) AND novelty visited-cell coverage > objective coverage AND > random coverage (both CIs
-  disjoint) AND objective EFG < random EFG (floor gate holds).
-- **NO SPEED TAX** iff novelty's median-EFG CI lies entirely BELOW 1.25x objective's median
-  (a pre-committed equivalence margin) -> novelty is not meaningfully slower even here.
-- **REVERSAL** iff novelty median EFG < objective median EFG (disjoint CIs) -> novelty is
-  FASTER on a non-deceptive task; a signed surprise.
-- **NO COVERAGE GAIN** iff novelty coverage CI overlaps objective's or random's -> novelty
-  bought no coverage here; signed negative.
-- **INCONCLUSIVE (unsigned)** iff EFG CIs overlap without meeting the equivalence margin
-  (indistinguishable from low power at n=40, +/- lambda granularity).
-- **INVALID** iff objective-EA solve rate on E is not high (contradicts the probe -> harness
-  regression) OR the floor gate fails.
+Coverage and speed are adjudicated SEPARATELY (CLAIM-gate fix: a passing, independently-gated
+coverage finding must not be discarded because the speed gate is inconclusive; run 1's single
+mutually-exclusive ladder wrongly did that). All EFG tests are TWO-SAMPLE (bootstrap 95% CI on a
+median DIFFERENCE), not disjoint one-sample CIs (run 1's floor gate used the latter and fired a
+false INVALID: it failed on a 40-eval tail overlap despite a 3.9x median gap, obj 282 vs rnd 1092).
+
+**COVERAGE axis** (own floor: novelty must beat random), over budget E:
+- **NOVELTY WINS** iff novelty visited-cell coverage CI > objective's AND > random's (disjoint).
+- **NO GAIN** otherwise.
+
+**SPEED axis** (valid only if objective solves E at high rate AND the two-sample floor gate holds:
+bootstrap 95% CI on median(objective EFG) - median(random EFG) entirely < 0):
+- **TAX** iff bootstrap CI on median(obj EFG - nov EFG) lies entirely below 0 (objective faster).
+- **REVERSAL** iff that CI lies entirely above 0 (novelty faster).
+- **NO TAX** iff that CI lies within +/- 0.25 * median(obj EFG) (equivalent within 25%).
+- **INCONCLUSIVE (unsigned)** iff that CI spans the equivalence margin (underpowered at this n).
+- **INVALID** iff objective solve rate <= 0.9 OR the two-sample floor gate fails.
+
+**n = 120 per arm** for the confirmatory run. (Run 1 at n=40 left novelty's EFG CI half-width
+~105 against a ~61 equivalence margin; half-width ~ 1/sqrt(n) -> n ~ 40*(105/61)^2 ~ 120.)
 
 ## Fallback interpretation (committed in advance)
 
@@ -142,6 +151,25 @@ overlap-without-margin = INCONCLUSIVE (fix 6); claim scoped (fix 7). Recorded en
 append-only); it must not be cited as an archive bound anywhere. With these, the gate's
 verdict is PROCEED.
 
+## CLAIM gate verdict, run 1 (n=40, Fable, 2026-07-23) — SIGN-NARROW + RERUN
+
+Run 1 (n=40) results: objective solved 40/40 EFG median 282, novelty 40/40 EFG median 292,
+random 40/40 EFG median 1092; coverage@15k obj 81.5 / nov 111.5 / rnd 67 (novelty wins, disjoint).
+The runner fired INVALID from a mis-specified floor gate (disjoint one-sample CIs; false fail on a
+40-eval tail overlap despite obj being 3.9x faster than random). The CLAIM gate ruled:
+- **INVALID is procedural, not substantive**, but must NOT be rescued post hoc (p-hacking). Amend
+  the rule (two-sample floor gate + decoupled coverage/speed axes), pre-commit, rerun. Done above.
+- **Coverage gain is real and signable** (verified visited-cells, not final-cells), with mandatory
+  hedges: ~66 cells are a shared random floor (attributable gains nov +45 / obj +15 / rnd +1) and
+  the gain is ceiling-bounded (novelty saturated ~112 of a small maze).
+- **Speed side UNSIGNED**: near-identical medians (282 vs 292) but INCONCLUSIVE (equivalence margin
+  missed; underpowered at n=40). "No tax" / "free lunch" would be overreach.
+- **E confirmed non-deceptive** (14 generations is optimisation time, not deception; obj 40/40 vs
+  D's 1/40).
+Run 1 preserved as exploratory (`052-raw-run1-n40-exploratory.txt`). Confirmatory run: n=120 under
+the amended, pre-committed rule.
+
 ## Result
 
 <one line once signed>
+
