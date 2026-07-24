@@ -1,0 +1,11 @@
+== EXP-063 diagnostic: optimizer strength on Flatland foraging (dim=64, n=24 runs each) ==
+hand-coded greedy baseline = 34.25 plants
+exp058 EA   : median=28.94 (min 13.38, max 34.50) = 84.5%% of greedy   <-- the EA the rungs ran
+mu_lambda_es: median=29.00 (min 12.50, max 35.00) = 84.7%% of greedy
+sep_cma_es  : median=29.00 (min 13.75, max 35.00) = 84.7%% of greedy
+
+-- permutation tests on the median difference (10k shuffles, two-sided) --
+sep_cma   vs mu_lambda: diff=0.00  p=1.0000
+mu_lambda vs exp058EA : diff=0.06  p=1.0000
+sep_cma   vs exp058EA : diff=0.06  p=0.0398
+best-of-run MAXIMA (what the rungs actually read): ea058=34.50 mu_lambda=35.00 sep_cma=35.00 (greedy=34.25)

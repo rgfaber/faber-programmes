@@ -1,12 +1,30 @@
 %%%-------------------------------------------------------------------
-%%% @doc EXP-063 (DIAGNOSTIC, unsigned) — is the OPTIMIZER the Flatland bottleneck?
+%%% @doc EXP-063 (DIAGNOSTIC, UNSIGNED — its drafted insight was REFUSED at the CLAIM gate)
 %%%
-%%% Every Flatland rung (058-062) used a plain (mu+lambda) truncation EA that under-converged
-%%% (foraging plateaued below the hand-coded greedy). P2 asks: does a STRONGER optimizer close
-%%% the gap? Diagnostic: run the SAME Flatland foraging fitness (plants eaten by a [5,6,4] net)
-%%% under mu_lambda_es vs sep_cma_es at a MATCHED evaluation budget, vs the hand-coded greedy (~34)
-%%% and random (~2). If sep-CMA-ES reaches greedy where mu+lambda plateaus, the optimizer is the
-%%% lever -> formalise as a signed P2 experiment. Unsigned scoping only.
+%%% Asks whether the Flatland rungs (058-062) were limited by a weak search algorithm. Runs the
+%%% Flatland foraging fitness (plants eaten by a [5,6,4] net, dim 64) at a nominal 2000-evaluation
+%%% budget under THREE optimizers, n=24 runs each, vs the hand-coded greedy (34.25):
+%%%
+%%%   1. `ea058/1'      -- exp058's `evolve/3' scheme: (mu+lambda) truncation, mu=lambda=20, FIXED
+%%%                        sigma=0.2, uniform parent pick, elitist over Pop++Off. NOTE: 50 gens over
+%%%                        8 layouts here, where exp058 gate_0b actually ran 80 gens over 12 -- so
+%%%                        this is the scheme, NOT a faithful reproduction of 058's configuration.
+%%%   2. `mu_lambda_es' -- the library self-adaptive (mu,lambda)-ES.
+%%%   3. `sep_cma_es'   -- the library separable/diagonal CMA-ES (insight 028).
+%%%
+%%% RESULT AT 2000 EVALS: medians 28.94 / 29.00 / 29.00, no pair separated. But this budget is
+%%% ~31 evaluations per dimension on a 64-dim problem, where sep_cma_es's covariance (learning rates
+%%% O(1/N), 100 generations at N=64) has barely moved -- so a null here is NEAR-DEFINITIONAL and does
+%%% NOT establish "the optimizer is not the lever". The CLAIM gate refused the insight drafted from
+%%% this feed. Known defects, all to be fixed before re-gating: budget too small (needs a 20k cell);
+%%% ea058 re-scores parents so it spends 1000 UNIQUE evals vs 2000 for the ESs; the 058 reproduction
+%%% uses 50 gens / 8 layouts where 058 actually ran 80 gens / 12 layouts; medians on a 0.125-value
+%%% grid collide by construction (use means + bootstrap CI + TOST); sep_cma_es starts at the ZERO
+%%% vector (constant-move policy) while the others init N(0,1); no common random numbers across arms;
+%%% per-run values are not persisted. See exp064_optimizer_strength_flatland.md for the full list.
+%%%
+%%% What IS earned from this feed: the n=8 read that sep_cma_es "removes mu+lambda's failure tail"
+%%% is REFUTED -- all three arms retain failure runs at n=24 (minima 13.38 / 12.50 / 13.75).
 %%% @end
 %%%-------------------------------------------------------------------
 -module(exp063_optimizer_diag_tests).
@@ -53,22 +71,51 @@ mk_net(W) -> network_evaluator:set_weights(network_evaluator:create_feedforward(
 %% fitness for the optimizers: mean plants eaten by the net over the layouts (higher = better)
 fit(W) -> mean([forage({net, mk_net(W)}, Pl) || Pl <- layouts()]).
 
+%% The EA the Flatland rungs ACTUALLY ran (exp058 evolve/3, verbatim): (mu+lambda) truncation,
+%% mu=lambda=20, FIXED sigma=0.2, uniform parent pick, elitist over Pop++Off. 40 evals/gen.
+-define(SIGMA, 0.2).
+ea058(Gens) ->
+    Pop = [[rand:normal() || _ <- lists:seq(1, ?NP)] || _ <- lists:seq(1, 20)],
+    ea058_loop(Gens, Pop, 0.0).
+ea058_loop(0, _Pop, B) -> B;
+ea058_loop(G, Pop, B) ->
+    Off = [[X + ?SIGMA * rand:normal() || X <- lists:nth(rand:uniform(length(Pop)), Pop)] || _ <- lists:seq(1, 20)],
+    Ranked = lists:reverse(lists:keysort(1, [{fit(Gm), Gm} || Gm <- Pop ++ Off])),
+    ea058_loop(G - 1, [Gm || {_F, Gm} <- lists:sublist(Ranked, 20)], max(B, element(1, hd(Ranked)))).
+
 run() ->
-    N = 8,
+    N = 24,
     Greedy = mean([forage(greedy, Pl) || Pl <- layouts()]),
     io:format("== EXP-063 diagnostic: optimizer strength on Flatland foraging (dim=~p, n=~p runs each) ==~n", [?NP, N]),
     io:format("hand-coded greedy baseline = ~.2f plants~n", [Greedy]),
     Opts = #{lambda => 20, max_generations => 100, init_sigma => 1.0},
+    EA = [ea058(50) || _ <- lists:seq(1, N)],   %% 50 gens x 40 evals = 2000, matched
+    io:format("exp058 EA   : median=~.2f (min ~.2f, max ~.2f) = ~.1f%% of greedy   <-- the EA the rungs ran~n",
+              [median(EA), lists:min(EA), lists:max(EA), 100.0 * median(EA) / Greedy]),
     ML = [maps:get(fitness, mu_lambda_es:evolve(fun fit/1, ?NP, Opts)) || _ <- lists:seq(1, N)],
     CM = [maps:get(fitness, sep_cma_es:evolve(fun fit/1, ?NP, Opts)) || _ <- lists:seq(1, N)],
     io:format("mu_lambda_es: median=~.2f (min ~.2f, max ~.2f) = ~.1f%% of greedy~n",
               [median(ML), lists:min(ML), lists:max(ML), 100.0 * median(ML) / Greedy]),
     io:format("sep_cma_es  : median=~.2f (min ~.2f, max ~.2f) = ~.1f%% of greedy~n",
               [median(CM), lists:min(CM), lists:max(CM), 100.0 * median(CM) / Greedy]),
-    io:format("advantage (sep_cma - mu_lambda) median-diff = ~.2f plants~n", [median(CM) - median(ML)]),
-    io:format("=> at 2000 evals, the STRONGER optimizer (sep-CMA-ES) reaches ~.1f%% vs ~.1f%% of greedy~n",
-              [100.0 * median(CM) / Greedy, 100.0 * median(ML) / Greedy]),
+    io:format("~n-- permutation tests on the median difference (10k shuffles, two-sided) --~n"),
+    io:format("sep_cma   vs mu_lambda: diff=~.2f  p=~.4f~n", [median(CM) - median(ML), perm(CM, ML)]),
+    io:format("mu_lambda vs exp058EA : diff=~.2f  p=~.4f~n", [median(ML) - median(EA), perm(ML, EA)]),
+    io:format("sep_cma   vs exp058EA : diff=~.2f  p=~.4f~n", [median(CM) - median(EA), perm(CM, EA)]),
+    io:format("best-of-run MAXIMA (what the rungs actually read): ea058=~.2f mu_lambda=~.2f sep_cma=~.2f (greedy=~.2f)~n",
+              [lists:max(EA), lists:max(ML), lists:max(CM), Greedy]),
     ok.
+
+%% two-sided permutation test on the difference of medians
+perm(A, B) ->
+    Obs = abs(median(A) - median(B)),
+    All = A ++ B, Na = length(A), R = 10000,
+    Hits = length([x || _ <- lists:seq(1, R),
+                        begin
+                            Sh = [E || {_, E} <- lists:sort([{rand:uniform(), E} || E <- All])],
+                            abs(median(lists:sublist(Sh, Na)) - median(lists:nthtail(Na, Sh))) >= Obs
+                        end]),
+    Hits / R.
 median(L) -> S = lists:sort(L), Nn = length(S), case Nn rem 2 of 1 -> lists:nth(Nn div 2 + 1, S) * 1.0; 0 -> (lists:nth(Nn div 2, S) + lists:nth(Nn div 2 + 1, S)) / 2.0 end.
 
 argmax([H | T]) -> argmax(T, H, 0, 1).
