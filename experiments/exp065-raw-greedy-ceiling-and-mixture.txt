@@ -1,0 +1,48 @@
+== EXP-065: is greedy the CEILING, and is the gap a SHORTFALL or a MIXTURE? ==
+config: exp058-faithful (80 gens, 12 layouts, mu=lambda=20, sigma=0.2), n=20 runs/arm
+
+-- FREE FINDING: dead search dimensions in FORAGE --
+sense/6 is called with Opp=none, so inputs 1,2 are identically 0 in EVERY forage state.
+Globally dead weights (input 1,2 -> each of 6 hidden units): 12 of 64 coordinates = 18.8%%
+flat indices: [1,2,6,7,11,12,16,17,21,22,26,27]
+
+-- (1) INSTRUMENT CHECK: constructed greedy policy (a=1.00 c=1.00 eps=0.05) --
+validity condition (1+eps)*tanh(0.75a) < tanh(a): true
+exhaustive state agreement: 243/243
+constructed net return=34.4167  vs hand-coded greedy=34.4167  (must be EXACT)
+INSTRUMENT VALID
+
+-- (2) PRIMARY: is greedy the CEILING? (common random numbers by run index) --
+arm G (seeded with constructed greedy): median=34.5417 min=34.4167 max=35.0833
+arm R (N(0,1) init)                   : median=32.3333 min=13.5833 max=35.0000
+greedy reference = 34.4167 ; 1.02x = 35.1050 ; 1.10x = 37.8583
+PRIMARY VERDICT: GREEDY IS NEAR THE CEILING -- '% of greedy' is a fair yardstick
+
+-- (3) SECONDARY: shortfall or MIXTURE? (arm R; success = >= 0.95 * greedy) --
+success rate = 0.500  (10/20)  bootstrap 95% CI [0.300, 0.700]
+successes: n=10 median=33.667
+failures : n=10 median=30.000
+arm R IQR = [29.250, 33.667] = [0.850, 0.978] x greedy
+SECONDARY VERDICT: NEITHER pre-declared pattern -- report the numbers, no mechanism claim
+
+-- (4) TERTIARY: champion disagreement vs the greedy rule (arm R) --
+champ fit=33.667  action-agreement=0.935  boundary/far mass=0.419  distinct bad states=9
+champ fit=33.667  action-agreement=0.935  boundary/far mass=0.419  distinct bad states=9
+champ fit=31.000  action-agreement=0.919  boundary/far mass=0.128  distinct bad states=7
+champ fit=33.667  action-agreement=0.935  boundary/far mass=0.419  distinct bad states=9
+champ fit=31.000  action-agreement=0.923  boundary/far mass=0.081  distinct bad states=6
+champ fit=31.250  action-agreement=0.862  boundary/far mass=0.594  distinct bad states=12
+champ fit=13.583  action-agreement=0.477  boundary/far mass=0.765  distinct bad states=13
+champ fit=32.583  action-agreement=0.935  boundary/far mass=0.548  distinct bad states=8
+champ fit=31.000  action-agreement=0.923  boundary/far mass=0.108  distinct bad states=7
+champ fit=30.750  action-agreement=0.854  boundary/far mass=0.514  distinct bad states=7
+median boundary/far mass=0.419  median distinct bad states=8.5
+TERTIARY VERDICT: NEITHER pattern cleanly
+
+-- PER-RUN VALUES (the feed is the record) --
+armG_seeds=[1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020]
+armG=34.7500 34.4167 34.4167 34.9167 34.8333 34.4167 34.4167 35.0000 35.0000 34.4167 34.8333 34.4167 35.0000 34.4167 34.6667 34.4167 34.4167 35.0833 34.9167 34.4167 
+armR=33.6667 33.6667 33.6667 34.0000 24.6667 34.2500 33.6667 31.0000 30.7500 16.2500 31.0000 33.6667 31.0000 28.5833 13.5833 35.0000 31.0000 33.6667 29.2500 34.9167 
+champ_seeds=[2001,2002,2003,2004,2005,2006,2007,2008,2009,2010]
+champ_fits=33.6667 33.6667 31.0000 33.6667 31.0000 31.2500 13.5833 32.5833 31.0000 30.7500 
+evals_per_run=3200 (80 gens x 40 scored per gen, parents re-scored as in exp058)
