@@ -1,0 +1,483 @@
+== EXP-066: does single-population evolution reach the COMPETENCE FLOOR? ==
+PRE-REGISTERED CONFIGURATION.
+config: #{workers => 32,calibration => 30,heldout => 80,train => 6,
+          budget => 50000,
+          checkpoints => [10000,25000,50000],
+          lambda => auto,lambda_m => 70,random_null => 30,inert_null => 200,
+          c_layers => [17,5],
+          seed0 => 2001,seeds_s => 20,seeds_m => 20,seeds_l => 10,
+          seeds_d => 10,probe_budget => 40,
+          arms => [s,l,d],
+          feed => "exp066_floor_feed.txt"}
+
+-- FROZEN CONSTANTS (scripted bots only, measured before any arm) --
+P=0.4188  SE=0.0390 (bootstrap 0.0207, binomial floor 0.0390)  S_par=18.49  cap_share=0.1625
+B=0.5748  R_line=0.4968  D_min=0.0780 (k=4 is the ONE chosen constant)
+N (scripted ladder vs the floor bot) = [{sitting_duck,0.0},
+                                        {spinner,0.0},
+                                        {rammer,0.0125},
+                                        {circle_strafer,0.0}]
+NOTE: the bootstrap SE exceeds 0.020, so the gate's band critique stands and the four-standard-error bar is the defensible one.
+
+-- ARM C: kill gate 0b, expressibility (built on CALIBRATION only) --
+layers=[17,5] dim=90 calibration=0.0000  W_0b=0.0000  margin=-53.64  shots/match=4.03  caps=0.000
+arm C ladder profile (IF-11 reads this): [{sitting_duck,0.41875,0.58125,0.0},
+                                          {spinner,0.15,0.78125,0.06875},
+                                          {rammer,0.4625,0.53125,0.00625},
+                                          {circle_strafer,0.0,1.0,0.0},
+                                          {predictive_gun,0.0,1.0,0.0}]
+
+arm C did NOT clear: W_0b=0.0000 is below B=0.5748. The arms RUN ANYWAY.
+Arm C is a DIAGNOSTIC, not a gate. A hand construction failing says something about the constructor; only evolution ALSO failing says anything about the encoding. See IF-1 below, decided after the arms.
+
+-- ARM S (sep_cma_es, [17,12,5], dim 281, 20 seeds) --
+R (best of 30 random genomes) = 0.0125 ; IF-2 inert reference (best of 200 random TRAINING fitness) = 1.6126
+seed 2001  W=0.9750 L=0.0250 D=0.0000  margin=67.23 caps=0.000 shots=11.96 pulls=71.94 trainW=1.0000 fit=5.7027 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.353 clamp_champ=0.349 id=4081C12360AE04CFD0A6C014E2950A1F8278A5C3504A984A04769526C77D26D3
+seed 2002  W=0.9375 L=0.0563 D=0.0063  margin=63.92 caps=0.006 shots=12.38 pulls=65.48 trainW=1.0000 fit=5.7035 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.341 clamp_champ=0.310 id=98FA26713DA860D0032430D0FAE5A4AF872BF774A37F5B67698DE56698AD0669
+seed 2003  W=1.0000 L=0.0000 D=0.0000  margin=79.12 caps=0.000 shots=12.37 pulls=58.65 trainW=1.0000 fit=5.7197 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.247 clamp_champ=0.246 id=FBE7A84EB4538B142E81FDC200E9ACC011FDCF610AE2FA6CE9D2839B609215D8
+seed 2004  W=0.9938 L=0.0063 D=0.0000  margin=70.99 caps=0.000 shots=12.78 pulls=126.60 trainW=1.0000 fit=5.6974 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.164 clamp_champ=0.174 id=E32BBF22C584CDDA9AD6721D3E2923A7DD03E78BB846DFDFDF4B2464218565DC
+seed 2005  W=0.9938 L=0.0063 D=0.0000  margin=72.05 caps=0.000 shots=11.04 pulls=58.10 trainW=1.0000 fit=5.7189 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.425 clamp_champ=0.359 id=CB124C37B06698C9A707BD87E5D146D33CE1AE751F85ED636822D930A2294B71
+seed 2006  W=0.9938 L=0.0063 D=0.0000  margin=72.09 caps=0.000 shots=10.25 pulls=86.75 trainW=1.0000 fit=5.7079 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.301 clamp_champ=0.299 id=791743D9490B4A5EB4598DDA6ED3A92D9AFBAF47D0EB1A98206CD146A900EEF5
+seed 2007  W=0.5813 L=0.4188 D=0.0000  margin=-1.49 caps=0.000 shots=8.01 pulls=119.09 trainW=1.0000 fit=5.6272 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.262 clamp_champ=0.274 id=E8C68093F4E3B4E71BDB8D9C12A0ACC270E33B4EB486FC391B4E8ABC4A567685
+seed 2008  W=0.9750 L=0.0250 D=0.0000  margin=71.92 caps=0.000 shots=11.28 pulls=123.84 trainW=1.0000 fit=5.7210 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.289 clamp_champ=0.292 id=8D90B4B469CDA2ADB94E0D0FFFBA5D2409382CD9E6CB8ACD7D075016716C43DC
+seed 2009  W=0.5750 L=0.4125 D=0.0125  margin=-3.08 caps=0.000 shots=8.06 pulls=78.19 trainW=1.0000 fit=5.6160 evals={50000,
+                                                                                                                      50000} distinct_last=20 clamp_gen=0.318 clamp_champ=0.317 id=AEDA4EE99E80D5C6E1C46AE59E4E9ACADD9F0649F53EEA4E97065B1BF95061FB
+seed 2010  W=0.9875 L=0.0125 D=0.0000  margin=72.58 caps=0.000 shots=12.02 pulls=142.78 trainW=1.0000 fit=5.7183 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.243 clamp_champ=0.256 id=9A1BC37910B90942F10D6BFEEC2F3CEBE44B5DD40357ED115AE137E6ED08D2A1
+seed 2011  W=0.5375 L=0.4625 D=0.0000  margin=-5.50 caps=0.000 shots=8.44 pulls=122.54 trainW=1.0000 fit=5.6213 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.168 clamp_champ=0.164 id=F0829E7ED7012F6AC466D5CF5E0325BAC36DDCF7AE7FAF307C6E75D13709AEAD
+seed 2012  W=1.0000 L=0.0000 D=0.0000  margin=78.22 caps=0.000 shots=10.82 pulls=106.02 trainW=1.0000 fit=5.7222 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.302 clamp_champ=0.313 id=43EFA7172EBE90A96D135B48BE58A2565B814AFFAB47830256A64EB3BD49EC84
+seed 2013  W=0.9750 L=0.0000 D=0.0250  margin=75.13 caps=0.025 shots=15.63 pulls=214.32 trainW=1.0000 fit=5.7107 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.295 clamp_champ=0.310 id=2284E8D36B5D78DB9AEF8EA0554A082A3AF8604426565644E24A255BE258E17D
+seed 2014  W=0.5813 L=0.4188 D=0.0000  margin=-1.47 caps=0.000 shots=7.91 pulls=116.36 trainW=1.0000 fit=5.6139 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.315 clamp_champ=0.299 id=E7B402FC43F64055077F4F46F375673EF62DF04EBBBBC9CC07A89A7D9B33B242
+seed 2015  W=0.4188 L=0.5813 D=0.0000  margin=-15.89 caps=0.000 shots=8.09 pulls=121.20 trainW=1.0000 fit=5.5999 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.237 clamp_champ=0.214 id=7CF0742808FF143C9D9E698A81070EEFAC561C1F5DB67A76E6517A691E3BBF75
+seed 2016  W=0.8000 L=0.2000 D=0.0000  margin=46.69 caps=0.000 shots=17.70 pulls=279.75 trainW=1.0000 fit=5.6779 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.343 clamp_champ=0.352 id=4F86C95E24BD4F4A3E44C60BAF2BED6C825DA3EED3EB5A419843EBD0F90517BF
+seed 2017  W=1.0000 L=0.0000 D=0.0000  margin=79.78 caps=0.000 shots=10.19 pulls=57.13 trainW=1.0000 fit=5.7229 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.248 clamp_champ=0.256 id=7F1D151B6CFCC36C3587AD50403C763D293BED4ADA9CE02275ABEEBD89617F30
+seed 2018  W=0.6062 L=0.3875 D=0.0063  margin=2.11 caps=0.000 shots=8.32 pulls=91.12 trainW=1.0000 fit=5.6213 evals={50000,
+                                                                                                                     50000} distinct_last=20 clamp_gen=0.347 clamp_champ=0.356 id=196B9715675744091D966EF19458C62ED969C6C09EDB21C3FA2CF362E8E0F10A
+seed 2019  W=0.9812 L=0.0187 D=0.0000  margin=70.97 caps=0.000 shots=11.47 pulls=79.62 trainW=1.0000 fit=5.7184 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.343 clamp_champ=0.335 id=459BD23D7AC806C627D8895B2A637864DD72B5D9F982ECA921006F72F3B4E073
+seed 2020  W=0.9875 L=0.0125 D=0.0000  margin=71.20 caps=0.000 shots=17.43 pulls=274.49 trainW=1.0000 fit=5.6899 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.151 clamp_champ=0.153 id=6F10E1F1E0BD23C826C357C095CEB3C3339783F386EE40D7CD55978E65FEDB26
+seed 2001 checkpoints (unique evals -> held-out W) = [{10000,0.7375},
+                                                      {25000,0.98125},
+                                                      {50000,0.975}]
+seed 2002 checkpoints (unique evals -> held-out W) = [{10000,0.9625},
+                                                      {25000,0.95},
+                                                      {50000,0.9375}]
+seed 2003 checkpoints (unique evals -> held-out W) = [{10000,1.0},
+                                                      {25000,1.0},
+                                                      {50000,1.0}]
+seed 2004 checkpoints (unique evals -> held-out W) = [{10000,0.81875},
+                                                      {25000,0.96875},
+                                                      {50000,0.99375}]
+seed 2005 checkpoints (unique evals -> held-out W) = [{10000,0.91875},
+                                                      {25000,0.975},
+                                                      {50000,0.99375}]
+seed 2006 checkpoints (unique evals -> held-out W) = [{10000,0.94375},
+                                                      {25000,0.975},
+                                                      {50000,0.99375}]
+seed 2007 checkpoints (unique evals -> held-out W) = [{10000,0.6},
+                                                      {25000,0.5},
+                                                      {50000,0.58125}]
+seed 2008 checkpoints (unique evals -> held-out W) = [{10000,0.68125},
+                                                      {25000,0.94375},
+                                                      {50000,0.975}]
+seed 2009 checkpoints (unique evals -> held-out W) = [{10000,0.53125},
+                                                      {25000,0.6},
+                                                      {50000,0.575}]
+seed 2010 checkpoints (unique evals -> held-out W) = [{10000,0.91875},
+                                                      {25000,1.0},
+                                                      {50000,0.9875}]
+seed 2011 checkpoints (unique evals -> held-out W) = [{10000,0.53125},
+                                                      {25000,0.56875},
+                                                      {50000,0.5375}]
+seed 2012 checkpoints (unique evals -> held-out W) = [{10000,0.86875},
+                                                      {25000,0.975},
+                                                      {50000,1.0}]
+seed 2013 checkpoints (unique evals -> held-out W) = [{10000,1.0},
+                                                      {25000,0.9875},
+                                                      {50000,0.975}]
+seed 2014 checkpoints (unique evals -> held-out W) = [{10000,0.5},
+                                                      {25000,0.525},
+                                                      {50000,0.58125}]
+seed 2015 checkpoints (unique evals -> held-out W) = [{10000,0.45},
+                                                      {25000,0.375},
+                                                      {50000,0.41875}]
+seed 2016 checkpoints (unique evals -> held-out W) = [{10000,0.55625},
+                                                      {25000,0.6875},
+                                                      {50000,0.8}]
+seed 2017 checkpoints (unique evals -> held-out W) = [{10000,0.98125},
+                                                      {25000,0.99375},
+                                                      {50000,1.0}]
+seed 2018 checkpoints (unique evals -> held-out W) = [{10000,0.4875},
+                                                      {25000,0.60625},
+                                                      {50000,0.60625}]
+seed 2019 checkpoints (unique evals -> held-out W) = [{10000,0.925},
+                                                      {25000,0.9875},
+                                                      {50000,0.98125}]
+seed 2020 checkpoints (unique evals -> held-out W) = [{10000,0.9875},
+                                                      {25000,0.93125},
+                                                      {50000,0.9875}]
+seed 2001 rung profile = [{sitting_duck,0.9375,0.01875,0.04375},
+                          {spinner,0.9875,0.0125,0.0},
+                          {rammer,0.99375,0.00625,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.975,0.025,0.0}]
+seed 2002 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.95,0.05,0.0},
+                          {rammer,0.99375,0.00625,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.9375,0.05625,0.00625}]
+seed 2003 rung profile = [{sitting_duck,0.99375,0.0,0.00625},
+                          {spinner,0.95625,0.01875,0.025},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,1.0,0.0,0.0}]
+seed 2004 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.99375,0.00625,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.99375,0.00625,0.0}]
+seed 2005 rung profile = [{sitting_duck,0.99375,0.00625,0.0},
+                          {spinner,0.9,0.05625,0.04375},
+                          {rammer,0.99375,0.00625,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.99375,0.00625,0.0}]
+seed 2006 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.96875,0.03125,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.99375,0.00625,0.0}]
+seed 2007 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,1.0,0.0,0.0},
+                          {rammer,0.9875,0.0125,0.0},
+                          {circle_strafer,0.76875,0.23125,0.0},
+                          {predictive_gun,0.58125,0.41875,0.0}]
+seed 2008 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.9875,0.0125,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.975,0.025,0.0}]
+seed 2009 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,1.0,0.0,0.0},
+                          {rammer,0.99375,0.00625,0.0},
+                          {circle_strafer,0.8,0.19375,0.00625},
+                          {predictive_gun,0.575,0.4125,0.0125}]
+seed 2010 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.9375,0.0625,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.9875,0.0125,0.0}]
+seed 2011 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.99375,0.00625,0.0},
+                          {rammer,0.98125,0.01875,0.0},
+                          {circle_strafer,0.79375,0.20625,0.0},
+                          {predictive_gun,0.5375,0.4625,0.0}]
+seed 2012 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.99375,0.00625,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,1.0,0.0,0.0}]
+seed 2013 rung profile = [{sitting_duck,0.95,0.0,0.05},
+                          {spinner,0.98125,0.01875,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.975,0.0,0.025}]
+seed 2014 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,1.0,0.0,0.0},
+                          {rammer,0.93125,0.06875,0.0},
+                          {circle_strafer,0.74375,0.25625,0.0},
+                          {predictive_gun,0.58125,0.41875,0.0}]
+seed 2015 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,1.0,0.0,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,0.875,0.125,0.0},
+                          {predictive_gun,0.41875,0.58125,0.0}]
+seed 2016 rung profile = [{sitting_duck,0.99375,0.00625,0.0},
+                          {spinner,0.975,0.01875,0.00625},
+                          {rammer,0.98125,0.01875,0.0},
+                          {circle_strafer,0.875,0.125,0.0},
+                          {predictive_gun,0.8,0.2,0.0}]
+seed 2017 rung profile = [{sitting_duck,0.975,0.0,0.025},
+                          {spinner,0.99375,0.00625,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,1.0,0.0,0.0}]
+seed 2018 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,1.0,0.0,0.0},
+                          {rammer,0.9875,0.0125,0.0},
+                          {circle_strafer,0.875,0.125,0.0},
+                          {predictive_gun,0.60625,0.3875,0.00625}]
+seed 2019 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.9625,0.025,0.0125},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.98125,0.01875,0.0}]
+seed 2020 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.9875,0.0125,0.0},
+                          {rammer,0.99375,0.00625,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.9875,0.0125,0.0}]
+median W_s=0.9750  median margin=70.98  seeds at R_line=19/20  seeds directional=18/20
+  quiet   IF-2 SEARCH-INERT : "the fitness supplies no usable gradient; NOT 'evolution cannot reach the floor'"
+  quiet   IF-3 DEGENERATE-NON-FIRING : "the pre-measured never-fire optimum was selected; the floor question was never asked"
+  quiet   IF-4 SEARCH-DIVERGED : "a diverging covariance emitted values quantize/1 clamped silently"
+  quiet   IF-5 LATTICE-COLLAPSE : "the run collapsed onto a lattice point; it has not answered the question"
+  quiet   IF-7 CAP-DOMINATED : "2.5x the measured parity cap share; the verdict is cap-conditional and must be LABELLED so"
+  quiet   IF-8 MEMORISATION : "MODIFIER; pre-registered next rung is the stochastic-start variant, NOT more budget"
+  quiet   IF-9 BUDGET-LIMITED : "read ONLY on a FAILED or INCONCLUSIVE verdict: the negative is budget-limited"
+  quiet   IF-10 LADDER-INVERSION : "an OBSERVABLE. NOT claimed as intransitivity; that is phase 1's question"
+  quiet   IF-12 RADAR-STARVED : "MODIFIER; the champion won by staying out of the beam, a DIFFERENT finding"
+  0.975 note median W_s : "the primary endpoint"
+VERDICT arm s = CLEARED
+SECONDARY: median held-out damage margin = 70.98 whole units.
+
+-- ARM L (sep_cma_es, [17,5], dim 90, 10 seeds) --
+R (best of 30 random genomes) = 0.0063 ; IF-2 inert reference (best of 200 random TRAINING fitness) = 1.5461
+seed 2001  W=0.9750 L=0.0250 D=0.0000  margin=63.14 caps=0.000 shots=13.86 pulls=91.31 trainW=1.0000 fit=5.7015 evals={50014,
+                                                                                                                       50014} distinct_last=17 clamp_gen=0.244 clamp_champ=0.244 id=E3D1D0B329615587CB1287FB08CD8372FC420ECD4C81E1A109393558B900DB2D
+seed 2002  W=0.9563 L=0.0437 D=0.0000  margin=59.70 caps=0.000 shots=13.68 pulls=124.42 trainW=1.0000 fit=5.6991 evals={50014,
+                                                                                                                        50014} distinct_last=17 clamp_gen=0.233 clamp_champ=0.233 id=1E28B764C557103DDEFFFB56614F0229423AA32F7134B4109D99CD608D48FDD0
+seed 2003  W=0.9375 L=0.0625 D=0.0000  margin=69.58 caps=0.000 shots=10.07 pulls=156.16 trainW=1.0000 fit=5.7274 evals={50014,
+                                                                                                                        50014} distinct_last=17 clamp_gen=0.078 clamp_champ=0.078 id=7069EA0FB8026F26EC10511CCAB7BB7CFB9218E9A2F47B3BB70A2FD4BBDFFBA5
+seed 2004  W=0.9375 L=0.0563 D=0.0063  margin=63.42 caps=0.006 shots=14.66 pulls=151.39 trainW=1.0000 fit=5.6945 evals={50014,
+                                                                                                                        50014} distinct_last=17 clamp_gen=0.156 clamp_champ=0.156 id=0E5FABEBA250B6DCFB1BD334DEBC6C3AD8D130D435C7D2C798EA2F8C063FBAFD
+seed 2005  W=0.9375 L=0.0625 D=0.0000  margin=65.46 caps=0.000 shots=13.18 pulls=211.04 trainW=1.0000 fit=5.7200 evals={50014,
+                                                                                                                        50014} distinct_last=17 clamp_gen=0.408 clamp_champ=0.411 id=3FDCD05B17E455C97F5D28A2FB2FB9DFD10344A48F7B593F79AEC281FDE4EA2B
+seed 2006  W=0.9437 L=0.0500 D=0.0063  margin=67.37 caps=0.006 shots=11.45 pulls=192.49 trainW=1.0000 fit=5.7122 evals={50014,
+                                                                                                                        50014} distinct_last=16 clamp_gen=0.156 clamp_champ=0.156 id=9C91BAC9881EBA52DE5F6098CFDC84DAE341724C3FE78E04B14691165623158E
+seed 2007  W=0.5062 L=0.4938 D=0.0000  margin=-5.78 caps=0.000 shots=8.53 pulls=125.81 trainW=1.0000 fit=5.6301 evals={50014,
+                                                                                                                       50014} distinct_last=17 clamp_gen=0.167 clamp_champ=0.167 id=CD4201F318E8A79C5500FB26D2AE488BC36A4AE49BBD98D1281C71985D36E0C4
+seed 2008  W=0.5938 L=0.4063 D=0.0000  margin=0.55 caps=0.000 shots=8.16 pulls=118.86 trainW=1.0000 fit=5.6474 evals={50014,
+                                                                                                                      50014} distinct_last=17 clamp_gen=0.078 clamp_champ=0.078 id=2A29B4669070745A95BCEE03A02CAB28E47EF773C4C61C1ACD82C32E73383592
+seed 2009  W=0.9750 L=0.0250 D=0.0000  margin=71.08 caps=0.000 shots=11.58 pulls=183.82 trainW=1.0000 fit=5.7272 evals={50014,
+                                                                                                                        50014} distinct_last=17 clamp_gen=0.144 clamp_champ=0.144 id=6B93668212A70E0432C1846E17622A3AA36600B3F6EBB5C88850E11A0711F5FF
+seed 2010  W=0.9625 L=0.0375 D=0.0000  margin=63.75 caps=0.000 shots=15.49 pulls=131.45 trainW=1.0000 fit=5.6904 evals={50014,
+                                                                                                                        50014} distinct_last=17 clamp_gen=0.133 clamp_champ=0.133 id=5FCBF6212382B91007445F68ED74E942B175601DC24ABA033823DF5EE57759CC
+seed 2001 checkpoints (unique evals -> held-out W) = [{10000,0.975},
+                                                      {25000,0.9625},
+                                                      {50000,0.975}]
+seed 2002 checkpoints (unique evals -> held-out W) = [{10000,0.9375},
+                                                      {25000,0.90625},
+                                                      {50000,0.95625}]
+seed 2003 checkpoints (unique evals -> held-out W) = [{10000,0.95625},
+                                                      {25000,0.95},
+                                                      {50000,0.9375}]
+seed 2004 checkpoints (unique evals -> held-out W) = [{10000,0.975},
+                                                      {25000,0.9125},
+                                                      {50000,0.9375}]
+seed 2005 checkpoints (unique evals -> held-out W) = [{10000,0.9},
+                                                      {25000,0.975},
+                                                      {50000,0.90625}]
+seed 2006 checkpoints (unique evals -> held-out W) = [{10000,0.93125},
+                                                      {25000,0.9625},
+                                                      {50000,0.94375}]
+seed 2007 checkpoints (unique evals -> held-out W) = [{10000,0.55},
+                                                      {25000,0.5125},
+                                                      {50000,0.50625}]
+seed 2008 checkpoints (unique evals -> held-out W) = [{10000,0.50625},
+                                                      {25000,0.59375},
+                                                      {50000,0.59375}]
+seed 2009 checkpoints (unique evals -> held-out W) = [{10000,0.96875},
+                                                      {25000,0.975},
+                                                      {50000,0.98125}]
+seed 2010 checkpoints (unique evals -> held-out W) = [{10000,0.84375},
+                                                      {25000,0.96875},
+                                                      {50000,0.9625}]
+seed 2001 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,1.0,0.0,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.975,0.025,0.0}]
+seed 2002 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.93125,0.06875,0.0},
+                          {rammer,0.9875,0.0125,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.95625,0.04375,0.0}]
+seed 2003 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.94375,0.05625,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.9375,0.0625,0.0}]
+seed 2004 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.9875,0.0125,0.0},
+                          {rammer,0.9875,0.0125,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.9375,0.05625,0.00625}]
+seed 2005 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.9625,0.0375,0.0},
+                          {rammer,0.99375,0.00625,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.9375,0.0625,0.0}]
+seed 2006 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.975,0.025,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,0.98125,0.01875,0.0},
+                          {predictive_gun,0.94375,0.05,0.00625}]
+seed 2007 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,1.0,0.0,0.0},
+                          {rammer,0.98125,0.01875,0.0},
+                          {circle_strafer,0.775,0.225,0.0},
+                          {predictive_gun,0.50625,0.49375,0.0}]
+seed 2008 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,1.0,0.0,0.0},
+                          {rammer,0.9875,0.00625,0.00625},
+                          {circle_strafer,0.85625,0.1375,0.00625},
+                          {predictive_gun,0.59375,0.40625,0.0}]
+seed 2009 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.99375,0.00625,0.0},
+                          {rammer,1.0,0.0,0.0},
+                          {circle_strafer,1.0,0.0,0.0},
+                          {predictive_gun,0.975,0.025,0.0}]
+seed 2010 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.99375,0.00625,0.0},
+                          {rammer,0.99375,0.00625,0.0},
+                          {circle_strafer,0.99375,0.00625,0.0},
+                          {predictive_gun,0.9625,0.0375,0.0}]
+median W_s=0.9406  median margin=63.58  seeds at R_line=10/10  seeds directional=9/10
+  quiet   IF-2 SEARCH-INERT : "the fitness supplies no usable gradient; NOT 'evolution cannot reach the floor'"
+  quiet   IF-3 DEGENERATE-NON-FIRING : "the pre-measured never-fire optimum was selected; the floor question was never asked"
+  quiet   IF-4 SEARCH-DIVERGED : "a diverging covariance emitted values quantize/1 clamped silently"
+  quiet   IF-5 LATTICE-COLLAPSE : "the run collapsed onto a lattice point; it has not answered the question"
+  quiet   IF-7 CAP-DOMINATED : "2.5x the measured parity cap share; the verdict is cap-conditional and must be LABELLED so"
+  quiet   IF-8 MEMORISATION : "MODIFIER; pre-registered next rung is the stochastic-start variant, NOT more budget"
+  quiet   IF-9 BUDGET-LIMITED : "read ONLY on a FAILED or INCONCLUSIVE verdict: the negative is budget-limited"
+  quiet   IF-10 LADDER-INVERSION : "an OBSERVABLE. NOT claimed as intransitivity; that is phase 1's question"
+  quiet   IF-12 RADAR-STARVED : "MODIFIER; the champion won by staying out of the beam, a DIFFERENT finding"
+  0.940625 note median W_s : "the primary endpoint"
+VERDICT arm l = CLEARED
+SECONDARY: median held-out damage margin = 63.58 whole units.
+
+-- ARM D (sep_cma_es, [17,12,5], dim 281, 10 seeds) --
+R (best of 30 random genomes) = 0.0125 ; IF-2 inert reference (best of 200 random TRAINING fitness) = 0.3396
+seed 2001  W=0.9750 L=0.0250 D=0.0000  margin=73.34 caps=0.000 shots=11.66 pulls=84.52 trainW=1.0000 fit=1.7208 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.234 clamp_champ=0.228 id=DFF2A53B0B76D5C0C0ACF8294574516C2492B1667373269F6350B0AC33B7A68F
+seed 2002  W=0.9313 L=0.0688 D=0.0000  margin=76.85 caps=0.000 shots=12.54 pulls=143.87 trainW=1.0000 fit=1.7439 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.263 clamp_champ=0.256 id=A0EFDFF874B362AF23579F8A238ECEDEE9A0005FA233A69C26A70F050F0382A8
+seed 2003  W=0.9563 L=0.0437 D=0.0000  margin=79.10 caps=0.000 shots=11.18 pulls=77.19 trainW=1.0000 fit=1.7410 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.224 clamp_champ=0.228 id=7F8208E4E3FEB25CA0F7F94B1C2026FBE0AA526300739C1E77B525027C391999
+seed 2004  W=0.9625 L=0.0375 D=0.0000  margin=72.78 caps=0.000 shots=13.51 pulls=116.40 trainW=1.0000 fit=1.7352 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.313 clamp_champ=0.324 id=AA3AC074AF34ADB28EE979207584606A07AC51CAEDF8E3B50D10EBE35D2ECF1F
+seed 2005  W=0.9250 L=0.0625 D=0.0125  margin=68.32 caps=0.013 shots=17.88 pulls=303.59 trainW=1.0000 fit=1.7318 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.262 clamp_champ=0.267 id=725893A24AA54906774E799B7E19D23EB7F84F90CF694505887CD2F27C44798D
+seed 2006  W=0.9313 L=0.0688 D=0.0000  margin=65.22 caps=0.000 shots=12.59 pulls=106.37 trainW=1.0000 fit=1.7257 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.215 clamp_champ=0.210 id=B865EB0E03799D6F108DE58EF4C5368FC55DCE98C8520A32984A5337933E2C1C
+seed 2007  W=0.9313 L=0.0688 D=0.0000  margin=71.01 caps=0.000 shots=11.48 pulls=81.79 trainW=1.0000 fit=1.7408 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.233 clamp_champ=0.217 id=6DF64D1BDE9F4E6553B70A06CA0F921A218D8266090B80050E116A586563E2A0
+seed 2008  W=0.9688 L=0.0313 D=0.0000  margin=71.55 caps=0.000 shots=11.58 pulls=85.04 trainW=1.0000 fit=1.7301 evals={50000,
+                                                                                                                       50000} distinct_last=20 clamp_gen=0.301 clamp_champ=0.285 id=D9846931C084B9018905A73531D9E12191F3CD7C1C551C281D236C8A344CECEE
+seed 2009  W=0.8625 L=0.1313 D=0.0063  margin=63.45 caps=0.000 shots=13.11 pulls=112.44 trainW=1.0000 fit=1.7362 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.236 clamp_champ=0.231 id=91271CB300ADFA8B4B161F075009D7D46BBD78BC01F32E767CB730CFF2AB752D
+seed 2010  W=0.9688 L=0.0250 D=0.0063  margin=73.91 caps=0.000 shots=12.03 pulls=126.10 trainW=1.0000 fit=1.7318 evals={50000,
+                                                                                                                        50000} distinct_last=20 clamp_gen=0.275 clamp_champ=0.267 id=9849C1A40378B8B763FF9C93D87CD6E3D871A50EBBD91D5669FF0A4F583DF9CA
+seed 2001 checkpoints (unique evals -> held-out W) = [{10000,0.9875},
+                                                      {25000,0.975},
+                                                      {50000,0.975}]
+seed 2002 checkpoints (unique evals -> held-out W) = [{10000,0.98125},
+                                                      {25000,0.98125},
+                                                      {50000,0.93125}]
+seed 2003 checkpoints (unique evals -> held-out W) = [{10000,0.9875},
+                                                      {25000,0.9625},
+                                                      {50000,0.95625}]
+seed 2004 checkpoints (unique evals -> held-out W) = [{10000,1.0},
+                                                      {25000,0.925},
+                                                      {50000,0.9625}]
+seed 2005 checkpoints (unique evals -> held-out W) = [{10000,0.96875},
+                                                      {25000,0.925},
+                                                      {50000,0.925}]
+seed 2006 checkpoints (unique evals -> held-out W) = [{10000,0.9375},
+                                                      {25000,0.98125},
+                                                      {50000,0.93125}]
+seed 2007 checkpoints (unique evals -> held-out W) = [{10000,0.95625},
+                                                      {25000,0.9375},
+                                                      {50000,0.93125}]
+seed 2008 checkpoints (unique evals -> held-out W) = [{10000,0.88125},
+                                                      {25000,0.93125},
+                                                      {50000,0.96875}]
+seed 2009 checkpoints (unique evals -> held-out W) = [{10000,0.875},
+                                                      {25000,0.925},
+                                                      {50000,0.8625}]
+seed 2010 checkpoints (unique evals -> held-out W) = [{10000,0.91875},
+                                                      {25000,0.95625},
+                                                      {50000,0.96875}]
+seed 2001 rung profile = [{sitting_duck,0.18125,0.41875,0.4},
+                          {spinner,0.14375,0.78125,0.075},
+                          {rammer,0.9125,0.0875,0.0},
+                          {circle_strafer,0.98125,0.01875,0.0},
+                          {predictive_gun,0.975,0.025,0.0}]
+seed 2002 rung profile = [{sitting_duck,0.85,0.04375,0.10625},
+                          {spinner,0.54375,0.40625,0.05},
+                          {rammer,0.85625,0.14375,0.0},
+                          {circle_strafer,0.84375,0.15625,0.0},
+                          {predictive_gun,0.93125,0.06875,0.0}]
+seed 2003 rung profile = [{sitting_duck,0.83125,0.14375,0.025},
+                          {spinner,0.725,0.275,0.0},
+                          {rammer,0.2875,0.70625,0.00625},
+                          {circle_strafer,0.95,0.05,0.0},
+                          {predictive_gun,0.95625,0.04375,0.0}]
+seed 2004 rung profile = [{sitting_duck,0.0125,0.00625,0.98125},
+                          {spinner,0.09375,0.1625,0.74375},
+                          {rammer,0.675,0.2125,0.1125},
+                          {circle_strafer,0.96875,0.03125,0.0},
+                          {predictive_gun,0.9625,0.0375,0.0}]
+seed 2005 rung profile = [{sitting_duck,1.0,0.0,0.0},
+                          {spinner,0.74375,0.06875,0.1875},
+                          {rammer,0.6875,0.3125,0.0},
+                          {circle_strafer,0.91875,0.075,0.00625},
+                          {predictive_gun,0.925,0.0625,0.0125}]
+seed 2006 rung profile = [{sitting_duck,0.025,0.1125,0.8625},
+                          {spinner,0.10625,0.25,0.64375},
+                          {rammer,0.6125,0.3875,0.0},
+                          {circle_strafer,0.9125,0.025,0.0625},
+                          {predictive_gun,0.93125,0.06875,0.0}]
+seed 2007 rung profile = [{sitting_duck,0.8875,0.1125,0.0},
+                          {spinner,0.95625,0.04375,0.0},
+                          {rammer,0.36875,0.63125,0.0},
+                          {circle_strafer,0.9125,0.0875,0.0},
+                          {predictive_gun,0.93125,0.06875,0.0}]
+seed 2008 rung profile = [{sitting_duck,0.09375,0.66875,0.2375},
+                          {spinner,0.34375,0.63125,0.025},
+                          {rammer,0.9125,0.0875,0.0},
+                          {circle_strafer,0.9125,0.0875,0.0},
+                          {predictive_gun,0.96875,0.03125,0.0}]
+seed 2009 rung profile = [{sitting_duck,0.04375,0.30625,0.65},
+                          {spinner,0.2875,0.4625,0.25},
+                          {rammer,0.625,0.375,0.0},
+                          {circle_strafer,0.91875,0.075,0.00625},
+                          {predictive_gun,0.8625,0.13125,0.00625}]
+seed 2010 rung profile = [{sitting_duck,0.325,0.0,0.675},
+                          {spinner,0.34375,0.0875,0.56875},
+                          {rammer,0.9875,0.0125,0.0},
+                          {circle_strafer,0.9625,0.0375,0.0},
+                          {predictive_gun,0.96875,0.025,0.00625}]
+median W_s=0.9438  median margin=72.16  seeds at R_line=10/10  seeds directional=10/10
+  quiet   IF-2 SEARCH-INERT : "the fitness supplies no usable gradient; NOT 'evolution cannot reach the floor'"
+  quiet   IF-3 DEGENERATE-NON-FIRING : "the pre-measured never-fire optimum was selected; the floor question was never asked"
+  quiet   IF-4 SEARCH-DIVERGED : "a diverging covariance emitted values quantize/1 clamped silently"
+  quiet   IF-5 LATTICE-COLLAPSE : "the run collapsed onto a lattice point; it has not answered the question"
+  quiet   IF-7 CAP-DOMINATED : "2.5x the measured parity cap share; the verdict is cap-conditional and must be LABELLED so"
+  quiet   IF-8 MEMORISATION : "MODIFIER; pre-registered next rung is the stochastic-start variant, NOT more budget"
+  quiet   IF-9 BUDGET-LIMITED : "read ONLY on a FAILED or INCONCLUSIVE verdict: the negative is budget-limited"
+  quiet   IF-10 LADDER-INVERSION : "an OBSERVABLE. NOT claimed as intransitivity; that is phase 1's question"
+  quiet   IF-12 RADAR-STARVED : "MODIFIER; the champion won by staying out of the beam, a DIFFERENT finding"
+  0.9437500000000001 note median W_s : "the primary endpoint"
+VERDICT arm d = CLEARED
+SECONDARY: median held-out damage margin = 72.16 whole units.
+
+arm S CLEARED, so arm M is NOT run: CLEARED is an EXISTENCE claim and one optimiser class suffices.
+
+IF-1 quiet: the hand construction failed but evolution did not, so expressibility is established BY EVOLUTION and the encoding is not implicated. Arm C's failure is a note about the construction only.
