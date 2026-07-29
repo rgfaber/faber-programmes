@@ -481,3 +481,93 @@ SECONDARY: median held-out damage margin = 72.16 whole units.
 arm S CLEARED, so arm M is NOT run: CLEARED is an EXISTENCE claim and one optimiser class suffices.
 
 IF-1 quiet: the hand construction failed but evolution did not, so expressibility is established BY EVOLUTION and the encoding is not implicated. Arm C's failure is a note about the construction only.
+
+
+== ADDENDUM, appended 2026-07-30, POST HOC, recomputed from the champion archive ==
+
+WHAT THIS IS. Everything ABOVE this line was written by run/1 during the run of 2026-07-29 and NOTHING above it is changed or re-run. Everything below was produced afterwards by addendum/1 from the archived champion genomes only, at engine pin a5e8bcfc5646827e9be49a9629f8a6a9678c814b, on the same 80 held-out starts, and appended because a CLAIM gate on the draft insight found two things this feed did not contain.
+
+Produced by: experiments/exp066_single_population_floor_tests.erl, AMENDED 2026-07-30. The as-run copy archived beside the champions does NOT contain addendum/1; the amendment adds it, rewrites the cross-play probe so it writes a file, and emits the dropped column named in section A. NO ARM WAS RE-RUN and the arms' code path is unchanged apart from that one emit.
+Archive read: programmes/p7_coevolution/exp066_competence_floor/
+Recomputation is a RE-EXECUTION of the same measurement, not the captured original. Where a number below can be checked against one above, both are printed.
+
+-- A. THE DROPPED won_opp_shots COLUMN, IF-12's raw material --
+
+WHY IT IS ABSENT ABOVE. seed_run/4 computes won_opp_shots for every seed and the per-seed emit in arm_report/4 did not print it. Every IF-12 line above therefore reports a verdict whose evidence is in no record: the feed cannot show whether the floor bot ever fired in the champion's WON matches, and 'the verdict carries no modifier' rests on exactly that. The runner's emit is fixed (defect D10) so a future run cannot drop it; these values are recovered.
+
+S_par (predictive_gun's shots per match against its own CLONE, recomputed) = 18.49
+IF-12 threshold = 0.25 * S_par = 4.6234 shots. IF-12 reads the MEDIAN champion by held-out W, by median_res/1, NOT the arm's mean.
+won_matches is the support of the mean: won_opp_shots is a mean over the champion's won matches ONLY, and is UNDEFINED, not zero, at zero wins.
+
+arm S, 20 archived champions, recomputed. Compare each W with the same seed's W in the arm S block above: agreement is evidence the archived genome IS the champion the feed measured, and the recomputed column beside it is therefore that champion's.
+  seed 2001  W=0.9750  won_opp_shots=11.95  won_matches=156  shots=11.96  margin=67.23
+  seed 2002  W=0.9375  won_opp_shots=12.05  won_matches=150  shots=12.38  margin=63.92
+  seed 2003  W=1.0000  won_opp_shots=13.34  won_matches=160  shots=12.37  margin=79.12
+  seed 2004  W=0.9938  won_opp_shots=11.77  won_matches=159  shots=12.78  margin=70.99
+  seed 2005  W=0.9938  won_opp_shots=10.94  won_matches=159  shots=11.04  margin=72.05
+  seed 2006  W=0.9938  won_opp_shots=10.77  won_matches=159  shots=10.25  margin=72.09
+  seed 2007  W=0.5813  won_opp_shots=6.23  won_matches=93  shots=8.01  margin=-1.49
+  seed 2008  W=0.9750  won_opp_shots=10.36  won_matches=156  shots=11.28  margin=71.92
+  seed 2009  W=0.5750  won_opp_shots=6.16  won_matches=92  shots=8.06  margin=-3.08
+  seed 2010  W=0.9875  won_opp_shots=13.03  won_matches=158  shots=12.02  margin=72.58
+  seed 2011  W=0.5375  won_opp_shots=6.22  won_matches=86  shots=8.44  margin=-5.50
+  seed 2012  W=1.0000  won_opp_shots=10.87  won_matches=160  shots=10.82  margin=78.22
+  seed 2013  W=0.9750  won_opp_shots=15.94  won_matches=156  shots=15.63  margin=75.13
+  seed 2014  W=0.5813  won_opp_shots=5.92  won_matches=93  shots=7.91  margin=-1.47
+  seed 2015  W=0.4188  won_opp_shots=6.66  won_matches=67  shots=8.09  margin=-15.89
+  seed 2016  W=0.8000  won_opp_shots=16.35  won_matches=128  shots=17.70  margin=46.69
+  seed 2017  W=1.0000  won_opp_shots=11.24  won_matches=160  shots=10.19  margin=79.78
+  seed 2018  W=0.6062  won_opp_shots=6.64  won_matches=97  shots=8.32  margin=2.11
+  seed 2019  W=0.9812  won_opp_shots=10.87  won_matches=157  shots=11.47  margin=70.97
+  seed 2020  W=0.9875  won_opp_shots=15.29  won_matches=158  shots=17.43  margin=71.20
+  won_opp_shots over the arm: min=5.92 median=10.91 max=16.35 ; seeds individually below the threshold = 0 of 20
+  MEDIAN CHAMPION = seed 2008, W=0.9750, won_opp_shots=10.36 against a threshold of 4.6234
+  IF-12 RADAR-STARVED, recomputed by if12/2, the same predicate the run used = quiet
+
+arm L, 10 archived champions, recomputed. Compare each W with the same seed's W in the arm L block above: agreement is evidence the archived genome IS the champion the feed measured, and the recomputed column beside it is therefore that champion's.
+  seed 2001  W=0.9750  won_opp_shots=14.11  won_matches=156  shots=13.86  margin=63.14
+  seed 2002  W=0.9563  won_opp_shots=13.16  won_matches=153  shots=13.68  margin=59.70
+  seed 2003  W=0.9375  won_opp_shots=10.23  won_matches=150  shots=10.07  margin=69.58
+  seed 2004  W=0.9375  won_opp_shots=15.27  won_matches=150  shots=14.66  margin=63.42
+  seed 2005  W=0.9375  won_opp_shots=11.55  won_matches=150  shots=13.18  margin=65.46
+  seed 2006  W=0.9437  won_opp_shots=10.66  won_matches=151  shots=11.45  margin=67.37
+  seed 2007  W=0.5062  won_opp_shots=6.62  won_matches=81  shots=8.53  margin=-5.78
+  seed 2008  W=0.5938  won_opp_shots=6.39  won_matches=95  shots=8.16  margin=0.55
+  seed 2009  W=0.9750  won_opp_shots=10.31  won_matches=156  shots=11.58  margin=71.08
+  seed 2010  W=0.9625  won_opp_shots=17.74  won_matches=154  shots=15.49  margin=63.75
+  won_opp_shots over the arm: min=6.39 median=11.11 max=17.74 ; seeds individually below the threshold = 0 of 10
+  MEDIAN CHAMPION = seed 2005, W=0.9375, won_opp_shots=11.55 against a threshold of 4.6234
+  IF-12 RADAR-STARVED, recomputed by if12/2, the same predicate the run used = quiet
+
+arm D, 10 archived champions, recomputed. Compare each W with the same seed's W in the arm D block above: agreement is evidence the archived genome IS the champion the feed measured, and the recomputed column beside it is therefore that champion's.
+  seed 2001  W=0.9750  won_opp_shots=12.51  won_matches=156  shots=11.66  margin=73.34
+  seed 2002  W=0.9313  won_opp_shots=9.38  won_matches=149  shots=12.54  margin=76.85
+  seed 2003  W=0.9563  won_opp_shots=8.88  won_matches=153  shots=11.18  margin=79.10
+  seed 2004  W=0.9625  won_opp_shots=12.95  won_matches=154  shots=13.51  margin=72.78
+  seed 2005  W=0.9250  won_opp_shots=12.41  won_matches=148  shots=17.88  margin=68.32
+  seed 2006  W=0.9313  won_opp_shots=13.34  won_matches=149  shots=12.59  margin=65.22
+  seed 2007  W=0.9313  won_opp_shots=11.21  won_matches=149  shots=11.48  margin=71.01
+  seed 2008  W=0.9688  won_opp_shots=12.22  won_matches=155  shots=11.58  margin=71.55
+  seed 2009  W=0.8625  won_opp_shots=12.66  won_matches=138  shots=13.11  margin=63.45
+  seed 2010  W=0.9688  won_opp_shots=12.17  won_matches=155  shots=12.03  margin=73.91
+  won_opp_shots over the arm: min=8.88 median=12.31 max=13.34 ; seeds individually below the threshold = 0 of 10
+  MEDIAN CHAMPION = seed 2007, W=0.9313, won_opp_shots=11.21 against a threshold of 4.6234
+  IF-12 RADAR-STARVED, recomputed by if12/2, the same predicate the run used = quiet
+
+-- B. ARM C: THE ATTEMPT ACCOUNTING THE PRE-REGISTRATION REQUIRES --
+
+The pre-registration's stop rule says: an ATTEMPT is one edit to the gains or one topology change followed by one full evaluation on the 30 calibration starts; construction stops either when the calibration rate reaches B and 5 consecutive further attempts fail to raise it, or at 40 attempts (20 per topology) without reaching B, in which case UNGRADEABLE fires; and THE ATTEMPT COUNT AND THE FULL CALIBRATION TRAJECTORY GO INTO THE RAW FEED.
+
+THE HONEST ACCOUNTING:
+  attempts made                = 1 (the single fixed gains map labelled ATTEMPT 1 in the runner; arm_c/1 holds no attempt loop, so a second attempt would have been a source edit)
+  calibration trajectory       = ONE POINT, 0.0000 on the 30 calibration starts. There is no trajectory. None is invented here.
+  held-out W_0b                = 0.0000 (recomputed; the feed above reports the same value)
+  topologies tried             = 1 of the 2 the rule allows, [17,5] only. The pre-registered fallback to [17,12,5] was never taken, and after defect fix D1 arm_c_weights/1 REFUSES that topology rather than silently zero-filling it, so taking the fallback would itself have needed a source edit.
+  stop rule exercised          = NO. Neither branch was reached: the calibration rate never reached B=0.5748, so the first branch could not fire, and 1 attempt is not 40, so the second could not either. Construction stopped because the experimenter stopped, not because the rule stopped it.
+  attempts run for this addendum = 0, DELIBERATELY. After defect fix D9 arm C gates nothing, and iterating a construction now, with the evolution arms already CLEARED at 0.9750, would be calibration after the fact against a known outcome. The 0.0000 stands as a fact about ONE construction and is not a measured bound on hand construction in general.
+  what this costs the front    = nothing that the arms did not already settle. Expressibility is a property of the network class and an evolved champion beating the floor bot establishes it a fortiori. What is LOST is the ability to say anything about how hard the encoding is to hand-build, and that claim is not made anywhere.
+
+-- WHAT IS STILL NOT IN THIS RECORD --
+
+The cross-play probe is NOT in this feed and does not belong in it: it is exploratory, it was not pre-registered, and it signs nothing. It has its own record at programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt, which is where its numbers must be read from. The first pass of that probe persisted nothing at all, which is the defect this addendum's sibling fixes.
+== END ADDENDUM ==

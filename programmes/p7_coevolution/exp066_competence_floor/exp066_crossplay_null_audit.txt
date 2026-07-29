@@ -1,0 +1,49 @@
+== EXP-066 cross-play NULL AUDIT ==
+
+status      = EXPLORATORY, UNREGISTERED, SIGNS NOTHING
+reads       = programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt
+champions   = 20
+matches/cell= 160
+null draws  = 200
+seed        = 661
+reads only the persisted matrix; no genome loaded, no match replayed
+
+OBSERVED    = recounted from the persisted matrix
+ORIENTATION = observed |margin| kept edge for edge, SIGNS randomised
+  (the decisiveness-matched null; the reference the record lacks)
+ANALYTIC    = triples with all three edges decisive, divided by 4
+  (a cyclic orientation is 2 of 8 equally likely assignments)
+MATCH AS-BUILT  = the record's own match-level null, margins doubled
+MATCH CORRECTED = the same model with the margin differenced once
+
+band 0.05
+  OBSERVED        : ordered 73 | cycles 49 | decisive 169 of 190
+  ORIENTATION     : ordered med 303.0 {243,354} | cycles med 202.0 {164,222} | decisive med 169.0 of 190
+  ANALYTIC        : all-three-decisive triples 802, expected cycles 200.50, expected ordered 300.75
+  MATCH AS-BUILT  : ordered med 178.0 {88,289} | cycles med 121.5 {65,197} | decisive med 144.0 of 190
+  MATCH CORRECTED : ordered med 82.0 {36,139} | cycles med 54.5 {20,94} | decisive med 111.0 of 190
+
+band 0.10
+  OBSERVED        : ordered 28 | cycles 18 | decisive 152 of 190
+  ORIENTATION     : ordered med 225.0 {169,275} | cycles med 151.0 {115,172} | decisive med 152.0 of 190
+  ANALYTIC        : all-three-decisive triples 604, expected cycles 151.00, expected ordered 226.50
+  MATCH AS-BUILT  : ordered med 80.5 {34,133} | cycles med 54.5 {24,96} | decisive med 110.0 of 190
+  MATCH CORRECTED : ordered med 5.0 {0,15} | cycles med 3.0 {0,10} | decisive med 44.0 of 190
+
+band 0.15
+  OBSERVED        : ordered 18 | cycles 12 | decisive 141 of 190
+  ORIENTATION     : ordered med 184.0 {148,233} | cycles med 122.0 {97,145} | decisive med 141.0 of 190
+  ANALYTIC        : all-three-decisive triples 487, expected cycles 121.75, expected ordered 182.63
+  MATCH AS-BUILT  : ordered med 11.0 {1,35} | cycles med 8.0 {1,23} | decisive med 57.0 of 190
+  MATCH CORRECTED : ordered med 0.0 {0,2} | cycles med 0.0 {0,1} | decisive med 9.0 of 190
+
+
+READING. The sign of the comparison depends entirely on which null is
+used, which is why the choice has to be argued rather than defaulted:
+against the record's as-built match-level null the observed count looks
+BELOW chance, against the same null corrected it looks ABOVE chance, and
+against the only null matched to the observed edge structure it is far
+below. The first two comparisons are unusable because that null does not
+reproduce the observed decisiveness; the third is the one that answers
+the question asked, and it is UNREGISTERED and self-calibrated like
+everything else in this probe.

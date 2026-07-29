@@ -1,0 +1,398 @@
+== EXP-066 POST-HOC PROBE: THE TWO ATTRACTORS IN ARM S ==
+
+date            = 2026-07-30
+status          = POST HOC, NOT pre-registered, SIGNS NOTHING on its own
+what            = characterisation of the arm S mode split; no arm re-run
+produced_by     = scripts/exp066_probe_two_attractors.escript
+method          = the runner's OWN compiled beam, abstract code renamed to
+                  exp066_view_ta with export_all and loaded from memory, so the pilot
+                  encoder, the 120-start generator and the match loop are the
+                  archived ones and not a reimplementation
+beam            = /home/rl/work/github.com/rgfaber/faber-programmes/_build/test/lib/faber_programmes/experiments/exp066_single_population_floor_tests.beam
+champions       = /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_champions_s.eterm (20 champions)
+out             = /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_two_attractors_probe.txt
+workers         = 12
+
+-- A. THE PARITY MATCH, RECOMPUTED, AND ITS PER-START STRUCTURE --
+
+predictive_gun against its own CLONE on the 80 held-out starts, both seats.
+  matches            = 160
+  W / L / D          = 67 / 67 / 26
+  P = W/160          = 0.41875   (the frozen constant, feed line 14: P=0.4188)
+  1 - P              = 0.58125
+  S_par              = 18.49  (feed line 14: 18.49)
+  mean turns         = 540.1
+  pair complementary = true  (no start gave a malformed W/W or L/L pair)
+
+PER-START CLASSES. With identical controllers the two seat replays are one
+simulation read from both seats, so each start is either DECISIVE for one
+seat or DRAWN for both.
+  decisive starts    = 67  (seat a wins 34, seat b wins 33)
+  drawn starts       = 13
+  identity check     : W = L = decisive = 67, D = 2 x drawn = 26
+
+SO P IS FORCED BY THE GENERATOR, NOT BY THE GUN'S SKILL: P = decisive/160
+and 1 - P = (decisive + 2 x drawn)/160. The two numbers three low-mode seeds
+land on are exactly these two.
+
+-- B. THE 20 ARM S CHAMPIONS, RECOMPUTED, ONE ROW EACH --
+
+W L D are COUNTS out of 160. fit is read from the champion archive, not the
+feed. Compare W/160 and shots with the arm S block of the feed.
+
+seed   W   L   D  W/160    fit     turns  turns_won turns_lost shots opp_sh won_opp margin
+2001  156   4   0 0.97500  5.7027   209.4     209.4      207.8 11.96  11.95   11.95  67.23
+2002  150   9   1 0.93750  5.7035   230.1     214.8      287.4 12.38  12.46   12.05  63.92
+2003  160   0   0 1.00000  5.7197   200.9     200.9        0.0 12.37  13.34   13.34  79.12
+2004  159   1   0 0.99375  5.6974   210.8     211.0      180.0 12.78  11.78   11.77  70.99
+2005  159   1   0 0.99375  5.7189   193.2     193.1      200.0 11.04  10.96   10.94  72.05
+2006  159   1   0 0.99375  5.7079   192.7     192.0      299.0 10.25  10.80   10.77  72.09
+2007   93  67   0 0.58125  5.6272   120.5     117.3      125.0  8.01   6.91    6.23  -1.49
+2008  156   4   0 0.97500  5.7210   182.1     181.5      207.0 11.28  10.42   10.36  71.92
+2009   92  66   2 0.57500  5.6160   124.7     120.2      130.5  8.06   6.99    6.16  -3.08
+2010  158   2   0 0.98750  5.7183   200.2     199.5      262.0 12.02  13.09   13.03  72.58
+2011   86  74   0 0.53750  5.6213   127.7     118.8      138.0  8.44   7.47    6.22  -5.50
+2012  160   0   0 1.00000  5.7222   181.2     181.2        0.0 10.82  10.87   10.87  78.22
+2013  156   0   4 0.97500  5.7107   282.5     238.5        0.0 15.63  16.66   15.94  75.13
+2014   93  67   0 0.58125  5.6139   117.9     115.9      120.7  7.91   6.64    5.92  -1.47
+2015   67  93   0 0.41875  5.5999   123.4     117.9      127.4  8.09   7.61    6.66 -15.89
+2016  128  32   0 0.80000  5.6779   281.0     285.5      263.1 17.70  16.45   16.35  46.69
+2017  160   0   0 1.00000  5.7229   174.2     174.2        0.0 10.19  11.24   11.24  79.78
+2018   97  62   1 0.60625  5.6213   127.7     123.8      133.5  8.32   7.28    6.64   2.11
+2019  157   3   0 0.98125  5.7184   193.6     192.4      257.7 11.47  10.97   10.87  70.97
+2020  158   2   0 0.98750  5.6899   275.2     274.1      356.5 17.43  15.36   15.29  71.20
+
+SORTED VALUES AND LARGEST INTERNAL GAP
+  held-out W     min=0.4188 max=1.0000 largest gap=0.1938 between 0.6062 and 0.8000
+  train fitness  min=5.5999 max=5.7229 largest gap=0.0507 between 5.6272 and 5.6779
+  shots/match    min=7.9125 max=17.7000 largest gap=2.8438 between 12.7813 and 15.6250
+  turns/match    min=117.9313 max=282.4937 largest gap=46.5375 between 127.7000 and 174.2375
+
+LOW MODE (held-out W below 0.62) = 6 seeds: [2007,2009,2011,2014,2015,2018]
+HIGH MODE (held-out W above 0.93) = 13 seeds: [2001,2002,2003,2004,2005,2006,2008,2010,2012,2013,2017,2019,2020]
+NEITHER = 1 seeds: [2016]
+
+-- C. EVERY OUTCOME CROSS-TABULATED AGAINST THE PARITY CLASS OF ITS START --
+
+For each champion, its 160 outcomes split by whether the START is one the
+floor bot's own clone match DECIDES (67 of 80) or DRAWS (13 of 80), and by
+whether the champion sits in the seat parity FAVOURS or the seat it dooms.
+
+          on the 67 DECISIVE starts            on the 13 DRAWN starts
+        favoured seat      doomed seat        both seats        inherit
+seed     W   L   D       W   L   D         W   L   D          score
+2001   65   2   0      66   1   0        25   1   0         0.5687
+2002   62   4   1      63   4   0        25   1   0         0.5687
+2003   67   0   0      67   0   0        26   0   0         0.5813
+2004   66   1   0      67   0   0        26   0   0         0.5750
+2005   67   0   0      67   0   0        25   1   0         0.5750
+2006   66   1   0      67   0   0        26   0   0         0.5750
+2007   40  27   0      38  29   0        15  11   0         0.5250
+2008   65   2   0      66   1   0        25   1   0         0.5687
+2009   38  28   1      44  23   0        10  15   1         0.4437
+2010   66   1   0      66   1   0        26   0   0         0.5813
+2011   40  27   0      33  34   0        13  13   0         0.5437
+2012   67   0   0      67   0   0        26   0   0         0.5813
+2013   65   0   2      66   0   1        25   0   1         0.5625
+2014   39  28   0      38  29   0        16  10   0         0.5250
+2015   28  39   0      27  40   0        12  14   0         0.5000
+2016   52  15   0      57  10   0        19   7   0         0.5062
+2017   67   0   0      67   0   0        26   0   0         0.5813
+2018   42  24   1      41  26   0        14  12   0         0.5125
+2019   67   0   0      65   2   0        25   1   0         0.5875
+2020   67   0   0      65   2   0        26   0   0         0.5938
+
+'inherit' is the fraction of the 160 outcomes matching the hypothesised
+pattern: win the favoured seat, LOSE the doomed seat, win both seats of a
+parity-drawn start. READ IT AGAINST THE RIGHT CEILING. The pattern demands
+67 losses, so a champion that wins all 160 scores 93/160 = 0.5813 and not
+1.0000, which is exactly what seeds 2003, 2012 and 2017 score. The column
+is therefore only diagnostic for the low mode, where the pattern would have
+to reach 1.0000 and instead sits at 0.4437 to 0.5437: the losses are spread
+across BOTH seats and the drawn starts are not swept.
+
+-- D. OUTCOME-VECTOR AGREEMENT: SAME MATCHES, OR ONLY THE SAME COUNT? --
+
+Hamming distance between two champions' 160-long outcome vectors, in the
+start-then-seat order heldout/3 emits. 0 means the two champions win and
+lose EXACTLY the same matches.
+
+  low-mode pairs   n=15  min=58 median=68.0 max=90
+  high-mode pairs  n=78  min=0 median=4.0 max=14
+  low-vs-high      n=78  min=61 median=68.0 max=95
+
+EVERY LOW-MODE PAIR, with what INDEPENDENCE would give for the same two
+win counts: E = (Wa*Lb + La*Wb)/160. Identity is 0, independence is E.
+  2007 vs 2009 : hamming=58  independence=76.9
+  2007 vs 2011 : hamming=63  independence=79.0
+  2007 vs 2014 : hamming=68  independence=77.9
+  2007 vs 2015 : hamming=86  independence=82.1
+  2007 vs 2018 : hamming=67  independence=76.7
+  2009 vs 2011 : hamming=61  independence=78.0
+  2009 vs 2014 : hamming=65  independence=76.9
+  2009 vs 2015 : hamming=87  independence=81.1
+  2009 vs 2018 : hamming=68  independence=75.7
+  2011 vs 2014 : hamming=73  independence=79.0
+  2011 vs 2015 : hamming=81  independence=81.0
+  2011 vs 2018 : hamming=80  independence=78.2
+  2014 vs 2015 : hamming=74  independence=82.1
+  2014 vs 2018 : hamming=59  independence=76.7
+  2015 vs 2018 : hamming=90  independence=82.3
+
+-- E. MATCH SHAPE BY MODE, AGAINST THE PARITY MATCH AS THE RULER --
+
+                     parity   low mode (6 seeds)    high mode (13 seeds)
+  turns / match       540.11    124.09 [117.93..127.70]    200.24 [174.24..282.49]
+  champion shots       18.49      8.07 [7.91..8.44]     11.96 [10.19..17.43]
+  floor bot shots      18.49      7.14 [6.64..7.61]     11.78 [10.42..16.66]
+  damage dealt          0.00     59.48 [52.13..65.25]    107.03 [85.69..111.58]
+  damage taken          0.00     63.29 [61.36..68.02]     35.11 [10.56..47.14]
+  turn-cap share        0.00      0.00 [0.00..0.00]      0.00 [0.00..0.03]
+
+-- F. WHAT THE TWO MODES DO: RANGE HELD AND THROTTLE USED --
+
+The match loop's own probe accumulator, over the FIRST 10 held-out starts,
+both seats, so 20 matches per champion. dist is the pilot's range to its
+latest contact in whole units; vel is the champion's own speed. Turns with
+no contact yet are excluded from the range statistics only.
+
+seed  mode   turns  contact%%  mean_dist  p10_dist  p90_dist  mean_speed  fire%%
+2001 high     199.3    0.985      183.3     143.7     239.3         7.0  0.354
+2002 high     215.1    0.966      179.8     145.7     217.2         7.6  0.261
+2003 high     209.0    0.986      291.5     234.0     318.9         7.8  0.290
+2004 high     193.3    0.984      190.0     152.9     252.5         7.9  0.611
+2005 high     196.4    0.971      178.5     150.6     203.4         7.8  0.291
+2006 high     186.8    0.971      189.4     149.7     264.1         7.8  0.435
+2007 low      116.7    0.976      136.9      10.3     311.8         4.8  0.993
+2008 high     194.9    0.971      177.6     148.0     220.7         7.7  0.682
+2009 low      122.3    0.976      124.7       8.3     291.6         4.6  0.644
+2010 high     201.3    0.985      209.9     178.4     235.5         6.0  0.712
+2011 low      125.3    0.976      137.3       7.1     292.6         5.1  0.963
+2012 high     162.8    0.973      197.9     153.2     281.1         5.9  0.586
+2013 high     307.4    0.990      307.8     258.2     334.6         7.9  0.745
+2014 low      119.7    0.955      113.6       6.2     252.2         4.4  0.986
+2015 low      118.0    0.975      130.7      11.9     285.6         5.2  0.978
+2016 mid      292.8    0.980      201.5     115.8     280.3         7.7  0.992
+2017 high     170.9    0.982      206.9     170.9     243.9         5.7  0.331
+2018 low      147.3    0.980      122.8      13.3     235.0         5.6  0.721
+2019 high     187.9    0.984      187.4     149.4     242.3         7.8  0.408
+2020 high     266.3    0.989      194.4     159.6     220.8         5.6  0.998
+
+-- G. THE TRAINING SIDE: THE LADDER THE OPTIMISER SAW, RECOMPUTED --
+
+Mean damage margin in WHOLE units over the 12 matches of each rung on the 6
+TRAINING starts. cleared = every one of those 12 margins strictly positive,
+which is the ladder's own rule. frontier = the weakest rung by mean, which is
+the only margin the fitness reads once all five are cleared.
+
+seed  mode   duck  spinner  rammer strafer   gun  rungs  frontier  fit_recomputed  fit_archive  trainW
+2001 high    106.1    83.4    92.8    95.5   81.1     5     81.08          5.7027       5.7027  1.0000
+2002 high     87.4    81.9    82.9    92.5   81.4     5     81.41          5.7035       5.7035  1.0000
+2003 high     87.9    92.1    90.8    88.1   88.3     5     87.88          5.7197       5.7197  1.0000
+2004 high     98.1    79.0    88.6    93.3   79.3     5     78.98          5.6974       5.6974  1.0000
+2005 high     96.8    89.9    89.9    93.2   87.6     5     87.58          5.7189       5.7189  1.0000
+2006 high     99.0    83.2    85.9    92.2   84.8     5     83.18          5.7079       5.7079  1.0000
+2007 low      70.7    69.3    52.2    50.9   50.9     5     50.89          5.6272       5.6272  1.0000
+2008 high    106.6    88.4    92.8    96.1   90.2     5     88.40          5.7210       5.7210  1.0000
+2009 low      70.4    66.9    47.9    53.1   46.4     5     46.39          5.6160       5.6160  1.0000
+2010 high    107.7    99.0    88.0    91.8   87.3     5     87.32          5.7183       5.7183  1.0000
+2011 low      68.0    65.3    49.3    52.3   48.5     5     48.50          5.6213       5.6213  1.0000
+2012 high    104.8    88.9    93.2    93.5   89.1     5     88.90          5.7222       5.7222  1.0000
+2013 high     87.9    85.2    85.7    85.8   84.3     5     84.28          5.7107       5.7107  1.0000
+2014 low      67.9    70.6    45.6    46.5   45.8     5     45.55          5.6139       5.6139  1.0000
+2015 low      93.0    73.1    73.7    49.9   40.0     5     39.97          5.5999       5.5999  1.0000
+2016 mid      88.0    72.8    71.2    72.2   71.6     5     71.17          5.6779       5.6779  1.0000
+2017 high    101.0    90.2    89.4    92.6   89.2     5     89.15          5.7229       5.7229  1.0000
+2018 low      71.8    66.4    48.5    58.9   49.2     5     48.54          5.6213       5.6213  1.0000
+2019 high     97.9    90.0    94.3    91.2   87.4     5     87.38          5.7184       5.7184  1.0000
+2020 high     76.0    75.9    78.6    81.7   76.2     5     75.95          5.6899       5.6899  1.0000
+
+EVERY seed clears all five rungs on the training starts, which is why the
+feed's trainW column reads 1.0000 for all twenty and separates nothing. The
+fitness the optimiser ranked on is NOT flat: it is the frontier margin, and
+that margin is what splits.
+
+THE GENERALISATION GAP IN THE FITNESS'S OWN UNITS. The same floored rung
+margin, gun rung, on the 6 TRAINING starts and on the 80 HELD-OUT starts.
+Floored means margin/1's death floor is applied on both sides, which the
+feed's own margin column does NOT do, so the two columns below are
+comparable and the feed's margin is not comparable with either.
+
+seed  mode   train_gun  heldout_gun     gap
+2001 high       81.08        67.02   14.06
+2002 high       81.41        63.75   17.66
+2003 high       88.33        79.12    9.21
+2004 high       79.31        70.81    8.50
+2005 high       87.58        71.94   15.64
+2006 high       84.77        71.98   12.79
+2007 low        50.89        -8.30   59.19
+2008 high       90.18        71.77   18.41
+2009 low        46.39       -10.37   56.75
+2010 high       87.32        72.39   14.92
+2011 low        48.50       -14.69   63.20
+2012 high       89.09        78.22   10.87
+2013 high       84.28        75.13    9.15
+2014 low        45.79        -9.27   55.06
+2015 low        39.97       -27.63   67.61
+2016 mid        71.55        40.90   30.65
+2017 high       89.15        79.78    9.37
+2018 low        49.18        -3.62   52.80
+2019 high       87.38        70.77   16.61
+2020 high       76.19        70.91    5.28
+
+-- H. HOW EACH MODE DIES: THE TWO GUNLESS RUNGS ISOLATE SELF-DESTRUCTION --
+
+duck_L and spin_L are losses to an opponent that NEVER FIRES, so each one is
+the champion killing itself on a wall, on a ram, or by spending its own bar.
+taken_in_L is mean bullet damage absorbed in LOST matches, whole units, against
+a 100-unit bar; under 100 means bullets alone did not do it, but firing cost
+and collisions are in that gap too and are not separated here.
+
+              gunless rungs        vs circle_strafer      vs predictive_gun
+seed  mode  duck_L spin_L duck_D    L   taken_in_L        L   taken_in_L
+2001 high       3      2      7     0        0.00        4       95.50
+2002 high       0      8      0     0        0.00        9      105.75
+2003 high       0      3      1     0        0.00        0        0.00
+2004 high       0      1      0     0        0.00        1       72.00
+2005 high       1      9      0     0        0.00        1       82.00
+2006 high       0      5      0     0        0.00        1       82.00
+2007 low        0      0      0    37       79.22       67       84.18
+2008 high       0      2      0     0        0.00        4       94.50
+2009 low        0      0      0    31       72.25       66       83.90
+2010 high       0     10      0     0        0.00        2       84.90
+2011 low        0      1      0    33       60.25       74       80.50
+2012 high       0      1      0     0        0.00        0        0.00
+2013 high       0      3      8     0        0.00        0        0.00
+2014 low        0      0      0    41       76.26       67       81.40
+2015 low        0      0      0    20       56.87       93       79.96
+2016 mid        1      3      0    20       63.88       32       71.05
+2017 high       0      1      4     0        0.00        0        0.00
+2018 low        0      0      0    20       82.50       62       87.42
+2019 high       0      4      0     0        0.00        3       99.13
+2020 high       0      2      0     0        0.00        2       76.89
+
+-- I. THE INVERSION: THE FLOOR BOT'S ORDERING AGAINST THE CHAMPIONS' OWN --
+
+Read from programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt,
+the machine-readable term at its foot, 80 starts and 160 matches per cell.
+xp_mean = the row mean over the 19 opponents, diagonal dropped. copeland =
+opponents this champion has a POSITIVE margin against, of 19.
+
+seed  mode   heldout_W  xp_mean  copeland
+2016 mid       0.8000   0.8352        18
+2015 low       0.4188   0.6918        17
+2020 high      0.9875   0.6352        14
+2017 high      1.0000   0.5977        13
+2010 high      0.9875   0.5829        10
+2007 low       0.5813   0.5487        13
+2003 high      1.0000   0.5457        10
+2014 low       0.5813   0.5211        13
+2013 high      0.9750   0.5135         9
+2011 low       0.5375   0.5118        12
+2012 high      1.0000   0.4934        10
+2018 low       0.6062   0.4852        11
+2009 low       0.5750   0.4609         7
+2006 high      0.9938   0.4467         8
+2004 high      0.9938   0.3704         6
+2001 high      0.9750   0.3668         5
+2019 high      0.9812   0.3447         4
+2002 high      0.9375   0.3414         2
+2008 high      0.9750   0.3201         4
+2005 high      0.9938   0.2316         1
+
+Spearman rho between held-out W against the floor bot and xp_mean over the
+same 20 champions = -0.1451
+group means:  low mode xp_mean = 0.5366   high mode xp_mean = 0.4454   2016 = 0.8352
+low-mode rows against high-mode columns, mean win rate = 0.5772
+high-mode rows against low-mode columns, mean win rate = 0.4020
+THE UNIT OF EVIDENCE IS THE PAIRING, NOT THE MATCH: of the 6 x 13 = 78
+low-against-high pairings, the LOW champion holds the positive margin in
+57. Sign test against 39, two tailed, p = 0.0001, AND THAT p IS OPTIMISTIC:
+the 78 pairings share 19 champions, so they are not 78 independent draws.
+Rank test on the same claim at the level of CHAMPIONS is much weaker: the
+6 low-mode seeds hold xp_mean ranks [2,6,8,10,12,13] of 20, rank sum 51 against an
+expected 63, so the group-level ordering is suggestive at best.
+
+-- J. WHEN THE MODE IS DECIDED, AND WHETHER THE OTHER ARMS SHOW IT --
+
+Read from /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_floor_feed.txt, which is byte-identical to the signed
+insight feed insights/066-raw-competence-floor.txt.
+
+ARM S held-out W at each checkpoint, from the feed's arm S block.
+
+seed  mode      10k      25k      50k   50k-10k
+2001 high    0.73750  0.98125  0.97500   0.23750
+2002 high    0.96250  0.95000  0.93750  -0.02500
+2003 high    1.00000  1.00000  1.00000   0.00000
+2004 high    0.81875  0.96875  0.99375   0.17500
+2005 high    0.91875  0.97500  0.99375   0.07500
+2006 high    0.94375  0.97500  0.99375   0.05000
+2007 low     0.60000  0.50000  0.58125  -0.01875
+2008 high    0.68125  0.94375  0.97500   0.29375
+2009 low     0.53125  0.60000  0.57500   0.04375
+2010 high    0.91875  1.00000  0.98750   0.06875
+2011 low     0.53125  0.56875  0.53750   0.00625
+2012 high    0.86875  0.97500  1.00000   0.13125
+2013 high    1.00000  0.98750  0.97500  -0.02500
+2014 low     0.50000  0.52500  0.58125   0.08125
+2015 low     0.45000  0.37500  0.41875  -0.03125
+2016 mid     0.55625  0.68750  0.80000   0.24375
+2017 high    0.98125  0.99375  1.00000   0.01875
+2018 low     0.48750  0.60625  0.60625   0.11875
+2019 high    0.92500  0.98750  0.98125   0.05625
+2020 high    0.98750  0.93125  0.98750   0.00000
+
+SEPARATION AT EACH CHECKPOINT, low mode (6 seeds) against high mode (13):
+  10k  low max = 0.60000   high min = 0.68125   separated = true
+  25k  low max = 0.60625   high min = 0.93125   separated = true
+  50k  low max = 0.60625   high min = 0.93750   separated = true
+
+2016, the one seed in neither mode, sits INSIDE the low range at 10k and
+climbs out: 0.55625 -> 0.68750 -> 0.80000. It is a slow high-mode seed, not a third attractor, and it
+had not stopped climbing when the budget ran out.
+
+THE SAME SPLIT IN THE OTHER TWO ARMS, counted off the addendum's per-seed
+W lines. LOW is held-out W below 0.62, the empirical gap in arm S.
+
+  arm S : 20 seeds, 6 low, min W = 0.4188, low seeds = [2007,2009,2011,2014,2015,2018]
+  arm L : 10 seeds, 2 low, min W = 0.5062, low seeds = [2007,2008]
+  arm D : 10 seeds, 0 low, min W = 0.8625, low seeds = []
+
+Arm D is the SAME optimiser and the SAME topology as arm S with the
+curriculum removed, rung 5 only. Fisher exact, one tailed, arm S 6 of 20
+low against arm D 0 of 10 low: p = 0.0653. Ladder arms pooled (S and L)
+8 of 30 against arm D 0 of 10: p = 0.0761. SUGGESTIVE, not established.
+
+-- K. THE COINCIDENCE, TESTED ON THE 30 CALIBRATION STARTS --
+
+A start set no champion was ever measured on, same generator, indices 87..116.
+
+  parity on calibration : 60 matches, W/L/D = 26/26/8, P_cal = 0.43333
+  structural prediction : a low-mode champion scores 1 - P_cal = 0.56667,
+                          which on 60 matches is 34 wins, and NOTHING else
+
+seed  mode      W    L    D    W_rate   hits_prediction
+2001 high      58    2    0   0.96667           false
+2002 high      57    3    0   0.95000           false
+2003 high      59    0    1   0.98333           false
+2004 high      60    0    0   1.00000           false
+2005 high      59    1    0   0.98333           false
+2006 high      60    0    0   1.00000           false
+2007 low       29   31    0   0.48333           false
+2008 high      59    1    0   0.98333           false
+2009 low       24   36    0   0.40000           false
+2010 high      59    1    0   0.98333           false
+2011 low       35   25    0   0.58333           false
+2012 high      60    0    0   1.00000           false
+2013 high      60    0    0   1.00000           false
+2014 low       35   25    0   0.58333           false
+2015 low       30   30    0   0.50000           false
+2016 mid       47   13    0   0.78333           false
+2017 high      60    0    0   1.00000           false
+2018 low       38   22    0   0.63333           false
+2019 high      59    1    0   0.98333           false
+2020 high      58    2    0   0.96667           false
+
+HITS on the held-out 80 (section B): seeds 2007 and 2014 at exactly 93 = 1-P,
+seed 2015 at exactly 67 = P. HITS here: 0 of the 6 low-mode seeds.
+

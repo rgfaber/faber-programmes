@@ -68,6 +68,9 @@
 %% Kill gates and cheap instrument checks. Exported separately from the study so
 %% they can be run BEFORE any compute is committed.
 -export([crossplay/0, crossplay/1]).
+%% The post-hoc addendum: the dropped won_opp_shots column and arm C's attempt
+%% accounting, recomputed from the archive and APPENDED to the feed.
+-export([addendum/0, addendum/1]).
 -export([gates/0, gates/1]).
 %% Protocol step 2: the frozen constants. Scripted bots only, no pilot involved.
 -export([constants/0, constants/1]).
@@ -104,6 +107,10 @@
 -define(BOOT_SEED, 66).
 -define(BOOT_N, 10000).
 -define(NEG_INF, -1.0e308).
+%% The cross-play probe's synthetic nulls and its subsampling are the only places
+%% in this runner where a REPORTED number comes off rand, so the seed is fixed and
+%% named: the probe's report must be reproducible from the archived champions.
+-define(XP_SEED, 660).
 
 %% robo_match_tests' golden match vector, restated so this runner asserts by
 %% RECOMPUTATION that the engine is untouched rather than trusting that it is.
@@ -942,10 +949,18 @@ flags(Rs, K, Inert) ->
      %% Read ONLY when there is a won match to read it on: with no wins the mean
      %% is UNDEFINED, not zero, and a modifier that fires on every zero-win arm
      %% would label exactly the verdicts it says nothing about.
-     {'IF-12 RADAR-STARVED',
-      Med#res.w > 0.0 andalso Med#res.won_opp_shots < 0.25 * maps:get(s_par, K),
+     {'IF-12 RADAR-STARVED', if12(Med, K),
       "MODIFIER; the champion won by staying out of the beam, a DIFFERENT finding"},
      {'note median W_s', median(Ws), "the primary endpoint"}].
+
+%% IF-12's predicate, named ONCE. The post-hoc addendum re-evaluates this flag from
+%% the archive because the original per-seed emit dropped the column it reads, and
+%% the flag must not be restated there in a second copy that could drift from this
+%% one.
+if12(Med, K) ->
+    Med#res.w > 0.0 andalso Med#res.won_opp_shots < 0.25 * maps:get(s_par, K).
+
+if12_threshold(K) -> 0.25 * maps:get(s_par, K).
 
 %% Median W_s at the last checkpoint minus the median at the one before it.
 budget_gain(Rs) ->
@@ -1151,42 +1166,548 @@ champion_read(Path) ->
 %%% population, and cycling could still appear once opponents co-adapt. A matrix
 %%% with loops in it is the encouraging case and still proves nothing on its own.
 %%%============================================================================
+%%% WHAT THE FIRST PASS OF THIS PROBE GOT WRONG, and it was found by a CLAIM
+%%% gate, not by reading. Six defects, all of them in the RECORD rather than in
+%%% the arithmetic:
+%%%
+%%%   1. IT PERSISTED NOTHING. crossplay/1 returned a map to a shell and wrote no
+%%%      file, so the numbers a draft insight quoted existed on no disk anywhere.
+%%%      In this corpus the signed insight PLUS the persisted feed IS the record,
+%%%      so that made the headline unsignable however true it was. Everything
+%%%      below is written to xp_out.
+%%%   2. THE RUN CONFIGURATION WAS UNRECOVERABLE. The default was 12 held-out
+%%%      starts, a draft said 6, and nothing on disk said which. xp_starts now
+%%%      defaults to ALL 80 and the count is written into the report.
+%%%   3. THE EDGES WERE ONE FLIPPED MATCH WIDE. At 6 starts a cell holds 12
+%%%      matches, so a margin moves in steps of 2/12 = 0.167 and a single flipped
+%%%      match jumps clean across the 0.10 band the counter reads. At 80 starts a
+%%%      cell holds 160 matches and one flip moves a margin by 0.0125, which is
+%%%      an eighth of the band. The granularity is now computed and reported so a
+%%%      reader can see it rather than derive it.
+%%%   4. "100 TRIPLES" WAS NOT 100 CYCLES. exp057's counter is over ORDERED
+%%%      tuples and counts one cyclic triangle TWICE or ONCE depending on the
+%%%      cycle's orientation against index order. Both counts are now reported,
+%%%      with the identity that bridges them CHECKED rather than asserted.
+%%%   5. THE RANDOM NULL WAS ONE SYNTHETIC SEED where an exact number exists.
+%%%      The analytic expectation is now derived, and two empirical nulls are run
+%%%      over many seeds: a sign-only one (every edge decisive) and a
+%%%      MATCH-LEVEL one at this cell size, which are different references and
+%%%      were being conflated.
+%%%   6. THE exp057 COMPARISON WAS NOT LIKE FOR LIKE. Its zero is a median over
+%%%      runs of a count over 10 GENERATIONAL CHECKPOINTS OF ONE RUN, an object
+%%%      set pre-ordered by monotone progress and therefore transitivity-biased
+%%%      BY CONSTRUCTION, over 45 pairs and 360 ordered candidates. This probe
+%%%      has 20 INDEPENDENT equal-budget peers, 190 pairs and 3,420 ordered
+%%%      candidates: 9.5x the candidate count. An n-MATCHED subsample
+%%%      distribution is now reported, which is the only count comparable to it,
+%%%      and the substrate difference is still not separable from the object-set
+%%%      difference by this probe.
+%%%
+%%% THE DRAW SHARE was measured on a 4-champion 4-start corner of the matrix and
+%%% quoted as if it covered the matrix. It is now the true share over every match
+%%% played.
 crossplay() -> crossplay(#{}).
 
 crossplay(Opts0) ->
     Opts = merged(Opts0),
-    Champs = champion_read(archive_path(Opts, s)),
-    Starts = lists:sublist(heldout_starts(Opts), maps:get(xp_starts, Opts, 12)),
-    Nets = [{net, L, Q} || {champion, _A, _S, L, Q, _F, _E} <- Champs],
-    N = length(Nets),
-    G = list_to_tuple(Nets),
-    Idx = lists:seq(1, N),
-    %% Score(I,J) = I's win rate against J, both seats, so seat advantage cancels.
-    Cell = fun(I, J) -> win_rate(duels(element(I, G), element(J, G), Starts)) end,
-    Mtx = maps:from_list([{{I, J}, Cell(I, J)} || I <- Idx, J <- Idx, I =/= J]),
-    Mg = fun(I, J) -> maps:get({I, J}, Mtx, 0.0) - maps:get({J, I}, Mtx, 0.0) end,
-    Pairs = [{I, J} || I <- Idx, J <- Idx, I < J],
-    Trip = fun(B) -> length([1 || A <- Idx, X <- Idx, C <- Idx, A < X, A =/= C, X =/= C,
-                                  Mg(A, X) > B, Mg(X, C) > B, Mg(C, A) > B]) end,
-    Dec = fun(B) -> length([1 || {I, J} <- Pairs, abs(Mg(I, J)) > B]) end,
-    #{champions => N, starts => length(Starts), pairs => length(Pairs),
-      triples => #{5 => Trip(0.05), 10 => Trip(0.10), 15 => Trip(0.15)},
-      decisive => #{5 => Dec(0.05), 10 => Dec(0.10), 15 => Dec(0.15)},
-      margin_spread => spread([Mg(I, J) || {I, J} <- Pairs]),
-      draw_share => draw_share(Nets, Starts)}.
+    Champs = champion_read(maps:get(xp_champions, Opts)),
+    Starts = lists:sublist(heldout_starts(Opts), maps:get(xp_starts, Opts)),
+    Seeds = [S || {champion, _A, S, _L, _Q, _F, _E} <- Champs],
+    G = list_to_tuple([{net, L, Q} || {champion, _A, _S, L, Q, _F, _E} <- Champs]),
+    N = tuple_size(G),
+    %% The seat-symmetry self-check runs FIRST, on three pairs, because the whole
+    %% matrix is derived from the I<J half and a wrong derivation would make every
+    %% number below wrong after minutes of compute rather than seconds.
+    Sym = xp_symmetry(G, Starts),
+    Cells = pmap(fun({I, J}) -> xp_cell(G, Starts, I, J) end,
+                 xp_pairs(lists:seq(1, N)), maps:get(workers, Opts)),
+    Mtx = xp_matrix(N, Cells),
+    Repro = xp_repro(G, Opts, maps:get(xp_repro_starts, Opts)),
+    Report = xp_report(Opts, N, Seeds, Starts, Sym, Cells, Mtx, Repro),
+    ok = xp_write(maps:get(xp_out, Opts), Report),
+    Report.
+
+%%% THE FIRST PASS'S NUMBER, REPRODUCED, because a number whose configuration is
+%%% unknown is worse than no number. The draft insight quoted 100 intransitive
+%%% triples at band 0.10 and 170 decisive edges of 190, and said the probe ran 6
+%%% held-out starts, while the runner's default was 12; nothing was written to disk,
+%%% so the record could not settle it. Replaying the archived champions at 6 starts
+%%% returns exactly 100 and exactly 170, so THE FIRST PASS RAN 6 STARTS, 12 matches
+%%% per cell. Recovered by reproduction, since it could not be recovered by reading.
+%%%
+%%% It also shows what that cell size did to the band sweep, which is the reason
+%%% exp057 sweeps three bands at all: at 12 matches per cell a margin is a multiple
+%%% of 1/12, so NO representable margin lies between 0.10 and 0.15 and those two
+%%% bands are the SAME TEST. Two of the three bands were not independent readings.
+xp_repro(_G, _Opts, none) -> {as_run_reproduction, [{ran, none}]};
+xp_repro(G, Opts, S) ->
+    N = tuple_size(G),
+    Starts = lists:sublist(heldout_starts(Opts), S),
+    Cells = pmap(fun({I, J}) -> xp_cell(G, Starts, I, J) end,
+                 xp_pairs(lists:seq(1, N)), maps:get(workers, Opts)),
+    Mtx = xp_matrix(N, Cells),
+    {as_run_reproduction,
+     [{starts, S},
+      {why, "the first pass persisted nothing; this identifies the configuration "
+            "behind the 100 triples and 170 decisive edges a draft quoted"},
+      xp_grain(element(7, hd(Cells))),
+      xp_draws(Cells),
+      {counts, [xp_band(xp_mg(Mtx), lists:seq(1, N), B) || B <- xp_bands()]}]}.
 
 duels(A, B, Starts) -> [O || St <- Starts, O <- duel(A, B, St)].
+
+xp_pairs(Idx) -> [{I, J} || I <- Idx, J <- Idx, I < J].
+
+xp_triples(Idx) -> [{I, J, K} || I <- Idx, J <- Idx, K <- Idx, I < J, J < K].
+
+%% Score(I,J) = I's win rate against J over BOTH SEATS at every start, so seat
+%% advantage cancels. One cell yields the reverse cell too: duel/3 plays seat a and
+%% seat b, the engine is deterministic, so the two games behind cell {J,I} are
+%% BYTE-IDENTICAL to the two behind {I,J} and differ only in which side reports.
+%% W(J,I) is therefore L(I,J) exactly, which halves the matches from 60,800 to
+%% 30,400. xp_symmetry/2 proves it rather than assuming it.
+xp_cell(G, Starts, I, J) ->
+    Os = duels(element(I, G), element(J, G), Starts),
+    {W, L, D} = rates(Os),
+    {cell, I, J, W, L, D, length(Os)}.
+
+xp_symmetry(G, Starts) ->
+    Probe = lists:sublist(xp_pairs(lists:seq(1, tuple_size(G))), 3),
+    Checks = [xp_symmetry_one(G, Starts, P) || P <- Probe],
+    lists:all(fun({sym, _I, _J, Ok}) -> Ok end, Checks)
+        orelse error({seat_symmetry_broken, Checks}),
+    Checks.
+
+xp_symmetry_one(G, Starts, {I, J}) ->
+    {cell, I, J, W, L, D, _M} = xp_cell(G, Starts, I, J),
+    {cell, J, I, RW, RL, RD, _RM} = xp_cell(G, Starts, J, I),
+    {sym, I, J, {RW, RL, RD} =:= {L, W, D}}.
+
+%% Tuples, not a map: this matrix is written to disk and read back, and
+%% term_to_binary is not canonical over maps.
+xp_matrix(N, Cells) ->
+    Idx = lists:seq(1, N),
+    list_to_tuple([list_to_tuple([xp_at(Cells, I, J) || J <- Idx]) || I <- Idx]).
+
+xp_at(_Cells, I, I) -> 0.0;
+xp_at(Cells, I, J) when I < J -> element(4, lists:keyfind(J, 3, xp_row(Cells, I)));
+xp_at(Cells, I, J) -> element(5, lists:keyfind(I, 3, xp_row(Cells, J))).
+
+xp_row(Cells, I) -> [C || C <- Cells, element(2, C) =:= I].
+
+wr(M, I, J) -> element(J, element(I, M)).
+
+xp_mg(M) -> fun(I, J) -> wr(M, I, J) - wr(M, J, I) end.
+
+%%% THE TWO COUNTS, and why both are needed.
+%%%
+%%% xp_ordered/3 is exp057's counter, character for character, so this probe is
+%%% comparable to the bare-grid zero rather than measured with a new ruler. It
+%%% counts ORDERED tuples (A,X,C) with A<X, and one cyclic triangle p<q<r
+%%% therefore contributes TWICE when the cycle runs p->q->r->p (rotations (p,q,r)
+%%% and (q,r,p) both satisfy A<X) and ONCE when it runs p->r->q->p (only (p,r,q)
+%%% does). The count is 2*forward + backward and is NOT a cycle count.
+%%%
+%%% xp_cycles/3 counts unordered cyclic TRIANGLES, which is what "there is a
+%%% rock-paper-scissors pocket here" means. Margins are antisymmetric, so for any
+%%% band at or above zero "beats by more than the band" is an asymmetric relation
+%%% and a triangle on three distinct vertices is cyclic in exactly one of two
+%%% orientations: the two clauses below are mutually exclusive by construction, so
+%%% their sum is the cycle count and no division by a guessed factor is involved.
+xp_ordered(Mg, Idx, B) ->
+    length([1 || A <- Idx, X <- Idx, C <- Idx, A < X, A =/= C, X =/= C,
+                 Mg(A, X) > B, Mg(X, C) > B, Mg(C, A) > B]).
+
+xp_cycles(Mg, Idx, B) ->
+    Tri = xp_triples(Idx),
+    Fwd = length([1 || {I, J, K} <- Tri, Mg(I, J) > B, Mg(J, K) > B, Mg(K, I) > B]),
+    Bwd = length([1 || {I, J, K} <- Tri, Mg(I, K) > B, Mg(K, J) > B, Mg(J, I) > B]),
+    {Fwd, Bwd}.
+
+%% Reported per band with the bridge between the two counters CHECKED, because an
+%% arithmetic claim in a record should be recomputed rather than argued.
+xp_band(Mg, Idx, B) ->
+    {Fwd, Bwd} = xp_cycles(Mg, Idx, B),
+    Ord = xp_ordered(Mg, Idx, B),
+    Dec = length([1 || {I, J} <- xp_pairs(Idx), abs(Mg(I, J)) > B]),
+    {at_band, B, [{ordered_exp057, Ord}, {unordered_cycles, Fwd + Bwd},
+               {forward, Fwd}, {backward, Bwd},
+               {identity_2f_plus_b_equals_ordered, 2 * Fwd + Bwd =:= Ord},
+               {decisive_edges, Dec}, {of_pairs, length(xp_pairs(Idx))}]}.
+
+xp_bands() -> [0.05, 0.10, 0.15].
+
+%%% THE NULLS. Three references, and they are NOT interchangeable; the first pass
+%%% quoted one number for all three.
+%%%
+%%% ANALYTIC. For a tournament whose every edge is decisive and independently
+%%% oriented by a fair coin, an unordered triple is cyclic with probability 2/8,
+%%% so E[cycles] = C(N,3)/4, and forward and backward orientations are equally
+%%% likely, so E[ordered] = C(N,3) * (2 + 1) / 8 = 3*C(N,3)/8. At N=20 that is
+%%% 285.0 cycles and 427.5 ordered tuples, exactly, at every band the edges clear.
+%%%
+%%% SIGN-ONLY, empirical. The same model sampled, to confirm the analytic value
+%%% and give its spread. This is the reference the draft's single "452" belongs to.
+%%%
+%%% MATCH-LEVEL, empirical, AT THIS CELL SIZE. Coin-flip play over the real number
+%%% of matches per cell, so a margin is 2K/M - 1 for K wins of M and most edges
+%%% are NOT decisive at a 0.10 band. This is the honest coin-flip reference for a
+%%% BANDED count and it is far below the sign-only one; conflating them
+%%% understates how intransitive a banded count of 100-odd actually is.
+xp_null_analytic(N) ->
+    C3 = N * (N - 1) * (N - 2) / 6,
+    {null_analytic, [{model, "fair coin per edge, every edge decisive"},
+                     {c_n_3, C3},
+                     {expected_unordered_cycles, C3 / 4},
+                     {expected_ordered_exp057, 3 * C3 / 8}]}.
+
+xp_null_sign(N, Draws) ->
+    Idx = lists:seq(1, N),
+    Ms = [xp_from_pairs(N, [{I, J, xp_coin()} || {I, J} <- xp_pairs(Idx)])
+          || _ <- lists:seq(1, Draws)],
+    {null_sign_only, [{model, "fair coin per edge, margin +/-1.0, all edges decisive"},
+                      {draws, Draws} | xp_null_stats(Ms, Idx)]}.
+
+xp_null_match(N, Draws, M) ->
+    Idx = lists:seq(1, N),
+    Ms = [xp_from_pairs(N, [{I, J, xp_flips(M) * 2.0 / M - 1.0} || {I, J} <- xp_pairs(Idx)])
+          || _ <- lists:seq(1, Draws)],
+    {null_match_level, [{model, "fair coin per MATCH, " ++ integer_to_list(M) ++ " per cell"},
+                        {draws, Draws} | xp_null_stats(Ms, Idx)]}.
+
+xp_null_stats(Ms, Idx) ->
+    [{at_band, B, [{ordered_median, median([xp_ordered(xp_mg(M), Idx, B) || M <- Ms])},
+                {ordered_range, spread([xp_ordered(xp_mg(M), Idx, B) || M <- Ms])},
+                {cycles_median, median([xp_cyc_n(M, Idx, B) || M <- Ms])},
+                {cycles_range, spread([xp_cyc_n(M, Idx, B) || M <- Ms])}]}
+     || B <- xp_bands()].
+
+xp_cyc_n(M, Idx, B) ->
+    {F, Bw} = xp_cycles(xp_mg(M), Idx, B),
+    F + Bw.
+
+xp_coin() -> element(rand:uniform(2), {-1.0, 1.0}).
+
+xp_flips(M) -> length([1 || _ <- lists:seq(1, M), rand:uniform(2) =:= 1]).
+
+%% A margin matrix from its I<J half. Antisymmetric by construction, so no
+%% synthetic tournament can accidentally be built with two winners on one edge.
+xp_from_pairs(N, Vals) ->
+    Look = maps:from_list(lists:append([[{{I, J}, V}, {{J, I}, -V}] || {I, J, V} <- Vals])),
+    Idx = lists:seq(1, N),
+    list_to_tuple([list_to_tuple([maps:get({I, J}, Look, 0.0) || J <- Idx]) || I <- Idx]).
+
+%%% THE n-MATCHED COMPARISON. exp057's zero was counted over 10 objects and 45
+%%% pairs; this matrix has 20 objects and 190 pairs, and a count over 3,420
+%%% ordered candidates cannot be set beside a count over 360. Random 10-champion
+%%% subsamples of THIS matrix give the distribution of the same counter at the same
+%%% n, which is the only number comparable to it. What that comparison still
+%%% cannot separate is the SUBSTRATE from the OBJECT SET: exp057's ten objects were
+%%% successive generations of one coevolutionary run, pre-ordered by monotone
+%%% progress and so biased toward transitivity before any arithmetic ran.
+xp_subsample(Mtx, N, Sub, Draws) ->
+    Mg = xp_mg(Mtx),
+    Sets = [xp_pick(N, Sub) || _ <- lists:seq(1, Draws)],
+    {subsample, [{n, Sub}, {draws, Draws},
+                 {pairs, length(xp_pairs(lists:seq(1, Sub)))},
+                 {exp057_object_count, 10}, {exp057_pairs, 45}
+                 | [{at_band, B, [{ordered_median, median([xp_ordered(Mg, S, B) || S <- Sets])},
+                               {ordered_range, spread([xp_ordered(Mg, S, B) || S <- Sets])},
+                               {ordered_zero_draws,
+                                length([1 || S <- Sets, xp_ordered(Mg, S, B) =:= 0])},
+                               {cycles_median, median([xp_sub_cyc(Mg, S, B) || S <- Sets])},
+                               {cycles_range, spread([xp_sub_cyc(Mg, S, B) || S <- Sets])}]}
+                    || B <- xp_bands()]]}.
+
+xp_sub_cyc(Mg, S, B) ->
+    {F, Bw} = xp_cycles(Mg, S, B),
+    F + Bw.
+
+xp_pick(N, Sub) ->
+    lists:sort(lists:sublist([X || {_K, X} <- lists:sort([{rand:uniform(), I}
+                                                          || I <- lists:seq(1, N)])], Sub)).
 
 spread([]) -> {0.0, 0.0};
 spread(Xs) -> {lists:min(Xs), lists:max(Xs)}.
 
-%% If champions mostly draw with each other, the matrix is uninformative whatever
-%% its triple count, so this is reported beside it rather than left to be assumed.
-draw_share(Nets, Starts) ->
-    Os = [O || A <- lists:sublist(Nets, 4), B <- lists:sublist(Nets, 4), A =/= B,
-               St <- lists:sublist(Starts, 4), O <- duel(A, B, St)],
-    {_W, _L, D} = rates(Os),
-    D.
+%% The draw share over EVERY match played, not a corner of the matrix. Draws are
+%% symmetric, so counting each unordered pair once is the whole matrix.
+xp_draws(Cells) ->
+    Total = lists:sum([element(7, C) || C <- Cells]),
+    Drawn = lists:sum([element(6, C) * element(7, C) || C <- Cells]),
+    {draws, [{matches, Total}, {count, round(Drawn)},
+             {share, Drawn / max(1, Total)}]}.
+
+%% Granularity: what one flipped match does to a margin, against the band the
+%% counter reads. This is the number that decides whether an edge can be an
+%% artifact, and the first pass never computed it.
+xp_grain(M) ->
+    {granularity, [{matches_per_cell, M}, {win_rate_step, 1.0 / M},
+                   {one_flipped_match_moves_margin_by, 2.0 / M},
+                   {narrowest_band, 0.05}, {headline_band, 0.10},
+                   {flips_to_cross_headline_band, ceil(0.10 * M / 2.0)}]}.
+
+xp_edges(Mg, Idx) ->
+    As = [abs(Mg(I, J)) || {I, J} <- xp_pairs(Idx)],
+    {edges, [{min_abs_margin, lists:min(As)}, {max_abs_margin, lists:max(As)},
+             {median_abs_margin, median(As)},
+             {signed_spread, spread([Mg(I, J) || {I, J} <- xp_pairs(Idx)])},
+             {hist_abs_margin,
+              [{'0.000-0.050', length([1 || A <- As, A =< 0.05])},
+               {'0.050-0.100', length([1 || A <- As, A > 0.05, A =< 0.10])},
+               {'0.100-0.150', length([1 || A <- As, A > 0.10, A =< 0.15])},
+               {'0.150-1.000', length([1 || A <- As, A > 0.15])}]}]}.
+
+xp_report(Opts, N, Seeds, Starts, Sym, Cells, Mtx, Repro) ->
+    Idx = lists:seq(1, N),
+    Mg = xp_mg(Mtx),
+    M = element(7, hd(Cells)),
+    %% Bound in sequence, not inside the literal below: they share one rand state
+    %% and Erlang does not promise an evaluation order for list elements, so the
+    %% report would not be reproducible if the order were left to the compiler.
+    _ = rand:seed(exsss, {?XP_SEED, ?XP_SEED * 7 + 1, ?XP_SEED * 13 + 3}),
+    Sign = xp_null_sign(N, maps:get(xp_null_draws, Opts)),
+    Match = xp_null_match(N, maps:get(xp_null_draws, Opts), M),
+    Sub = xp_subsample(Mtx, N, maps:get(xp_sub_n, Opts), maps:get(xp_sub_draws, Opts)),
+    {crossplay,
+     [{date, "2026-07-30"},
+      {status, "EXPLORATORY, NOT pre-registered, SIGNS NOTHING on its own"},
+      {engine_pin, "a5e8bcfc5646827e9be49a9629f8a6a9678c814b"},
+      %% Named, because the as-run runner archived beside this file does NOT contain
+      %% this probe: the version that produced the arms' numbers on 2026-07-29 held
+      %% the first pass, which persisted nothing. The arms are untouched by the
+      %% amendment; only the probe and one dropped emit field changed.
+      {produced_by, "experiments/exp066_single_population_floor_tests.erl, AMENDED "
+                    "2026-07-30 after a CLAIM gate; same engine pin, arms not re-run"},
+      {champions_file, maps:get(xp_champions, Opts)},
+      {champions, N}, {seeds, Seeds},
+      {starts, length(Starts)}, {pairs, length(xp_pairs(Idx))},
+      {ordered_candidates, length(xp_pairs(Idx)) * (N - 2)},
+      {unordered_triples, length(xp_triples(Idx))},
+      {total_matches, lists:sum([element(7, C) || C <- Cells])},
+      {seat_symmetry_selfcheck, Sym},
+      xp_grain(M),
+      xp_draws(Cells),
+      xp_edges(Mg, Idx),
+      {counts, [xp_band(Mg, Idx, B) || B <- xp_bands()]},
+      xp_null_analytic(N), Sign, Match, Sub, Repro,
+      {matrix_note, "row I = champion I's win rate against champion J, both seats, "
+                    "all starts; diagonal 0.0; margin(I,J) = W(I,J) - W(J,I)"},
+      {matrix, [{row, I, lists:nth(I, Seeds),
+                 [wr(Mtx, I, J) || J <- Idx]} || I <- Idx]}]}.
+
+%%% THE PROBE IS NOW A RECORD. Human-readable, tuples and lists only, no maps
+%%% anywhere in it, written where the archive keeps the rest of EXP-066.
+xp_write(Path, {crossplay, Fields}) ->
+    {ok, Fd} = file:open(Path, [write]),
+    io:format(Fd, "== EXP-066 exploratory CROSS-PLAY probe: the 20 arm-S champions "
+                  "against one another ==~n~n", []),
+    [xp_line(Fd, F) || F <- Fields],
+    io:format(Fd, "~n== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) =="
+                  "~n~w.~n", [{crossplay, Fields}]),
+    file:close(Fd).
+
+xp_line(Fd, {matrix, Rows}) ->
+    io:format(Fd, "~nmatrix (win rate of ROW against COLUMN):~n", []),
+    [io:format(Fd, "  seed ~p : ~s~n", [S, xp_nums(Ws)]) || {row, _I, S, Ws} <- Rows],
+    io:format(Fd, "~n", []);
+xp_line(Fd, {at_band, B, Kvs}) ->
+    io:format(Fd, "    band ~.2f : ~p~n", [B, Kvs]);
+xp_line(Fd, {Key, [H | _] = Kvs}) when is_tuple(H) ->
+    io:format(Fd, "~n~p:~n", [Key]),
+    [xp_sub(Fd, Kv) || Kv <- Kvs];
+xp_line(Fd, {Key, V}) ->
+    io:format(Fd, "~p = ~p~n", [Key, V]).
+
+xp_sub(Fd, {at_band, B, Kvs}) -> xp_line(Fd, {at_band, B, Kvs});
+xp_sub(Fd, {K, [H | _] = Kvs}) when is_tuple(H) ->
+    io:format(Fd, "    ~p:~n", [K]),
+    [xp_deep(Fd, Kv) || Kv <- Kvs];
+xp_sub(Fd, {K, V}) -> io:format(Fd, "    ~p = ~p~n", [K, V]);
+xp_sub(Fd, Other) -> io:format(Fd, "    ~p~n", [Other]).
+
+xp_deep(Fd, {at_band, B, Kvs}) -> io:format(Fd, "        band ~.2f : ~p~n", [B, Kvs]);
+xp_deep(Fd, {K, V}) -> io:format(Fd, "        ~p = ~p~n", [K, V]).
+
+xp_nums(Ws) -> lists:join(" ", [io_lib:format("~.4f", [W]) || W <- Ws]).
+
+%%%============================================================================
+%%% THE POST-HOC ADDENDUM. Two things the feed does not contain, appended to it
+%%% rather than argued around.
+%%%
+%%% A. THE DROPPED COLUMN. seed_run/4 computes won_opp_shots, IF-12 reads it, and
+%%%    the per-seed emit dropped it, so the feed carried IF-12's verdict with its
+%%%    evidence absent: nothing on disk could show whether the floor bot ever
+%%%    fired in the champion's won matches. "No modifier" is load-bearing in the
+%%%    headline claim, so this is recomputed from the archived genomes.
+%%%
+%%% B. ARM C's ATTEMPT ACCOUNTING. The pre-registration requires "the attempt
+%%%    count and the full calibration trajectory" in the raw feed. The feed has
+%%%    one line, because the runner holds ONE fixed gains map and no attempt loop.
+%%%    That is stated here as the fact it is. NO further attempts are run: arm C
+%%%    gates nothing after defect fix D9, and tuning it now, knowing the arms
+%%%    cleared, would be calibration after the fact.
+%%%
+%%% RECOMPUTED IS NOT CAPTURED, and the distinction is marked in the text. This
+%%% replays archived champions through the same measurement at the same engine
+%%% pin; it is a re-execution, and the recomputed held-out W is printed beside the
+%%% feed's own value so that agreement is visible rather than assumed.
+%%%============================================================================
+addendum() -> addendum(#{}).
+
+addendum(Opts0) ->
+    Opts = merged(Opts0),
+    K = constants(Opts),
+    Arms = [add_arm(Opts, K, A) || A <- maps:get(addendum_arms, Opts)],
+    C = arm_c(Opts),
+    Lines = add_lines(Opts, K, Arms, C),
+    [ok = add_append(P, Lines) || P <- maps:get(addendum_feeds, Opts)],
+    io:format("~s", [Lines]),
+    {addendum, [{feeds, maps:get(addendum_feeds, Opts)},
+                {arms, [{A, W, if12(Med, K)} || {arm, A, _Rs, Med, W} <- Arms]}]}.
+
+add_append(Path, Lines) ->
+    {ok, Fd} = file:open(Path, [append]),
+    io:format(Fd, "~s", [Lines]),
+    file:close(Fd).
+
+add_path(Opts, Arm) ->
+    maps:get(archive_dir, Opts) ++ "exp066_champions_" ++ atom_to_list(Arm) ++ ".eterm".
+
+add_arm(Opts, K, Arm) ->
+    Held = heldout_starts(Opts),
+    Rows = pmap(fun(Ch) -> add_row(Ch, Held) end,
+                champion_read(add_path(Opts, Arm)), maps:get(workers, Opts)),
+    Med = median_res([R || {arow, R, _Won} <- Rows]),
+    {arm, Arm, Rows, Med, if12(Med, K)}.
+
+add_row({champion, Arm, Seed, Layers, Q, Fit, Evals}, Held) ->
+    Net = {net, Layers, Q},
+    Os = heldout(Net, ?FLOOR, Held),
+    {W, L, D} = rates(Os),
+    Won = [O || #{alive := true, opp_alive := false} = O <- Os],
+    {arow,
+     #res{arm = Arm, seed = Seed, layers = Layers, evals = Evals, fit = Fit, q = Q,
+          w = W, l = L, d = D, margin = mean_margin(Os), caps = cap_share(Os),
+          shots = mean([maps:get(shots, O) || O <- Os]),
+          won_opp_shots = won_opp_shots(Os)},
+     length(Won)}.
+
+add_lines(Opts, K, Arms, C) ->
+    [add_head(Opts),
+     add_part_a(K, Arms),
+     add_part_b(K, C),
+     add_tail()].
+
+add_head(Opts) ->
+    io_lib:format(
+      "~n~n== ADDENDUM, appended 2026-07-30, POST HOC, recomputed from the champion "
+      "archive ==~n~n"
+      "WHAT THIS IS. Everything ABOVE this line was written by run/1 during the run of "
+      "2026-07-29 and NOTHING above it is changed or re-run. Everything below was "
+      "produced afterwards by addendum/1 from the archived champion genomes only, at "
+      "engine pin a5e8bcfc5646827e9be49a9629f8a6a9678c814b, on the same 80 held-out "
+      "starts, and appended because a CLAIM gate on the draft insight found two things "
+      "this feed did not contain.~n~n"
+      "Produced by: experiments/exp066_single_population_floor_tests.erl, AMENDED "
+      "2026-07-30. The as-run copy archived beside the champions does NOT contain "
+      "addendum/1; the amendment adds it, rewrites the cross-play probe so it writes "
+      "a file, and emits the dropped column named in section A. NO ARM WAS RE-RUN and "
+      "the arms' code path is unchanged apart from that one emit.~n"
+      "Archive read: ~s~n"
+      "Recomputation is a RE-EXECUTION of the same measurement, not the captured "
+      "original. Where a number below can be checked against one above, both are "
+      "printed.~n",
+      [maps:get(archive_dir, Opts)]).
+
+add_part_a(K, Arms) ->
+    [io_lib:format(
+       "~n-- A. THE DROPPED won_opp_shots COLUMN, IF-12's raw material --~n~n"
+       "WHY IT IS ABSENT ABOVE. seed_run/4 computes won_opp_shots for every seed and "
+       "the per-seed emit in arm_report/4 did not print it. Every IF-12 line above "
+       "therefore reports a verdict whose evidence is in no record: the feed cannot "
+       "show whether the floor bot ever fired in the champion's WON matches, and "
+       "'the verdict carries no modifier' rests on exactly that. The runner's emit is "
+       "fixed (defect D10) so a future run cannot drop it; these values are recovered.~n~n"
+       "S_par (predictive_gun's shots per match against its own CLONE, recomputed) = ~.2f~n"
+       "IF-12 threshold = 0.25 * S_par = ~.4f shots. IF-12 reads the MEDIAN champion "
+       "by held-out W, by median_res/1, NOT the arm's mean.~n"
+       "won_matches is the support of the mean: won_opp_shots is a mean over the "
+       "champion's won matches ONLY, and is UNDEFINED, not zero, at zero wins.~n",
+       [maps:get(s_par, K), if12_threshold(K)]),
+     [add_arm_lines(K, A) || A <- Arms]].
+
+add_arm_lines(K, {arm, Arm, Rows, Med, Fired}) ->
+    Ws = [R#res.won_opp_shots || {arow, R, _Won} <- Rows],
+    [io_lib:format("~narm ~s, ~p archived champions, recomputed. Compare each W with the "
+                   "same seed's W in the arm ~s block above: agreement is evidence the "
+                   "archived genome IS the champion the feed measured, and the recomputed "
+                   "column beside it is therefore that champion's.~n",
+                   [string:uppercase(atom_to_list(Arm)), length(Rows),
+                    string:uppercase(atom_to_list(Arm))]),
+     [io_lib:format("  seed ~p  W=~.4f  won_opp_shots=~.2f  won_matches=~p  "
+                    "shots=~.2f  margin=~.2f~n",
+                    [R#res.seed, R#res.w, R#res.won_opp_shots, Won, R#res.shots,
+                     R#res.margin])
+      || {arow, R, Won} <- Rows],
+     io_lib:format("  won_opp_shots over the arm: min=~.2f median=~.2f max=~.2f ; "
+                   "seeds individually below the threshold = ~p of ~p~n",
+                   [lists:min(Ws), median(Ws), lists:max(Ws),
+                    length([1 || X <- Ws, X < if12_threshold(K)]), length(Ws)]),
+     io_lib:format("  MEDIAN CHAMPION = seed ~p, W=~.4f, won_opp_shots=~.2f against a "
+                   "threshold of ~.4f~n",
+                   [Med#res.seed, Med#res.w, Med#res.won_opp_shots, if12_threshold(K)]),
+     io_lib:format("  IF-12 RADAR-STARVED, recomputed by if12/2, the same predicate the "
+                   "run used = ~s~n", [add_flag(Fired)])].
+
+add_flag(true) -> "FIRED";
+add_flag(false) -> "quiet".
+
+add_part_b(K, C) ->
+    io_lib:format(
+      "~n-- B. ARM C: THE ATTEMPT ACCOUNTING THE PRE-REGISTRATION REQUIRES --~n~n"
+      "The pre-registration's stop rule says: an ATTEMPT is one edit to the gains or "
+      "one topology change followed by one full evaluation on the 30 calibration "
+      "starts; construction stops either when the calibration rate reaches B and 5 "
+      "consecutive further attempts fail to raise it, or at 40 attempts (20 per "
+      "topology) without reaching B, in which case UNGRADEABLE fires; and THE ATTEMPT "
+      "COUNT AND THE FULL CALIBRATION TRAJECTORY GO INTO THE RAW FEED.~n~n"
+      "THE HONEST ACCOUNTING:~n"
+      "  attempts made                = 1 (the single fixed gains map labelled "
+      "ATTEMPT 1 in the runner; arm_c/1 holds no attempt loop, so a second attempt "
+      "would have been a source edit)~n"
+      "  calibration trajectory       = ONE POINT, ~.4f on the 30 calibration starts. "
+      "There is no trajectory. None is invented here.~n"
+      "  held-out W_0b                = ~.4f (recomputed; the feed above reports the "
+      "same value)~n"
+      "  topologies tried             = 1 of the 2 the rule allows, [17,5] only. The "
+      "pre-registered fallback to [17,12,5] was never taken, and after defect fix D1 "
+      "arm_c_weights/1 REFUSES that topology rather than silently zero-filling it, so "
+      "taking the fallback would itself have needed a source edit.~n"
+      "  stop rule exercised          = NO. Neither branch was reached: the "
+      "calibration rate never reached B=~.4f, so the first branch could not fire, and "
+      "1 attempt is not 40, so the second could not either. Construction stopped "
+      "because the experimenter stopped, not because the rule stopped it.~n"
+      "  attempts run for this addendum = 0, DELIBERATELY. After defect fix D9 arm C "
+      "gates nothing, and iterating a construction now, with the evolution arms "
+      "already CLEARED at 0.9750, would be calibration after the fact against a known "
+      "outcome. The 0.0000 stands as a fact about ONE construction and is not a "
+      "measured bound on hand construction in general.~n"
+      "  what this costs the front    = nothing that the arms did not already settle. "
+      "Expressibility is a property of the network class and an evolved champion "
+      "beating the floor bot establishes it a fortiori. What is LOST is the ability to "
+      "say anything about how hard the encoding is to hand-build, and that claim is "
+      "not made anywhere.~n",
+      [maps:get(calibration, C), maps:get(w_0b, C), maps:get(b, K)]).
+
+add_tail() ->
+    "\n-- WHAT IS STILL NOT IN THIS RECORD --\n\n"
+    "The cross-play probe is NOT in this feed and does not belong in it: it is "
+    "exploratory, it was not pre-registered, and it signs nothing. It has its own "
+    "record at programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt, "
+    "which is where its numbers must be read from. The first pass of that probe "
+    "persisted nothing at all, which is the defect this addendum's sibling fixes.\n"
+    "== END ADDENDUM ==\n".
 
 %%%============================================================================
 %%% THE ARMS.
@@ -1515,7 +2036,32 @@ pilot_opts() ->
       calibration => 4, checkpoints => [100, 200, 300], random_null => 3,
       inert_null => 20, probe_budget => 40, feed => "exp066_pilot_feed.txt"}.
 
+%% The cross-play probe and the post-hoc addendum both read the ARCHIVE, because
+%% the run that produced these champions is over: they are the only inputs either
+%% one has, and both are therefore reproducible from the archive alone. Paths are
+%% relative to the faber-programmes repository root, which is where every runner
+%% in this repo is run from; faber-ecosystem is its sibling checkout.
+xp_defaults() ->
+    Arch = "programmes/p7_coevolution/exp066_competence_floor/",
+    #{archive_dir => Arch,
+      xp_champions => Arch ++ "exp066_champions_s.eterm",
+      xp_out => Arch ++ "exp066_crossplay.txt",
+      %% ALL 80 held-out starts, so a cell holds 160 matches and one flipped match
+      %% moves a margin by 0.0125 against a 0.10 band. The first pass ran 12 and
+      %% persisted nothing, so nobody could tell 6 from 12 afterwards.
+      xp_starts => 80,
+      %% Set to none to skip; 6 reproduces the first pass's own configuration.
+      xp_repro_starts => 6,
+      xp_null_draws => 200,
+      xp_sub_n => 10,
+      xp_sub_draws => 200,
+      addendum_arms => [s, l, d],
+      addendum_feeds =>
+          ["../faber-ecosystem/insights/066-raw-competence-floor.txt",
+           Arch ++ "exp066_floor_feed.txt"]}.
+
 defaults() ->
+    maps:merge(xp_defaults(),
     #{arms => [s, l, d],
       budget => 50000,
       lambda => auto,
@@ -1533,7 +2079,7 @@ defaults() ->
       inert_null => 200,
       c_layers => ?C_LAYERS,
       gains => arm_c_gains(),
-      feed => "exp066_floor_feed.txt"}.
+      feed => "exp066_floor_feed.txt"}).
 
 merged(Opts) -> maps:merge(defaults(), Opts).
 
@@ -1675,11 +2221,17 @@ arm_report(Fd, Arm, K0, Opts) ->
     emit(Fd, "R (best of ~p random genomes) = ~.4f ; IF-2 inert reference (best of ~p "
              "random TRAINING fitness) = ~.4f~n",
          [maps:get(random_null, Opts), R, maps:get(inert_null, Opts), Inert]),
+    %% DEFECT FIX (D10). won_opp_shots was COMPUTED per seed and then dropped by
+    %% this line, so IF-12's raw material was in no record and the flag's quiet
+    %% state was an assertion rather than something a reader could recompute. It is
+    %% emitted here now. The 20-seed arm-S values were recovered post hoc from the
+    %% champion archive; see the addendum at the foot of the feed.
     [emit(Fd, "seed ~p  W=~.4f L=~.4f D=~.4f  margin=~.2f caps=~.3f shots=~.2f pulls=~.2f "
-              "trainW=~.4f fit=~.4f evals=~p distinct_last=~p clamp_gen=~.3f "
+              "won_opp_shots=~.2f trainW=~.4f fit=~.4f evals=~p distinct_last=~p clamp_gen=~.3f "
               "clamp_champ=~.3f id=~s~n",
           [X#res.seed, X#res.w, X#res.l, X#res.d, X#res.margin, X#res.caps,
-           X#res.shots, X#res.pulls, X#res.train_w, X#res.fit, X#res.evals,
+           X#res.shots, X#res.pulls, X#res.won_opp_shots,
+           X#res.train_w, X#res.fit, X#res.evals,
            X#res.distinct_last, X#res.clamp_last, X#res.clamp_frac,
            champion_id(champion(Arm, X#res.seed, Layers, X#res.q, X#res.fit, X#res.evals))])
      || X <- Rs],
