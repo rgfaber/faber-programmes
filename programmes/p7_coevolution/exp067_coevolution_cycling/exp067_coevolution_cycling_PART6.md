@@ -502,6 +502,87 @@ rule a pure transitive climb can satisfy is defective whether or not a transitiv
 
 ---
 
+## DESIGN gate verdict ROUND 4 (faber-adversary / Fable, 2026-07-30): REDESIGN. NOT YET APPLIED.
+
+**Status: recorded, not answered.** The verdict is entered here so the record is complete. Its three
+directions are NOT applied, because (b) changes which comparison the experiment DECIDES on, and that
+is a scope decision rather than a required edit. No runner code exists and none may be written.
+
+**What was fatal, in the gate's own framing.** The rebuilt branch 6 / 7 discriminator and the
+PANEL-VISIBLE conjunct are one rule, and that rule has **proven specificity and measured-zero
+sensitivity.** SC15 demonstrates it cannot fire on the synthetic backbone climber, which is what
+round 3 asked for. Nothing demonstrates it fires on any realistic instance of the phenomenon, and
+the corpus's own sensitivity evidence says it does not: `exp067_panel_discriminator_redesign.txt`
+section D4 scores seeds 2003 and 2013, **the two champions through which every measured cycle in
+this corpus runs** (`exp066_residue_and_inv0.txt` section B), at `INV` 6 against `E[INV]` 27.79 and
+`INV` 5 against 22.40 at band 0.10, far below even their own means. So the only known pocket
+occupants are classified by the exceedance rule as prefix-shaped backbone objects. A rule that fires
+on neither hypothesis gives both hypotheses the same reading, which is the third construction of the
+central test, and round 3's prompt pre-committed the consequence.
+
+**Round 3's acceptance test was one-sided, and this document accepted it.** D3's anti-consistent
+contrast was offered as the sensitivity half and the redesign record itself concedes it is "necessary
+and not sufficient". The sensitivity test was the D4 table in the same file, and its answer is 0 of
+20. The data that condemns the rule is in the record written to accept it.
+
+**Three further findings, each with the item that carries it.**
+
+1. **The negative is now close to unfailable, and the flaw has moved sides a third time.** Three
+   rounds have produced: a negative reachable only through an artifact, a negative blocked by an
+   artifact, and a negative the phenomenon itself cannot block. A coevolutionary run that genuinely
+   cycles at any rate between zero and the cross-regime independent-champion rate is printed
+   SUB-REFERENCE EXCEEDANCE, declared NOT CYCLIC, and counts toward the universal negative. The
+   labels are disclosures; the signed verdict is identical with or without them.
+2. **The branch 6 / 7 conjunct is counted over A1's QUALIFYING RUNS ONLY**, and A1 is the arm this
+   document itself declares biased AGAINST a positive while A2 is the maximal-chance arm. Step 7
+   computes A2's Null C exceedances and no branch reads them. Three A2 runs could exceed their own
+   maxima while branch 6 still signs the universal negative. Introduced in round 2, carried in round
+   3 without comment; the gate records the defect as shared with its own prescriptions.
+3. **Leg (iii)'s timing is defensible and its object is not.** Calibrating an analysis rule on prior
+   data before any phase 1 datum exists is what pilot calibration is for. What the defence cannot
+   cover is that the single binding bar of the count positive is one unreplicated number, with no
+   distribution and no error bar, from an object this document declares shape-mismatched. And
+   "conservative" is a misnomer: it is conservative relative to the positive, while this document's
+   modal hypothesis IS the negative, so the error direction points at the author's own hypothesis.
+
+**The redesign direction the gate gives, and it is constructive rather than a fourth threshold.**
+
+- **(a)** The panel instrument needs a **LOCAL** pocket statistic whose **sensitivity is demonstrated
+  in advance** on seeds 2003 and 2013, the way SC15 demonstrates specificity on the synthetic
+  climber. Exceedance of a permutation maximum is a test of GLOBAL anti-arrangement; a pocket is
+  local. And it must be read over every arm the negative needs, not A1 alone.
+- **(b)** The count decision should be re-centred on the **paired coupled-against-decoupled
+  contrast** (A1 and A2 against A3 at the same seeds under CRN, exact test, pre-registered one-tailed
+  level), with leg (iii) demoted to a reported label. The gate's argument for this is that the
+  contrast is already replicated, shape-matched, contemporaneous, CRN-paired and level-bearing, is
+  the exact instrument shape that produced the closed programme's most trusted result (insight 057's
+  decoupled control, per `SYNTHESIS_P7.md`), and is currently demoted to "a reported number and not
+  a gate". Its phrasing: the experiment worth running is in this document, and it is not the one the
+  decision rule decides.
+- **(c)** IF-4 SEARCH-DIVERGED is **orphaned**: the preamble asserts IF-1 to IF-6 void or replace a
+  verdict, the INSTRUMENT FAILED trigger never enumerates IF-4, and GRADEABLE reads only the floor,
+  `n >= 15` and IF-9. A checkpoint champion with more than half its coordinates clamped, still
+  holding the floor, enters every matrix with a defined trip and no defined consequence. Trip without
+  consequence is the class of hole RC-1 was about.
+
+**Two smaller items recorded so they are not rediscovered.** The panel threshold retains the
+seed-dependence defect RC3-4 removed from the count headline: the verdict-deciding reference at every
+checkpoint is a sampled maximum of 200 draws at one seed, with no closed form. And the redesign
+record contains a false universal, "every conclusion here holds whatever those 200 draws return":
+the bound it rests on requires the sampled maximum to be at least the exact mean, which is
+overwhelmingly probable rather than guaranteed.
+
+**What survived, on the gate's own statement.** The counting half and the ladder's exhaustion
+survived everything it threw at them again, re-walked with the A4 trigger interactions, the
+NON-ENGAGEMENT carve-out and the 5a/5b routing, with no result landing nowhere or in two places. The
+three panel-clause statements now agree. Both splits are proven byte-identical. Every number it spot
+checked resolves to a persisted record. It credits the calibration-before-runner discipline, the
+honest withdrawal of the level with nothing fabricated in its place, and the one-normalisation
+rebuild as genuine improvements.
+
+**The gate's answer to whether this is worth running as it stands: no.** Its estimate is that 87 to
+185 CPU-hours would buy a foreordained negative wearing four warning labels.
+
 ## Result
 
 PENDING. No arm has been run, no runner has been written, no panel has been measured and no verdict
@@ -590,6 +671,6 @@ changes), and none of it commits an arm either:
 - **This is arithmetic over persisted matrices. No genome was loaded, no match was replayed, no arm was
   re-run, no engine module was read, and no runner code of any kind was written** (the standing rule on
   this front is that no experiment code exists before the gate returns BUILD, and it has now returned
-  BUILD_WITH_CHANGES twice and REDESIGN once).
+  BUILD_WITH_CHANGES twice and REDESIGN twice, round 4 being unanswered).
 - The two append-only records were not touched again and still share md5
   `2aa36633da745b62be4db2971a6481b7`.

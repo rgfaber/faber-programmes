@@ -49,11 +49,25 @@ separation.
 
 ## Status
 
-**Pre-registration. Nothing has been executed.** No arm has been run, no runner has been written,
-no panel has been measured and no verdict exists. The DESIGN gate has returned three verdicts:
-BUILD_WITH_CHANGES in round 1 with nine required changes, BUILD_WITH_CHANGES in round 2 with six,
-and **REDESIGN in round 3 with seven**, scoped to the negative's panel discriminator. All
-twenty-two are applied. **Round 3's redesign is a change of SHAPE and not of wording: the branch
+**Pre-registration. Nothing has been executed, and this document is NOT CLEARED TO BUILD.** No arm
+has been run, no runner has been written, no panel has been measured and no verdict exists. The
+DESIGN gate has returned four verdicts: BUILD_WITH_CHANGES in round 1 with nine required changes,
+BUILD_WITH_CHANGES in round 2 with six, **REDESIGN in round 3 with seven**, scoped to the negative's
+panel discriminator, and **REDESIGN AGAIN IN ROUND 4, UNANSWERED**. The first twenty-two changes are
+applied. Round 4's three directions are recorded in PART 6 and are NOT applied.
+
+**READ ROUND 4 BEFORE READING ANYTHING ELSE HERE AS SETTLED.** Its finding is that the round-3
+rebuild has proven specificity and **measured-zero sensitivity**: it cannot fire on the synthetic
+backbone climber, which is what round 3 required, and it also does not fire on the only real pocket
+occupants this corpus contains (seeds 2003 and 2013, through which every measured cycle runs), per
+the redesign record's own D4 table. A rule that fires on neither hypothesis gives both hypotheses
+the same reading. Round 4 also finds the negative's panel conjunct is counted over arm A1 alone,
+which is the arm this document declares biased against a positive, and that the count positive's
+binding leg is one unreplicated number whose error direction points at this document's own modal
+hypothesis. Its redesign direction is constructive and is summarised in PART 6: a LOCAL pocket
+statistic with sensitivity demonstrated in advance, the count decision re-centred on the paired
+coupled-against-decoupled contrast this document already builds and currently does not gate on, and
+a consumer for the orphaned IF-4. **Round 3's redesign is a change of SHAPE and not of wording: the branch
 6 / 7 discriminator was a mean-centred median of `INV - E[INV]`, which subtracts a mean without
 conditioning on the realised composition and therefore sent a pure transitive climb to the branch
 reserved for panel inversion (measured median +15.6000 at band 0.10). It is replaced by the
@@ -85,7 +99,7 @@ which carries both splits.
 | [PART 3](exp067_coevolution_cycling_PART3.md) | The 25-member reference panel, the coevolution design (fitness, the opponent set that is the experimental variable, seeding, optimisers), the protocol with its self-checks SC1 to SC15, and the frozen constants. |
 | [PART 4](exp067_coevolution_cycling_PART4.md) | The decision rule: the precedence ladder, the reading table, the exhaustion argument, the secondary endpoints, the IF-1 to IF-14 instrument-failure table, and what would falsify what. |
 | [PART 5](exp067_coevolution_cycling_PART5.md) | The largest threat to validity with its four artifact routes, how the under-convergence confound stays closed, what a negative would and would not mean, the compute budget, what is out of scope, and H1 to H4. |
-| [PART 6](exp067_coevolution_cycling_PART6.md) | The DESIGN gate record, all three rounds (BUILD_WITH_CHANGES, BUILD_WITH_CHANGES, REDESIGN) with every required change and where it landed, and the Result. |
+| [PART 6](exp067_coevolution_cycling_PART6.md) | The DESIGN gate record, all four rounds (BUILD_WITH_CHANGES, BUILD_WITH_CHANGES, REDESIGN, REDESIGN-unanswered) with every required change and where it landed, and the Result. |
 
 ## Section index
 
