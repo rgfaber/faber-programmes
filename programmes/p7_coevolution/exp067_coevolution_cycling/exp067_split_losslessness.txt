@@ -1,0 +1,592 @@
+EXP-067 SPLIT LOSSLESSNESS RECORD
+=================================
+
+WHAT WAS DONE
+
+The EXP-067 pre-registration reached 2696 lines and 224790 bytes in a single
+file, past the documentation rule that caps a plan file at roughly 1500 lines
+and 75KB. It was split into a root plus five parts:
+
+  exp067_coevolution_cycling.md        the original path, kept, so every
+                                       inbound link still resolves: title,
+                                       framing, status, parts table, section
+                                       index
+  ..._PART1.md   original lines 49-368     handover, question, primary endpoint
+  ..._PART2.md   original lines 369-988    the nulls, the two instruments
+  ..._PART3.md   original lines 989-1593   panel, design, protocol, constants
+  ..._PART4.md   original lines 1594-2008  decision rule, instrument failure,
+                                           what would falsify what
+  ..._PART5.md   original lines 2009-2696  threats, meaning, budget,
+                                           hypothesis, both gate rounds, Result
+
+The cuts are on top-level section boundaries only. No section is split.
+
+WHY FIVE PARTS AND NOT FOUR
+
+The instruction was three or four parts, each under about 800 lines and 60KB.
+No four-way split of this document can hold every part under 60KB, and that
+is arithmetic rather than preference. The body below the root framing is
+221333 bytes. The largest indivisible section, THE NULLS, is 36914 bytes, and
+the cumulative byte positions of the section boundaries admit no cut sequence
+with four parts all at or under 60000 bytes:
+
+  a first part at or under 60000 must end at or before cumulative 24704
+  a fourth part at or under 60000 must begin at or after cumulative 161333
+  what is left for the middle two parts is at least 136629 bytes, so one of
+  them exceeds 60000 whatever cut is chosen between them
+
+The best four-way split available is 61618 / 52986 / 51331 / 55398 bytes, with
+its first part at exactly 800 lines. Five parts gives 24919 / 47993 / 49325 /
+44583 / 55663 bytes, every part under 700 lines, and the Result section (which
+is PENDING and will grow when arms run) sits in the part with the most room
+before the 75KB cap. The arithmetic is recorded rather than the preference.
+
+STAGE A, THE SPLIT ALONE
+
+Method: strip the navigation lines the split added (root lines 49 to end;
+lines 1 to 4 of each part, being breadcrumb, blank, part title, blank),
+concatenate what is left in reading order, compare with the pre-split
+document. Script: scripts/exp067_verify_split_lossless.sh.
+
+reconstruction: 2696 lines, 224790 bytes
+reconstruction sha256: 5eb2a34ba5d3f750fa1029832cef1f670d76176296cf95e8b110411b3926c2b4
+pre-split      sha256: 5eb2a34ba5d3f750fa1029832cef1f670d76176296cf95e8b110411b3926c2b4
+VERDICT: BYTE-IDENTICAL. The split lost nothing and changed nothing.
+
+line accounting against /home/rl/.claude/jobs/f931f320/tmp/exp067_pre_split.md:
+  original       : 2696 lines, 224790 bytes
+  lines present in the original and absent from the reconstruction: 0
+  lines present in the reconstruction and absent from the original: 0
+
+the diff, which is the complete list of lines the repointing touched:
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+every difference is a line replaced by exactly one other line.
+
+STAGE B, AFTER THE CROSS-REFERENCE REPOINTING
+
+The document cites its own sections constantly, and many of those citations
+now cross a file boundary. Each such citation carries an explicit (PART n)
+locator, inserted into the existing sentence. The repointing rule was
+INSERT ONLY: no word of the pre-registration was removed or reworded, which
+is why every diff hunk below is a one-for-one line replacement and none is an
+addition or a deletion.
+
+Plain-English "above" and "below" pointing at material within the same part
+was left alone. Object names that are defined elsewhere but not being pointed
+at (flag names, self-check names, arm codes) were left alone; the root's
+section index resolves them.
+
+reconstruction: 2696 lines, 225661 bytes
+reconstruction sha256: 7e83206163c837e51598edb23c4c7af20770dee0a80d143510330628cf3b343e
+pre-split      sha256: 5eb2a34ba5d3f750fa1029832cef1f670d76176296cf95e8b110411b3926c2b4
+VERDICT: NOT byte-identical. Every difference must be an enumerated repoint.
+
+line accounting against /home/rl/.claude/jobs/f931f320/tmp/exp067_pre_split.md:
+  original       : 2696 lines, 224790 bytes
+  lines present in the original and absent from the reconstruction: 67
+  lines present in the reconstruction and absent from the original: 67
+
+the diff, which is the complete list of lines the repointing touched:
+----------------------------------------------------------------------
+80c80
+<   (section "The reference panel").
+---
+>   (section "The reference panel", PART 3).
+84c84
+<   DIFFERENT instrument (IF-11 below) that reads the FLOORED MARGIN, because phase 0's post-hoc
+---
+>   DIFFERENT instrument (IF-11 below, PART 4) that reads the FLOORED MARGIN, because phase 0's post-hoc
+102c102
+< reachable, with a precedence order fixed in the decision rule below so that no combination of
+---
+> reachable, with a precedence order fixed in the decision rule below (PART 4) so that no combination of
+107c107
+< rule instead of asserted in a sentence.** **The gate's ROUND 2 then found the negative had no
+---
+> rule (PART 4) instead of asserted in a sentence.** **The gate's ROUND 2 then found the negative had no
+109c109
+< RC2-3 and RC2-2 and the ladder gains two precedence positions, 5a and 5b.**
+---
+> RC2-3 and RC2-2 and the ladder (PART 4) gains two precedence positions, 5a and 5b.**
+122c122
+<      beat their temporal neighbours produces it with no pocket anywhere (see "The largest threat",
+---
+>      beat their temporal neighbours produces it with no pocket anywhere (see "The largest threat", PART 5,
+168c168
+<       IF-8 headroom is now 4 violations (see "Null A has now been run on a real matrix") and without
+---
+>       IF-8 headroom is now 4 violations (see "Null A has now been run on a real matrix", PART 2) and without
+645c645
+<   VOID rather than falling through the ladder.
+---
+>   VOID rather than falling through the ladder (PART 4).
+814c814
+< assumption: the 25-member panel measurement at step 2 computes each seed's actual permutation maximum
+---
+> assumption: the 25-member panel measurement at step 2 of the protocol (PART 3) computes each seed's actual permutation maximum
+895c895
+< outcome 1 with two conjuncts and then implemented only the first in the decision rule, so a positive
+---
+> outcome 1 with two conjuncts and then implemented only the first in the decision rule (PART 4), so a positive
+913c913
+< computed, while the decision rule contained an ABSOLUTE condition (`INV = 0`) that it might already
+---
+> computed, while the decision rule (PART 4) contained an ABSOLUTE condition (`INV = 0`) that it might already
+941c941
+< decision rule, and H1 is restated to match.
+---
+> decision rule (PART 4), and H1 (PART 5) is restated to match.
+947c947
+< matrix. The panel measurement at step 2 supersedes it with the full 25-member value, and the sign of
+---
+> matrix. The panel measurement at step 2 of the protocol (PART 3) supersedes it with the full 25-member value, and the sign of
+953c953
+< panel-reading decision now consumes Null C" and measured for real at panel step 2.
+---
+> panel-reading decision now consumes Null C" and measured for real at panel step 2 of the protocol (PART 3).
+1028c1028
+<    champion-only value printed in section I1, for every seed and every band**, because the 190
+---
+>    champion-only value printed in section I1 (PART 2), for every seed and every band**, because the 190
+1133c1133
+< majority notion the ladder already uses, not a new constant. **The exclusion cannot be steered by A3's
+---
+> majority notion the ladder (PART 4) already uses, not a new constant. **The exclusion cannot be steered by A3's
+1488c1488
+< RUN SEED that both the reading table and H2 lean on, so an unnamed derogation would have confounded the
+---
+> RUN SEED that both the reading table (PART 4) and H2 (PART 5) lean on, so an unnamed derogation would have confounded the
+1525c1525
+< | **SC13** | the 25-member panel's `INV_0` for each of the 13 seeds is at least the champion-only value printed in section I1, at every band | IF-5, void; the panel does not contain the 190-cell submatrix SC3a says it reproduces |
+---
+> | **SC13** | the 25-member panel's `INV_0` for each of the 13 seeds is at least the champion-only value printed in section I1 (PART 2), at every band | IF-5, void; the panel does not contain the 190-cell submatrix SC3a says it reproduces |
+1588c1588
+< phase 1 measurement, because none exists yet.** The `INV` baseline table in section I1, the no-coevolution
+---
+> phase 1 measurement, because none exists yet.** The `INV` baseline table in section I1 (PART 2), the no-coevolution
+1661c1661
+< IN THE LADDER and not the outcome numbers of the list in "The question"; the outcome NAMES are what
+---
+> IN THE LADDER and not the outcome numbers of the list in "The question" (PART 1); the outcome NAMES are what
+1938c1938
+< collision exists at 8**: phase 0's IF-8 was the memorisation instrument that the "NOT carried" section
+---
+> collision exists at 8**: phase 0's IF-8 was the memorisation instrument that the "NOT carried" section (PART 1)
+1979c1979
+< - **Instrument I1 is falsified as an instrument** by IF-8: a panel with no readable order, or with more
+---
+> - **Instrument I1 (PART 2) is falsified as an instrument** by IF-8: a panel with no readable order, or with more
+1996c1996
+<   panel's own 25 members at step 2, before any run, and is printed there.
+---
+>   panel's own 25 members at step 2 of the protocol (PART 3), before any run, and is printed there.
+2027c2027
+< non-transferring aim. **Instrument I1 exists precisely to discriminate this, and the CYCLING branch now
+---
+> non-transferring aim. **Instrument I1 (PART 2) exists precisely to discriminate this, and the CYCLING branch (PART 4) now
+2049c2049
+< all three bands, on a matrix with no coevolution in it (see "Null A has now been run on a real matrix").
+---
+> all three bands, on a matrix with no coevolution in it (see "Null A has now been run on a real matrix", PART 2).
+2174c2174
+<   13-champion pool argued in the seeding section, and it says nothing about populations seeded from the
+---
+>   13-champion pool argued in the seeding section (PART 3), and it says nothing about populations seeded from the
+2272c2272
+< spend it in this pre-committed order: (1) more SEEDS per arm, because the decision rule counts runs and
+---
+> spend it in this pre-committed order: (1) more SEEDS per arm, because the decision rule (PART 4) counts runs and
+2311c2311
+< wrong and each has a named falsifier above.
+---
+> wrong and each has a named falsifier above, in "What would falsify what" (PART 4).
+2322c2322
+< at band 0.10 has a median of 2 and nine of thirteen seeds start non-zero (section I1's table, from
+---
+> at band 0.10 has a median of 2 and nine of thirteen seeds start non-zero (section I1's table, PART 2, from
+2400c2400
+< 1. **RC-1, the ladder is not a partition.** Applied in "Decision rule": per-run **GRADEABLE** is now
+---
+> 1. **RC-1, the ladder is not a partition.** Applied in "Decision rule" (PART 4): per-run **GRADEABLE** is now
+2406,2408c2406,2408
+<    **discharged by an exhaustion argument under the ladder** instead of asserted. The outcome list at the
+<    head of the document says plainly that the earlier "no combination lands nowhere" sentence was false.
+< 2. **RC-2, CYCLING must consume Instrument I1.** Applied in the ladder (branch 2) and in "Instrument I1":
+---
+>    **discharged by an exhaustion argument under the ladder** (PART 4) instead of asserted. The outcome list at the
+>    head of the document (PART 1) says plainly that the earlier "no combination lands nowhere" sentence was false.
+> 2. **RC-2, CYCLING must consume Instrument I1.** Applied in the ladder (branch 2, PART 4) and in "Instrument I1" (PART 2):
+2416c2416
+< 3. **RC-3, the absolute `INV = 0` condition.** Applied in the ladder (branch 6), in "What would falsify
+---
+> 3. **RC-3, the absolute `INV = 0` condition.** Applied in the ladder (branch 6, PART 4), in "What would falsify
+2422c2422
+<    in section I1 from `exp066_crossplay.txt`. It is not zero: median 2 at band 0.10, nine of thirteen seeds
+---
+>    in section I1 (PART 2) from `exp066_crossplay.txt`. It is not zero: median 2 at band 0.10, nine of thirteen seeds
+2425c2425
+< 4. **RC-4, the silent Null A to Null B swap.** Applied in "Null A" (fit gate), "Null B" (role), and the
+---
+> 4. **RC-4, the silent Null A to Null B swap.** Applied in "Null A" (fit gate, PART 2), "Null B" (role, PART 2), and the
+2430c2430
+< 5. **RC-5, IF-3 under a non-stationary fitness.** Applied in the IF-3 row and in "The archive": collapse
+---
+> 5. **RC-5, IF-3 under a non-stationary fitness.** Applied in the IF-3 row (PART 4) and in "The archive" (PART 3): collapse
+2434c2434
+<    content hash is stated in the archive section.
+---
+>    content hash is stated in the archive section (PART 3).
+2436c2436
+<    random quantity": two streams per run, the optimiser sampling stream `{RunSeed, 7}` **shared** across
+---
+>    random quantity" (both PART 3): two streams per run, the optimiser sampling stream `{RunSeed, 7}` **shared** across
+2442c2442
+< 7. **RC-7, A4's arm-level gradeability undefined.** Applied in "Decision rule": **A4 is gradeable at arm
+---
+> 7. **RC-7, A4's arm-level gradeability undefined.** Applied in "Decision rule" (PART 4): **A4 is gradeable at arm
+2448c2448
+<    seeding section (with the full table) and in the IF-12 row. The 11 kill-mode champions other than 2003
+---
+>    seeding section (PART 3, with the full table) and in the IF-12 row (PART 4). The 11 kill-mode champions other than 2003
+2452c2452
+< 9. **RC-9, three specification gaps.** (a) Applied in "The opponent set": one opponent set per generation,
+---
+> 9. **RC-9, three specification gaps.** (a) Applied in "The opponent set" (PART 3): one opponent set per generation,
+2456c2456
+<    the dead uniform-draw-from-a-shuffled-list form is gone. (c) Applied in "Instrument I2": the table has
+---
+>    the dead uniform-draw-from-a-shuffled-list form is gone. (c) Applied in "Instrument I2" (PART 2): the table has
+2466c2466
+< 2. **Checkpoint spacing is a sampling rate.** Answered in "The archive" and carried into "What a negative
+---
+> 2. **Checkpoint spacing is a sampling rate.** Answered in "The archive" (PART 3) and carried into "What a negative
+2472c2472
+<    carve-out at precedence 0 from INSTRUMENT FAILED, with the IF-2 row carrying the carve-out.
+---
+>    carve-out at precedence 0 from INSTRUMENT FAILED, with the IF-2 row (PART 4) carrying the carve-out.
+2474,2475c2474,2475
+<    and nothing else.** Answered by softening the I1 claim to what Null C actually controls for and by adding
+<    **IF-14 FLOOR-SHED**, whose firing bars a run's `INV` rise from counting toward the panel conjunct.
+---
+>    and nothing else.** Answered by softening the I1 claim (PART 2) to what Null C actually controls for and by adding
+>    **IF-14 FLOOR-SHED** (PART 4), whose firing bars a run's `INV` rise from counting toward the panel conjunct.
+2480c2480
+< **SC13** (the 25-member panel's `INV_0` must be at least the champion-only value now printed) exists
+---
+> **SC13** (PART 3, the 25-member panel's `INV_0` must be at least the champion-only value now printed in PART 2) exists
+2482c2482
+< **The per-arm blocking rule and the DECOUPLED-CONTROL CYCLED label** in the decision rule close two
+---
+> **The per-arm blocking rule and the DECOUPLED-CONTROL CYCLED label** in the decision rule (PART 4) close two
+2491c2491
+< the champion-only lower bound printed in section I1 is not what the full panel shows. That is checkable at
+---
+> the champion-only lower bound printed in section I1 (PART 2) is not what the full panel shows. That is checkable at
+2517,2519c2517,2519
+<    section ("Every panel-reading decision now consumes Null C"), in the ladder's branch 2 sub-label, in
+<    branches 6 and 7, in instrument I1's framing and its reported-per-run list, in the constants table, in
+<    the falsifier list, in H1, and in route B. The CYCLING panel conjunct is now **`INV` at the final
+---
+>    section (PART 2, "Every panel-reading decision now consumes Null C"), in the ladder's branch 2 sub-label (PART 4), in
+>    branches 6 and 7 (PART 4), in instrument I1's framing and its reported-per-run list (PART 2), in the constants table (PART 3), in
+>    the falsifier list (PART 4), in H1, and in route B. The CYCLING panel conjunct is now **`INV` at the final
+2528,2529c2528,2529
+<    branch 6, in the new ladder position **5b INCONCLUSIVE, PANEL BASE UNAVAILABLE**, in outcome 10 at the
+<    head of the document, in the reading table, in the exhaustion argument, and in the constants table. The
+---
+>    branch 6, in the new ladder position **5b INCONCLUSIVE, PANEL BASE UNAVAILABLE** (both PART 4), in outcome 10 at the
+>    head of the document (PART 1), in the reading table (PART 4), in the exhaustion argument (PART 4), and in the constants table (PART 3). The
+2534,2535c2534,2535
+<    CONVERGED, BASE INSUFFICIENT**, in outcome 9, in branch 6's conjunct list, in the reading table, in the
+<    exhaustion argument, in the constants table and in H1's own failure mode. NO CYCLING now requires at
+---
+>    CONVERGED, BASE INSUFFICIENT** (PART 4), in outcome 9 (PART 1), in branch 6's conjunct list (PART 4), in the reading table (PART 4), in the
+>    exhaustion argument (PART 4), in the constants table (PART 3) and in H1's own failure mode. NO CYCLING now requires at
+2557c2557
+<    table. The row reads CHOSEN, the named alternative "all floor-holding arm S champions" is argued
+---
+>    table, both PART 3. The row reads CHOSEN, the named alternative "all floor-holding arm S champions" is argued
+2565,2567c2565,2567
+<    primary-endpoint sentence (the clause is deleted from it, with the reason: no scripted rung can be a
+<    member of an archive matrix, so it did zero work there), in the gunless-leg paragraph (rescoped to the
+<    PANEL-derived counts, where it does bite), and in a new required report: **DAMAGE PROVENANCE per edge**
+---
+>    primary-endpoint sentence (PART 1; the clause is deleted from it, with the reason: no scripted rung can be a
+>    member of an archive matrix, so it did zero work there), in the gunless-leg paragraph (PART 1; rescoped to the
+>    PANEL-derived counts, where it does bite), and in a new required report (PART 1): **DAMAGE PROVENANCE per edge**
+2575c2575
+<    **the correction and never the refuted claim**, in the Upstream line and in the gunless-leg paragraph,
+---
+>    **the correction and never the refuted claim**, in the Upstream line (the root) and in the gunless-leg paragraph (PART 1),
+2584c2584
+<    other half is added as a required report: **EDGE-FAMILY STRUCTURE** (the cycle set partitioned by shared
+---
+>    other half is added as a required report (PART 1): **EDGE-FAMILY STRUCTURE** (the cycle set partitioned by shared
+2589c2589
+<    covered by any of the six, and answered with one pre-committed sentence in the opponent-set section: an
+---
+>    covered by any of the six, and answered with one pre-committed sentence in the opponent-set section (PART 3): an
+2607c2607
+< 2. **LADDER POSITION 5b's SECOND SUB-LABEL, PANEL VOID.** RC2-2 covers the eroded base; a firing IF-8 left
+---
+> 2. **LADDER POSITION 5b's SECOND SUB-LABEL, PANEL VOID.** (PART 4.) RC2-2 covers the eroded base; a firing IF-8 left
+2612c2612
+<    with the fitted order on the 190 cells SC3a forces the panel to reproduce, against a trigger of more
+---
+>    with the fitted order on the 190 cells SC3a (PART 3) forces the panel to reproduce, against a trigger of more
+2679c2679
+<   the nulls section rather than into a footnote.
+---
+>   the nulls section (PART 2) rather than into a footnote.
+----------------------------------------------------------------------
+every difference is a line replaced by exactly one other line.
+
+SUMMARY
+
+  diff hunks                                   58
+  hunks that add or delete a line              0
+  lines replaced                               67
+  lines introduced                             67
+
+Every hunk is a change, none is an addition or a deletion, and the replaced
+and introduced counts are equal, so no line of the pre-registration was lost,
+duplicated or split by either the split or the repointing.
+
+WHAT REMAINS CHECKABLE ONCE THE PRE-SPLIT FILE IS GONE
+
+scripts/exp067_verify_split_lossless.sh carries the pre-split sha256 as a
+literal. Run it with the split directory alone and it reconstructs and
+reports; the reconstruction will not match that hash any more, because of the
+67 repointed lines listed above, and reversing those 67 lines
+recovers it exactly.
+
+THE SECOND SPLIT, 2026-07-30: FIVE PARTS BECOME SIX
+
+WHY. PART 5 reached 1035 lines and 86954 bytes once the round-3 DESIGN gate
+section was written into it, past the documentation rule's byte cap of roughly
+75KB. The DESIGN gate record, all three rounds, and the Result moved to a new
+PART 6. The cut is on a top-level section boundary, immediately before the
+round-1 gate section, and no section is divided.
+
+  ..._PART5.md   pre-resplit lines 5-454     threats to validity with its four
+                                             artifact routes, the confound, what
+                                             a negative would mean, the budget,
+                                             out of scope, H1 to H4
+  ..._PART6.md   pre-resplit lines 455-1035   the DESIGN gate record, all three
+                                             rounds, and the Result
+
+  new PART 5: 454 lines, 35800 bytes
+  new PART 6: 595 lines, 52356 bytes
+
+Both are under the 1500-line and 75KB caps, and PART 6 holds the Result, which
+is PENDING and will grow when arms run, so the part with the most room before
+the cap is again the one that will need it.
+
+Scripts: scripts/exp067_split_part5.sh does the cut,
+scripts/exp067_verify_part5_split.sh proves it, and this file's second-split
+section is written by scripts/exp067_write_part5_split_record.sh.
+
+STAGE A OF THE SECOND SPLIT, THE SPLIT ALONE
+
+Method: strip the four navigation lines each part carries (breadcrumb, blank,
+part title, blank), concatenate PART 5 then PART 6 in reading order, compare
+with the pre-resplit PART 5's own content, meaning that file with its own four
+navigation lines stripped.
+
+  pre-resplit PART 5 whole file : 1035 lines, 86954 bytes
+  its content, navigation stripped: 1031 lines, 86689 bytes
+  content sha256: f655c226788b53aeae9db2ee8b931cc4de4908163c93ac0b789a3d33ea48c085
+  VERDICT AT STAGE A: BYTE-IDENTICAL, 0 lines lost, 0 gained, 0 diff hunks.
+
+The whole pre-resplit file's sha256 was
+ab855b49d537c8b3eac5022f25c3f9395da81da0e55ef9b52abc5ee529807601.
+
+STAGE B OF THE SECOND SPLIT, AFTER THE CROSS-REFERENCE REPOINTING
+
+The gate record cites the hypothesis, the artifact routes, the negative's scope
+section, the confound section and the compute section constantly, and all five
+now live in PART 5 while the citations live in PART 6. Each such citation gained
+an explicit (PART 5) locator, inserted into the existing sentence. The
+repointing rule was INSERT ONLY, so every hunk the repointing itself produced
+is a one-for-one line replacement and none is an addition or a deletion. Two
+later edits to PART 6 are in the diff as well and are classified below rather
+than blended into the repoint count.
+
+  reconstruction sha256: d08c0d3ce0422eb214b2f72fea5cf42cde4826cf8c3f2c2e28d121fa575dee01
+  pre-resplit content  : f655c226788b53aeae9db2ee8b931cc4de4908163c93ac0b789a3d33ea48c085
+  lines present in the pre-resplit and absent from the reconstruction: 16
+  lines present in the reconstruction and absent from the pre-resplit: 26
+  diff hunks: 16
+  hunks that add or delete a line: 1
+
+THE DIFF BELOW IS NOT ALL REPOINTING, AND THE TWO CLASSES ARE NAMED RATHER THAN
+COUNTED TOGETHER.
+
+  CLASS 1, THE REPOINTS THE SPLIT CAUSED: 11 one-for-one line replacements,
+  each inserting an explicit (PART 5) locator into an existing sentence and
+  removing nothing. At the moment the repointing finished, the diff contained
+  NOTHING ELSE: 11 lines replaced, 11 introduced, 0 add-or-delete hunks. Every
+  one of the 11 is identifiable in the diff below as a line whose only change
+  is an inserted (PART 5).
+
+  CLASS 2, ORDINARY LATER EDITS TO PART 6's ROUND-3 GATE SECTION, which are
+  edits to the pre-registration and not split artifacts: the md5 of
+  exp067_panel_discriminator_redesign.txt was restated after that record gained
+  an anti-consistent contrast section, and prose was added reporting the
+  contrast and qualifying what round 3 passed. They are listed here because
+  this record enumerates every difference rather than only the convenient ones,
+  and because a reader comparing the two sides needs to know which differences
+  the split is answerable for. Every line in this class is an ADDITION or a
+  restatement inside the round-3 section and none of it removes a line.
+
+the diff, which is the complete list of differences between the pre-resplit
+PART 5 and the two parts that replaced it:
+----------------------------------------------------------------------
+461c461
+< and open-endedness overclaims; and H1 through H4 embarrassable with named falsifiers.
+---
+> and open-endedness overclaims; and H1 through H4 (PART 5) embarrassable with named falsifiers.
+485c485
+<    B** in "The largest threat to validity", named as the answer to whether the headline can be produced by
+---
+>    B** in "The largest threat to validity" (PART 5), named as the answer to whether the headline can be produced by
+488c488
+<    what", and in H1: the condition is now the **median over A1's runs of (`INV` at checkpoint 20 minus
+---
+>    what", and in H1 (PART 5): the condition is now the **median over A1's runs of (`INV` at checkpoint 20 minus
+539c539
+<    task.** Answered in "How the search under-convergence confound stays CLOSED" as a **declared residual**,
+---
+>    task.** Answered in "How the search under-convergence confound stays CLOSED" (PART 5) as a **declared residual**,
+543c543
+<    would NOT mean": a NO CYCLING verdict is scoped to cycling slower than about two checkpoint intervals.
+---
+>    would NOT mean" (both PART 5): a NO CYCLING verdict is scoped to cycling slower than about two checkpoint intervals.
+595c595
+<    the falsifier list (PART 4), in H1, and in route B. The CYCLING panel conjunct is now **`INV` at the final
+---
+>    the falsifier list (PART 4), in H1 and in route B (both PART 5). The CYCLING panel conjunct is now **`INV` at the final
+625c625
+<    exhaustion argument (PART 4), in the constants table (PART 3) and in H1's own failure mode. NO CYCLING now requires at
+---
+>    exhaustion argument (PART 4), in the constants table (PART 3) and in H1's own failure mode (PART 5). NO CYCLING now requires at
+656c656
+<    PANEL-VISIBLE positive, and the scope line is added to "What a negative would NOT mean".
+---
+>    PANEL-VISIBLE positive, and the scope line is added to "What a negative would NOT mean" (PART 5).
+752,753c752,753
+< that is not marked withdrawn inside them.** Round 3 passed the counting half of this design and could not
+< break it: the Null A calibration is honest and independently verified, the withdrawn level is withdrawn
+---
+> that is not marked withdrawn inside them.** Round 3 passed the counting half of this design without
+> breaking it: the Null A calibration is honest and independently verified, the withdrawn level is withdrawn
+755c755,759
+< five-way split is lossless. **It failed the PANEL half, on the same central test round 2 used: construct
+---
+> five-way split is lossless. **Passed is not the same as unqualified**: RC3-4 below records that the count
+> positive's verdict-deciding bar moved to leg (iii), a single unreplicated reference share, and RC3-6
+> records that the panel leg's reachability on real patterns is unevidenced. Neither is a defect in a rule;
+> both are operating points the document was not stating. **What round 3 FAILED is the PANEL half, on the
+> same central test round 2 used: construct
+796c800
+<    `ad56561f14e37ad6a10b3ee2315da39a` twice, gated against `exp066_crossplay.txt`,
+---
+>    `686d59647c96da380b54a5821e081b3c` twice, gated against `exp066_crossplay.txt`,
+807a812,817
+>    - **The CONTRAST, in the same pass, so that result is not an artifact of a statistic that cannot
+>      move (section D3):** the ANTI-CONSISTENT win set, the `k` STRONGEST members rather than the `k`
+>      weakest, exceeds its own exact mean in **60 of 60** champion-and-band cases and peaks at
+>      **+37.1046**. `INV` is therefore not bounded above by its own mean as a matter of arithmetic, the
+>      exceedance leg is not identically unsatisfiable, and the prefix result is a fact about PREFIX
+>      arrangements rather than about the statistic.
+827c837
+<    PRIMARY" sentence, in the constants table's leg (iii) row (PART 3), in "A CYCLING verdict would mean"
+---
+>    PRIMARY" sentence, in the constants table's leg (iii) row (PART 3), in "A CYCLING verdict would mean" (PART 5)
+863c873
+<    speak of an EXCEEDANCE and not of an "`INV` rise". (f) H1's "makes H1 HARDER to hold, not easier"
+---
+>    speak of an EXCEEDANCE and not of an "`INV` rise". (f) H1's (PART 5) "makes H1 HARDER to hold, not easier"
+865c875
+<    direction was seed-dependent and never derived. (g) The compute section's spend priority no longer
+---
+>    direction was seed-dependent and never derived. (g) The compute section's (PART 5) spend priority no longer
+1011c1021
+<   whatever those 200 draws would return. md5 `ad56561f14e37ad6a10b3ee2315da39a` on two consecutive
+---
+>   whatever those 200 draws would return. md5 `686d59647c96da380b54a5821e081b3c` on two consecutive
+----------------------------------------------------------------------
+Every difference falls in one of the two classes named above, and the totals
+printed further up are the two classes together. No line of the pre-registration
+was lost, duplicated or split by the second split or by its repointing: the
+split's own contribution was 11 one-for-one replacements and nothing else.
+
+Also changed by the second split, and excluded from the reconstruction because
+it is navigation rather than pre-registration text: the breadcrumb on PARTS 1
+to 4 now reads "of 6" instead of "of 5".
+
+WHAT REMAINS CHECKABLE ONCE THE PRE-RESPLIT PART 5 IS GONE
+
+scripts/exp067_verify_part5_split.sh carries the pre-resplit content sha256 as
+a literal. Run it with the split directory alone and it reconstructs and
+reports; the reconstruction will not match that hash any more, because of the
+differences listed above, and reversing them recovers it exactly.
+
+AND THE FIRST SPLIT'S VERIFIER WAS FIXED RATHER THAN LEFT TO LIE
+
+scripts/exp067_verify_split_lossless.sh reconstructed the whole
+pre-registration from the root plus a HARD-CODED list of five parts. After the
+second split that list was short by one, so the script would have reported the
+whole of PART 6 as missing text and a reader could have read that as a lost
+section. It now counts the parts present and reads them all in order, prints
+the count it read, and refuses to run on fewer than five or on a
+non-consecutive numbering. It still exits non-zero against its recorded
+pre-split hash, which it has done since the first repointing and which its own
+section above already states; what it no longer does is confound a split with a
+loss.
+
+MACHINE-READABLE
+
+{exp067_split_losslessness, [
+  {date, "2026-07-30"},
+  {presplit, [{lines, 2696}, {bytes, 224790},
+              {sha256, "5eb2a34ba5d3f750fa1029832cef1f670d76176296cf95e8b110411b3926c2b4"}]},
+  {parts, [
+    {root,  "exp067_coevolution_cycling.md",       {original_lines, 1, 48}},
+    {part1, "exp067_coevolution_cycling_PART1.md", {original_lines, 49, 368}},
+    {part2, "exp067_coevolution_cycling_PART2.md", {original_lines, 369, 988}},
+    {part3, "exp067_coevolution_cycling_PART3.md", {original_lines, 989, 1593}},
+    {part4, "exp067_coevolution_cycling_PART4.md", {original_lines, 1594, 2008}},
+    {part5, "exp067_coevolution_cycling_PART5.md", {original_lines, 2009, 2696}}
+  ]},
+  {stage_a, [{byte_identical, true}, {lines_lost, 0}, {lines_gained, 0}]},
+  {stage_b, [{hunks, 58}, {add_or_delete_hunks, 0},
+             {lines_replaced, 67}, {lines_introduced, 67}]},
+  {rng, none},
+  {scripts, ["scripts/exp067_split_preregistration.sh",
+             "scripts/exp067_verify_split_lossless.sh",
+             "scripts/exp067_write_split_losslessness_record.sh"]},
+  {second_split, [
+    {date, "2026-07-30"},
+    {reason, "PART 5 passed the 75KB cap when the round-3 gate section landed"},
+    {presplit_part5, [{lines, 1035}, {bytes, 86954},
+                      {content_lines, 1031}, {content_bytes, 86689},
+                      {content_sha256, "f655c226788b53aeae9db2ee8b931cc4de4908163c93ac0b789a3d33ea48c085"}]},
+    {parts, [
+      {part5, "exp067_coevolution_cycling_PART5.md",
+              {presplit_lines, 5, 454}, {lines, 454}, {bytes, 35800}},
+      {part6, "exp067_coevolution_cycling_PART6.md",
+              {presplit_lines, 455, 1035}, {lines, 595}, {bytes, 52356}}
+    ]},
+    {stage_a, [{byte_identical, true}, {lines_lost, 0}, {lines_gained, 0}]},
+    {stage_b, [{reconstruction_sha256, "d08c0d3ce0422eb214b2f72fea5cf42cde4826cf8c3f2c2e28d121fa575dee01"},
+               {hunks, 16}, {add_or_delete_hunks, 1},
+               {lines_replaced, 16}, {lines_introduced, 26}]},
+    {navigation_only, "PARTS 1 to 4 breadcrumbs changed from of 5 to of 6"},
+    {rng, none},
+    {scripts, ["scripts/exp067_split_part5.sh",
+               "scripts/exp067_verify_part5_split.sh",
+               "scripts/exp067_write_part5_split_record.sh"]}
+  ]}
+]}.

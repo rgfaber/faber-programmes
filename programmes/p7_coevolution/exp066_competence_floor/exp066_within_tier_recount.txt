@@ -413,8 +413,38 @@ champions of one competence tier.
   binary64, so a strict > against a float band can admit that edge; the
   integer form cannot. A strict > on an exact-equality case can only err in
   the direction of INCLUDING it, so the float count is the high one, which
-  is what is observed. Bands 0.05 and 0.15 are unaffected because no edge
-  sits exactly on either.
+  is what is observed.
+
+  ONE SENTENCE OF THIS EXPLANATION WAS WRONG AND IS CORRECTED, 2026-07-30.
+  It read: "Bands 0.05 and 0.15 are unaffected because no edge sits exactly
+  on either." That is FALSE. Edges DO sit exactly on both bands, and the
+  full enumeration is now on disk in
+  exp067_coevolution_cycling/exp067_null_a_calibration.txt (detail A of its
+  verification, scripts/exp067_verify_null_a_calibration.escript):
+
+      band 0.05, 3 pairs exactly on the band:
+        {2,14}  float |margin| 0.05000000000000004441  ADMITTED by float
+        {11,20} float |margin| 0.04999999999999998890  rejected
+        {13,15} float |margin| 0.04999999999999993339  rejected
+      band 0.10, 2 pairs exactly on the band:
+        {5,8}   float |margin| 0.10000000000000003331  ADMITTED by float
+        {11,18} float |margin| 0.10000000000000003331  ADMITTED by float
+      band 0.15, 2 pairs exactly on the band:
+        {1,4}   float |margin| 0.14999999999999996669  rejected
+        {8,19}  float |margin| 0.14999999999999996669  rejected
+
+  So the bands are not unaffected; they are affected and the rounding
+  happened to fall the safe way. Band 0.10 is the only band where every
+  on-band pair rounded UP, which is why it is the only band that differs.
+  Band 0.05 differs by one edge on the full 20-champion matrix for the same
+  reason (169 float against 168 integer) even though the kill-tier count
+  happened to agree.
+
+  The correction matters because the original wording made the agreement at
+  0.05 and 0.15 sound like a property of the data. It is a coincidence of
+  binary rounding, and the next band chosen on a different grid could break
+  it. The rule is unchanged and now rests on the right reason: COUNT
+  INTEGERS, always, not only at band 0.10. ***
 
   CONSEQUENCE FOR THE NEXT RUNG: count integers. The phase 1
   pre-registration already specifies the exact-integer test for this reason.

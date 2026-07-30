@@ -1,0 +1,316 @@
+== EXP-067 INDEPENDENT CHECK OF THE NULL A CALIBRATION ==
+
+date        = 2026-07-30
+status      = INDEPENDENT VERIFICATION of a calibration record.
+              Signs nothing, gates nothing, decides no phase 1
+              outcome. Arithmetic only.
+engine_pin  = a5e8bcfc5646827e9be49a9629f8a6a9678c814b
+              (nothing was run at it: no genome loaded, no match
+               replayed, no arm re-run, no engine module read)
+produced_by = scripts/exp067_verify_null_a_calibration.escript
+written_to  = /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp067_coevolution_cycling/exp067_null_a_verification.txt
+reads       = /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt
+              (the matrix, parsed from its PRINTED 4-decimal rows
+               and, separately, from its machine-readable term)
+under test  = programmes/p7_coevolution/exp067_coevolution_cycling/
+              exp067_null_a_calibration.txt
+independence= written without reading
+              scripts/exp067_null_a_calibration.escript. Shares no
+              code, no helper and no parse path with it.
+rng         = items 1 to 4 use NO RNG AT ALL. The one random part is
+              a secondary 200-draw bootstrap under a DELIBERATELY
+              DIFFERENT seed: exsss seeded {9091,0,0}. Its end state is
+              persisted below. It is a distributional cross-check,
+              not a reproduction: a different seed must not give
+              identical draws and does not.
+comparisons = 139 tested, of which DISAGREES = 0
+
+PARSE GATE. printed rows = 20, term rows = 20, integer matrix from the
+printed 4-decimal display identical to the one from the term = true.
+Decisive matches summed over the 190 cells = 29928, draws = 472 of 30400.
+
+HOW THE TOLERANCES ARE SET, so no verdict rests on a number chosen
+after the fact. Deterministic quantities (the fit, the observed
+counts, IF-9, the tail probabilities) are compared at tolerance 0 or
+at a stated floating-point epsilon. Quantities that are Monte Carlo
+estimates in the record are compared against MY closed form at 3
+Monte Carlo standard errors, computed from MY OWN bootstrap's sd,
+plus the resolution of a count mean over 200 draws (3/200). Medians
+carry the median's own standard error, 1.2533 sd / sqrt(200), and a
+0.5 granularity term. My bootstrap against the record's bootstrap
+carries sqrt(2) more, being two independent estimates. The tolerance
+used is printed in its own column for every row.
+
+-- MINE BESIDE THE CLAIM, EVERY NUMBER --
+
+quantity                                                 mine                     claimed                  tolerance    verdict
+
+  1. THE FIT, MINE BY MM FROM THE MATRIX (claimed: section B)
+parse: worst cell distance from integer numerator        0.0                      0.0                      0.0          AGREES
+parse: worst |sum of one cell's binomial pmf - 1|        1.32117e-14              0.0                      1.00000e-12  AGREES
+fit: prior reading that reproduces the record (1 or 2)   1                        1                        0            AGREES
+fit: worst |mine - claimed| over 20 strengths, prior 1   0.0                      0.0                      1.00000e-9   AGREES
+fit: worst |mine - claimed| over 20 strengths, prior 2   0.100668                 na                       na           INFO
+fit: MM iterations to rel change < 1.0e-10 in every s    114                      114                      0            AGREES
+fit: status                                              converged                converged                0            AGREES
+fit: sum of strengths after normalisation                20.000000                20.000000                1.00000e-9   AGREES
+fit: strength of seed 2001                               0.459758                 0.459758                 5.00000e-11  AGREES
+fit: strength of seed 2002                               0.411048                 0.411048                 5.00000e-11  AGREES
+fit: strength of seed 2003                               0.978132                 0.978132                 5.00000e-11  AGREES
+fit: strength of seed 2004                               0.465698                 0.465698                 5.00000e-11  AGREES
+fit: strength of seed 2005                               0.241050                 0.241050                 5.00000e-11  AGREES
+fit: strength of seed 2006                               0.642233                 0.642233                 5.00000e-11  AGREES
+fit: strength of seed 2007                               1.054405                 1.054405                 5.00000e-11  AGREES
+fit: strength of seed 2008                               0.374883                 0.374883                 5.00000e-11  AGREES
+fit: strength of seed 2009                               0.692871                 0.692871                 5.00000e-11  AGREES
+fit: strength of seed 2010                               1.125804                 1.125804                 5.00000e-11  AGREES
+fit: strength of seed 2011                               0.894181                 0.894181                 5.00000e-11  AGREES
+fit: strength of seed 2012                               0.811991                 0.811991                 5.00000e-11  AGREES
+fit: strength of seed 2013                               0.876401                 0.876401                 5.00000e-11  AGREES
+fit: strength of seed 2014                               0.940799                 0.940799                 5.00000e-11  AGREES
+fit: strength of seed 2015                               1.898788                 1.898788                 5.00000e-11  AGREES
+fit: strength of seed 2016                               4.194687                 4.194687                 5.00000e-11  AGREES
+fit: strength of seed 2017                               1.198762                 1.198762                 5.00000e-11  AGREES
+fit: strength of seed 2018                               0.777802                 0.777802                 5.00000e-11  AGREES
+fit: strength of seed 2019                               0.414906                 0.414906                 5.00000e-11  AGREES
+fit: strength of seed 2020                               1.545801                 1.545801                 5.00000e-11  AGREES
+fit: row mean of seed 2016 (record prints 0.8352)        0.835197                 0.835200                 5.00000e-5   AGREES
+fit: row mean of seed 2005 (record prints 0.2316)        0.231579                 0.231600                 5.00000e-5   AGREES
+
+  2. CLOSED FORM AGAINST THE RECORD'S SIMULATED SPREAD, NO RNG
+band 0.05 closed form E[decisive edges] vs record's synt 171.369337               171.355000               0.643846     AGREES
+band 0.05 closed form E[decisive edges] vs record's synt 171.369337               171.000000               1.288133     AGREES
+band 0.05 closed form sd of the decisive-edge count      3.444277                 na                       na           INFO
+band 0.05 closed form E[cyclable triples] vs record's sy 838.556117               838.525000               9.262322     AGREES
+band 0.05 closed form E[cyclable triples] vs synth MEDIA 838.556117               841.000000               12.089669    AGREES
+band 0.05 closed form E[cycles] vs record's synth MEAN   1.028229                 0.975000                 0.260696     AGREES
+band 0.05 closed form E[2f+b ordered] vs record's synth  1.544124                 1.430000                 0.405364     AGREES
+band 0.05 closed form E[cycles] x 200 vs record's total  205.645792               195                      42.000000    AGREES
+band 0.05 Markov bound P(a null draw's cycles >= observe 0.020984                 na                       na           INFO
+band 0.05 observed cyclable triples, for the opportunity 789                      na                       na           INFO
+band 0.10 closed form E[decisive edges] vs record's synt 154.458417               154.405000               0.768498     AGREES
+band 0.10 closed form E[decisive edges] vs record's synt 154.458417               154.000000               1.444359     AGREES
+band 0.10 closed form sd of the decisive-edge count      3.751716                 na                       na           INFO
+band 0.10 closed form E[cyclable triples] vs record's sy 614.671522               614.490000               9.107211     AGREES
+band 0.10 closed form E[cyclable triples] vs synth MEDIA 614.671522               611.500000               11.895268    AGREES
+band 0.10 closed form E[cycles] vs record's synth MEAN   0.047972                 0.035000                 0.068368     AGREES
+band 0.10 closed form E[2f+b ordered] vs record's synth  0.071992                 0.065000                 0.082911     AGREES
+band 0.10 closed form E[cycles] x 200 vs record's total  9.594426                 7                        8.485281     AGREES
+band 0.10 Markov bound P(a null draw's cycles >= observe 0.002665                 na                       na           INFO
+band 0.10 observed cyclable triples, for the opportunity 582                      na                       na           INFO
+band 0.15 closed form E[decisive edges] vs record's synt 138.454855               138.600000               0.798886     AGREES
+band 0.15 closed form E[decisive edges] vs record's synt 138.454855               138.000000               1.482444     AGREES
+band 0.15 closed form sd of the decisive-edge count      3.659584                 na                       na           INFO
+band 0.15 closed form E[cyclable triples] vs record's sy 439.849904               441.620000               7.821231     AGREES
+band 0.15 closed form E[cyclable triples] vs synth MEDIA 439.849904               439.000000               10.283549    AGREES
+band 0.15 closed form E[cycles] vs record's synth MEAN   8.19687e-4               0.0                      0.015000     AGREES
+band 0.15 closed form E[2f+b ordered] vs record's synth  0.001230                 0.0                      0.015000     AGREES
+band 0.15 closed form E[cycles] x 200 vs record's total  0.163937                 0                        3.000000     AGREES
+band 0.15 Markov bound P(a null draw's cycles >= observe 6.83072e-5               na                       na           INFO
+band 0.15 observed cyclable triples, for the opportunity 487                      na                       na           INFO
+
+  3. OBSERVED COUNTS, EXACT INTEGER BAND TEST AND FLOAT TEST
+band 0.05 observed cycles, INTEGER counter               49                       49                       0            AGREES
+band 0.05 observed decisive edges, INTEGER counter       168                      168                      0            AGREES
+band 0.05 observed cyclable triples, INTEGER counter     789                      789                      0            AGREES
+band 0.05 observed cycles, FLOAT counter                 49                       49                       0            AGREES
+band 0.05 observed decisive edges, FLOAT counter         169                      169                      0            AGREES
+band 0.05 observed cyclable triples, FLOAT counter       802                      802                      0            AGREES
+band 0.05 observed forward cycles, FLOAT counter         24                       24                       0            AGREES
+band 0.05 observed backward cycles, FLOAT counter        25                       25                       0            AGREES
+band 0.05 observed 2f+b ordered, FLOAT counter           73                       73                       0            AGREES
+band 0.05 float minus integer decisive edges             1                        1                        0            AGREES
+band 0.05 float minus integer cyclable triples           13                       13                       0            AGREES
+band 0.05 pairs sitting exactly on the band              3                        3                        0            AGREES
+band 0.10 observed cycles, INTEGER counter               18                       18                       0            AGREES
+band 0.10 observed decisive edges, INTEGER counter       150                      150                      0            AGREES
+band 0.10 observed cyclable triples, INTEGER counter     582                      582                      0            AGREES
+band 0.10 observed cycles, FLOAT counter                 18                       18                       0            AGREES
+band 0.10 observed decisive edges, FLOAT counter         152                      152                      0            AGREES
+band 0.10 observed cyclable triples, FLOAT counter       604                      604                      0            AGREES
+band 0.10 observed forward cycles, FLOAT counter         10                       10                       0            AGREES
+band 0.10 observed backward cycles, FLOAT counter        8                        8                        0            AGREES
+band 0.10 observed 2f+b ordered, FLOAT counter           28                       28                       0            AGREES
+band 0.10 float minus integer decisive edges             2                        2                        0            AGREES
+band 0.10 float minus integer cyclable triples           22                       22                       0            AGREES
+band 0.10 pairs sitting exactly on the band              2                        2                        0            AGREES
+band 0.15 observed cycles, INTEGER counter               12                       12                       0            AGREES
+band 0.15 observed decisive edges, INTEGER counter       141                      141                      0            AGREES
+band 0.15 observed cyclable triples, INTEGER counter     487                      487                      0            AGREES
+band 0.15 observed cycles, FLOAT counter                 12                       12                       0            AGREES
+band 0.15 observed decisive edges, FLOAT counter         141                      141                      0            AGREES
+band 0.15 observed cyclable triples, FLOAT counter       487                      487                      0            AGREES
+band 0.15 observed forward cycles, FLOAT counter         6                        6                        0            AGREES
+band 0.15 observed backward cycles, FLOAT counter        6                        6                        0            AGREES
+band 0.15 observed 2f+b ordered, FLOAT counter           18                       18                       0            AGREES
+band 0.15 float minus integer decisive edges             0                        0                        0            AGREES
+band 0.15 float minus integer cyclable triples           0                        0                        0            AGREES
+band 0.15 pairs sitting exactly on the band              2                        2                        0            AGREES
+
+  4. IF-9 AT ITS PRE-REGISTERED WIDTH OF 20 OF 190
+IF-9: registered width, of 190                           20                       20                       0            AGREES
+IF-9: |record's median 154.0 - my integer observed|      4.000000                 4.000000                 1.00000e-9   AGREES
+IF-9: |record's median 154.0 - my float observed|        2.000000                 2.000000                 1.00000e-9   AGREES
+IF-9: fires on the integer counter, record's median      false                    false                    0            AGREES
+IF-9: fires on the float counter, record's median        false                    false                    0            AGREES
+IF-9: slack, width minus |median - observed| (integer)   16.000000                16.000000                1.00000e-9   AGREES
+IF-9: smallest integer width that accepts this matrix    4                        4                        0            AGREES
+IF-9: null's own max |draw - median|, from claimed min/m 10.000000                10.000000                1.00000e-9   AGREES
+IF-9: |my closed-form mean - my integer observed|        4.458417                 na                       na           INFO
+IF-9: fires against my closed-form mean                  false                    false                    0            AGREES
+IF-9: |my own bootstrap median - my integer observed|    4.000000                 na                       na           INFO
+IF-9: fires against my own bootstrap median              false                    false                    0            AGREES
+
+  5. FITTED-ORDER VIOLATIONS AND IDENTIFICATION
+band 0.05 band-decisive pairs on the integer counter     168                      168                      0            AGREES
+band 0.05 pairs disagreeing with the fitted order        36                       36                       0            AGREES
+band 0.05 share of decisive pairs disagreeing            0.214286                 na                       na           INFO
+band 0.10 band-decisive pairs on the integer counter     150                      150                      0            AGREES
+band 0.10 pairs disagreeing with the fitted order        26                       26                       0            AGREES
+band 0.10 share of decisive pairs disagreeing            0.173333                 na                       na           INFO
+band 0.15 band-decisive pairs on the integer counter     141                      141                      0            AGREES
+band 0.15 pairs disagreeing with the fitted order        23                       23                       0            AGREES
+band 0.15 share of decisive pairs disagreeing            0.163121                 na                       na           INFO
+identification: ordered pairs with zero wins for the row 1                        1                        0            AGREES
+identification: which pair                               [{5,16}]                 [{5,16}]                 0            AGREES
+identification: raw win digraph strongly connected       true                     true                     0            AGREES
+identification: augmented digraph complete               true                     true                     0            AGREES
+identification: forward-reachable from node 1            20                       na                       na           INFO
+identification: backward-reachable from node 1           20                       na                       na           INFO
+
+  6. FAMILY-WISE ARITHMETIC AND THE RE-DERIVATION ARITHMETIC
+family-wise: per-run rate 1/201                          0.004975                 0.004975                 1.00000e-15  AGREES
+family-wise: P(>=1 of 13)                                0.062781                 0.062781                 1.00000e-12  AGREES
+family-wise: P(>=2 of 13)                                0.001862                 0.001862                 1.00000e-14  AGREES
+family-wise: P(>=3 of 13)                                3.39282e-5               3.39282e-5               1.00000e-16  AGREES
+family-wise: P(>=4 of 13)                                4.22614e-7               4.22614e-7               1.00000e-18  AGREES
+family-wise: two verdict-carrying arms                   6.78553e-5               6.78553e-5               1.00000e-16  AGREES
+family-wise: three arms                                  1.01781e-4               1.01781e-4               1.00000e-16  AGREES
+re-derivation: smallest k of 13 at q = 1/201             3                        3                        0            AGREES
+re-derivation: smallest k of 13 at q = 0.05              6                        6                        0            AGREES
+re-derivation: smallest k of 13 at q = 1.0               none                     none                     0            AGREES
+re-derivation: Clopper-Pearson lower bound, 1 of 1, 95pc 0.050000                 0.050000                 1.00000e-15  AGREES
+bootstrap p floor, (0 + 1) / 201                         0.004975                 0.004975                 1.00000e-15  AGREES
+
+  7. MY OWN 200 DRAWS, DIFFERENT SEED, DISTRIBUTIONAL ONLY
+band 0.05 my bootstrap median decisive edges vs record's 171.000000               171.000000               1.821694     AGREES
+band 0.05 my bootstrap mean decisive edges vs record's   171.285000               171.355000               0.910536     AGREES
+band 0.05 my bootstrap mean cyclable triples vs record's 837.615000               838.525000               13.098902    AGREES
+band 0.05 my bootstrap mean cycles vs record's           0.985000                 0.975000                 0.368680     AGREES
+band 0.05 my bootstrap total cycles over 200 vs record's 197                      195                      59.472683    AGREES
+band 0.05 my bootstrap draws with zero cycles vs record' 94                       85                       30.660580    AGREES
+band 0.05 my bootstrap max cycles over 200 draws         4                        na                       na           INFO
+band 0.05 record's max cycles over 200 draws             5                        na                       na           INFO
+band 0.05 observed cycle count exceeds MY null's maximum true                     true                     0            AGREES
+band 0.05 my bootstrap min .. max decisive edges         {163,182}                na                       na           INFO
+band 0.10 my bootstrap median decisive edges vs record's 154.000000               154.000000               2.042631     AGREES
+band 0.10 my bootstrap mean decisive edges vs record's   154.285000               154.405000               1.086820     AGREES
+band 0.10 my bootstrap mean cyclable triples vs record's 612.890000               614.490000               12.879541    AGREES
+band 0.10 my bootstrap mean cycles vs record's           0.045000                 0.035000                 0.096687     AGREES
+band 0.10 my bootstrap total cycles over 200 vs record's 9                        7                        12.369317    AGREES
+band 0.10 my bootstrap draws with zero cycles vs record' 193                      193                      12.026786    AGREES
+band 0.10 my bootstrap max cycles over 200 draws         2                        na                       na           INFO
+band 0.10 record's max cycles over 200 draws             1                        na                       na           INFO
+band 0.10 observed cycle count exceeds MY null's maximum true                     true                     0            AGREES
+band 0.10 my bootstrap min .. max decisive edges         {144,165}                na                       na           INFO
+band 0.15 my bootstrap median decisive edges vs record's 138.000000               138.000000               2.096493     AGREES
+band 0.15 my bootstrap mean decisive edges vs record's   138.135000               138.600000               1.129795     AGREES
+band 0.15 my bootstrap mean cyclable triples vs record's 436.745000               441.620000               11.060890    AGREES
+band 0.15 my bootstrap mean cycles vs record's           0.0                      0.0                      0.021213     AGREES
+band 0.15 my bootstrap total cycles over 200 vs record's 0                        0                        3.000000     AGREES
+band 0.15 my bootstrap draws with zero cycles vs record' 200                      200                      1.000000     AGREES
+band 0.15 my bootstrap max cycles over 200 draws         0                        na                       na           INFO
+band 0.15 record's max cycles over 200 draws             0                        na                       na           INFO
+band 0.15 observed cycle count exceeds MY null's maximum true                     true                     0            AGREES
+band 0.15 my bootstrap min .. max decisive edges         {129,148}                na                       na           INFO
+
+-- DETAIL A. THE PAIRS THAT SIT EXACTLY ON A BAND --
+
+  band 0.05: 3 pairs with |K(I,J) - K(J,I)| exactly on the band
+    pair {2,14} int |margin| 8/160, float |margin| 0.05000000000000004441, float strict > band = true
+    pair {11,20} int |margin| 8/160, float |margin| 0.04999999999999998890, float strict > band = false
+    pair {13,15} int |margin| 8/160, float |margin| 0.04999999999999993339, float strict > band = false
+  band 0.10: 2 pairs with |K(I,J) - K(J,I)| exactly on the band
+    pair {5,8} int |margin| 16/160, float |margin| 0.10000000000000003331, float strict > band = true
+    pair {11,18} int |margin| 16/160, float |margin| 0.10000000000000003331, float strict > band = true
+  band 0.15: 2 pairs with |K(I,J) - K(J,I)| exactly on the band
+    pair {1,4} int |margin| 24/160, float |margin| 0.14999999999999996669, float strict > band = false
+    pair {8,19} int |margin| 24/160, float |margin| 0.14999999999999996669, float strict > band = false
+
+-- DETAIL B. THE CLOSED FORM IN FULL, NO RNG ANYWHERE IN IT --
+
+band   E[decisive]   sd[decisive]  E[cyclable]   E[cycles]     E[2f+b]      
+0.05   171.3693      3.4443        838.556       1.02822896    1.54412441   
+0.10   154.4584      3.7517        614.672       0.04797213    0.07199155   
+0.15   138.4549      3.6596        439.850       0.00081969    0.00122976   
+
+-- DETAIL C. MY OWN 200 DRAWS, SEED {9091,0,0} --
+
+band   dec_med   dec_max   cyc_mean    cyc_max   cycb_mean   zero  
+0.05   171.0     182       0.9850      4         837.615     94    
+0.10   154.0     165       0.0450      2         612.890     193   
+0.15   138.0     148       0.0000      0         436.745     200   
+
+exported_seed_state_after = {exsss,[155146907209991689|149717966196164699]}
+
+-- JUDGEMENT: HAS NULL A THE POWER TO SEPARATE A CYCLIC MATRIX
+   FROM A TRANSITIVE ONE, ON A MATRIX OF THIS SHAPE? --
+
+IT HAS POWER, AND THE OBSERVED COUNT IS NOT DEEP INSIDE THE
+BOOTSTRAP SPREAD. It sits outside the spread by orders of
+magnitude. So this is a finding about the DATA, not a confession
+that the instrument is blind here.
+
+The closed form settles it with no RNG at all. Summed exactly over
+all 1140 triples from the fitted per-edge orientation
+probabilities, the expected number of banded 3-cycles in ONE
+synthetic matrix is 1.02822896 at band 0.05, 0.04797213 at band 0.10 and
+0.00081969 at band 0.15 (DETAIL B). The observed counts are 49, 18 and
+12. Markov's inequality needs no distributional assumption and
+gives P(a null draw reaches the observed count) =< 0.02098426 at band
+0.05, =< 0.00266512 at band 0.10 and =< 0.00006831 at band 0.15. A null whose
+expected cycle count is a few hundredths cannot put an observation
+of 18 in the middle of its spread.
+
+WHERE THE POWER COMES FROM. It is not bought by starving the null
+of decisive edges. The closed form gives the null MORE cyclable
+triples than the observed matrix has at bands 0.05 and 0.10
+(DETAIL B against the observed 789 and 582), so the null has more
+cycle opportunity and still produces almost no cycles. In a
+fitted-strength world a band-decisive edge nearly always points
+the way the strengths do. The shortfall is orientation, not
+opportunity, and the record says the same thing.
+
+THE ONE REAL LIMIT, WHICH IS NOT A LOSS OF POWER. A one-sided test
+whose null mass sits on 0 has no RESOLUTION above its maximum: the
+bootstrap p saturates at (0+1)/201 = 0.004975 and cannot tell 2
+cycles from 18. That is a defect of the p-value as a summary, not
+of the null. The raw counts and the closed-form expectation carry
+the information the p-value throws away, which is why both belong
+in the record.
+
+AND THE POWER CUTS BOTH WAYS, WHICH IS THE CALIBRATION'S POINT. A
+test this sharp fires on a matrix with no coevolution in it, so
+firing cannot by itself mean coevolutionary cycling. Power against
+the scalar-strength model is not power against the hypothesis
+phase 1 wants to test. On that the record and this check agree.
+
+-- WHAT THIS ESTABLISHES AND WHAT IT DOES NOT --
+
+ESTABLISHES. That the calibration's arithmetic is reproducible from an
+implementation that shares nothing with it: the fit, the observed
+counts on both counters, the IF-9 verdict, the fitted-order violation
+counts, the family-wise tail probabilities and the re-derivation
+arithmetic. And that the simulated spread the calibration reports sits
+where its own closed form says it must, which the calibration never
+checked.
+
+DOES NOT ESTABLISH. Nothing about coevolution, nothing about phase 1,
+and nothing about whether the pre-registration's conclusions are the
+right ones. This file checks numbers. The matrix is 20 independently
+evolved champions and a phase 1 archive matrix is not.
+
+DISAGREEMENTS = 0 of 139 tested comparisons.
+
+== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) ==
+{null_a_verification,[{date,[50,48,50,54,45,48,55,45,51,48]},{status,[73,78,68,69,80,69,78,68,69,78,84,32,86,69,82,73,70,73,67,65,84,73,79,78,44,32,115,105,103,110,115,32,110,111,116,104,105,110,103]},{produced_by,[115,99,114,105,112,116,115,47,101,120,112,48,54,55,95,118,101,114,105,102,121,95,110,117,108,108,95,97,95,99,97,108,105,98,114,97,116,105,111,110,46,101,115,99,114,105,112,116]},{under_test,[112,114,111,103,114,97,109,109,101,115,47,112,55,95,99,111,101,118,111,108,117,116,105,111,110,47,101,120,112,48,54,55,95,99,111,101,118,111,108,117,116,105,111,110,95,99,121,99,108,105,110,103,47,101,120,112,48,54,55,95,110,117,108,108,95,97,95,99,97,108,105,98,114,97,116,105,111,110,46,116,120,116]},{engine_pin,[97,53,101,56,98,99,102,99,53,54,52,54,56,50,55,101,57,98,101,52,57,97,57,54,50,57,102,56,97,54,97,57,54,55,56,99,56,49,52,98]},{nothing_run_at_the_pin,true},{tested_comparisons,139},{disagreements,0},{disagreement_labels,[]},{parse,[{printed_rows,20},{term_rows,20},{integer_matrices_identical,true},{worst_cell_distance,0.0},{decisive_matches,29928},{draw_matches,472},{worst_pmf_error,1.3211653993039363e-14}]},{fit,[{prior_reading_used,1},{gaps_by_prior_reading,[{1,0.0},{2,0.1006682371500549}]},{iterations,114},{status,converged},{tolerance,1.0e-10},{cap,10000},{strengths,[{2001,0.4597576642648565},{2002,0.41104795242203596},{2003,0.9781320127613136},{2004,0.46569778490197283},{2005,0.2410500529128993},{2006,0.6422333779534315},{2007,1.0544054006566552},{2008,0.374883165965219},{2009,0.692871131263395},{2010,1.125803736917793},{2011,0.8941806365106608},{2012,0.8119905273081143},{2013,0.8764014396766397},{2014,0.9407991435030372},{2015,1.8987884521621419},{2016,4.194686911410726},{2017,1.1987622555852337},{2018,0.7778018385276934},{2019,0.41490562297501205},{2020,1.545800892321166}]}]},{identification,[{zero_win_ordered_pairs,1},{those_pairs,[{5,16}]},{forward_reachable_from_1,20},{backward_reachable_from_1,20},{raw_win_digraph_strongly_connected,true},{augmented_digraph_complete,true}]},{observed_integer,[{0.05,[{cycles,49},{ordered_2f_plus_b,73},{forward,24},{backward,25},{decisive_edges,168},{cyclable_triples,789}]},{0.1,[{cycles,18},{ordered_2f_plus_b,28},{forward,10},{backward,8},{decisive_edges,150},{cyclable_triples,582}]},{0.15,[{cycles,12},{ordered_2f_plus_b,18},{forward,6},{backward,6},{decisive_edges,141},{cyclable_triples,487}]}]},{observed_float,[{0.05,[{cycles,49},{ordered_2f_plus_b,73},{forward,24},{backward,25},{decisive_edges,169},{cyclable_triples,802}]},{0.1,[{cycles,18},{ordered_2f_plus_b,28},{forward,10},{backward,8},{decisive_edges,152},{cyclable_triples,604}]},{0.15,[{cycles,12},{ordered_2f_plus_b,18},{forward,6},{backward,6},{decisive_edges,141},{cyclable_triples,487}]}]},{on_band_pairs,[{0.05,[{{2,14},8,[48,46,48,53,48,48,48,48,48,48,48,48,48,48,48,48,48,48,52,52,52,49],true},{{11,20},8,[48,46,48,52,57,57,57,57,57,57,57,57,57,57,57,57,57,57,56,56,57,48],false},{{13,15},8,[48,46,48,52,57,57,57,57,57,57,57,57,57,57,57,57,57,57,51,51,51,57],false}]},{0.1,[{{5,8},16,[48,46,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,51,51,51,49],true},{{11,18},16,[48,46,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,51,51,51,49],true}]},{0.15,[{{1,4},24,[48,46,49,52,57,57,57,57,57,57,57,57,57,57,57,57,57,57,54,54,54,57],false},{{8,19},24,[48,46,49,52,57,57,57,57,57,57,57,57,57,57,57,57,57,57,54,54,54,57],false}]}]},{closed_form,[{0.05,[{expected_decisive_edges,171.36933702538053},{sd_decisive_edges,3.444276816277898},{expected_cyclable_triples,838.5561167585961},{expected_cycles,1.0282289579191617},{expected_forward,0.5158954533625375},{expected_backward,0.5123335045566241},{expected_ordered_2f_plus_b,1.544124411281699}]},{0.1,[{expected_decisive_edges,154.45841715954663},{sd_decisive_edges,3.7517157367835754},{expected_cyclable_triples,614.6715221707681},{expected_cycles,0.04797212994713268},{expected_forward,0.0240194244383635},{expected_backward,0.023952705508769177},{expected_ordered_2f_plus_b,0.07199155438549618}]},{0.15,[{expected_decisive_edges,138.4548553365958},{sd_decisive_edges,3.659583668841734},{expected_cyclable_triples,439.8499038339889},{expected_cycles,8.196867317592511e-4},{expected_forward,4.100750271402287e-4},{expected_backward,4.0961170461902236e-4},{expected_ordered_2f_plus_b,0.0012297617588994797}]}]},{order_violations,[{0.05,[{decisive_pairs,168},{disagree_with_fitted_order,36},{share,0.21428571428571427}]},{0.1,[{decisive_pairs,150},{disagree_with_fitted_order,26},{share,0.17333333333333334}]},{0.15,[{decisive_pairs,141},{disagree_with_fitted_order,23},{share,0.16312056737588654}]}]},{family_wise,[{per_run_rate,0.004975124378109453},{runs_per_arm,13},{p_at_least_1,0.06278075655132542},{p_at_least_2,0.0018615057271615762},{p_at_least_3,3.392820243666039e-5},{p_at_least_4,4.226144833702751e-7},{two_arms,6.78552537503041e-5},{three_arms,1.0178115398018495e-4},{clopper_pearson_lower_1_of_1_at_95pc,0.05}]},{smallest_k_of_13,[{0.004975124378109453,3},{0.05,6},{1.0,none}]},{bootstrap,[{alg,exsss},{seed,{9091,0,0}},{draws,200},{exported_state_after,{exsss,[155146907209991689|149717966196164699]}},{per_band,[{0.05,[{cycles,[{min,0},{median,1.0},{max,4},{mean,0.985},{sd,1.1582238177745705},{total,197},{zero_draws,94}]},{ordered_2f_plus_b,[{min,0},{median,1.0},{max,8},{mean,1.475},{sd,1.8401919825559825},{total,295},{zero_draws,94}]},{decisive_edges,[{min,163},{median,171.0},{max,182},{mean,171.285},{sd,2.964407793782628},{total,34257},{zero_draws,0}]},{cyclable_triples,[{min,718},{median,834.0},{max,999},{mean,837.615},{sd,43.59229537521971},{total,167523},{zero_draws,0}]}]},{0.1,[{cycles,[{min,0},{median,0.0},{max,2},{mean,0.045},{sd,0.25157793481629487},{total,9},{zero_draws,193}]},{ordered_2f_plus_b,[{min,0},{median,0.0},{max,3},{mean,0.055},{sd,0.3201365914511022},{total,11},{zero_draws,193}]},{decisive_edges,[{min,144},{median,154.0},{max,165},{mean,154.285},{sd,3.5520218603609988},{total,30857},{zero_draws,0}]},{cyclable_triples,[{min,502},{median,614.5},{max,741},{mean,612.89},{sd,42.861092687093944},{total,122578},{zero_draws,0}]}]},{0.15,[{cycles,[{min,0},{median,0.0},{max,0},{mean,0.0},{sd,0.0},{total,0},{zero_draws,200}]},{ordered_2f_plus_b,[{min,0},{median,0.0},{max,0},{mean,0.0},{sd,0.0},{total,0},{zero_draws,200}]},{decisive_edges,[{min,129},{median,138.0},{max,148},{mean,138.135},{sd,3.695274042781705},{total,27627},{zero_draws,0}]},{cyclable_triples,[{min,349},{median,430.0},{max,544},{mean,436.745},{sd,36.79892361054156},{total,87349},{zero_draws,0}]}]}]}]}]}.

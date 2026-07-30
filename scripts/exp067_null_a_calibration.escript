@@ -62,9 +62,10 @@
 
 -define(REPO, "/home/rl/work/github.com/rgfaber/faber-programmes").
 -define(ARCH, ?REPO "/programmes/p7_coevolution/exp066_competence_floor/").
+-define(P1, ?REPO "/programmes/p7_coevolution/exp067_coevolution_cycling/").
 -define(XP, ?ARCH "exp066_crossplay.txt").
 -define(VERIFY, ?ARCH "exp066_within_tier_verify.txt").
--define(OUT, ?ARCH "exp066_null_a_calibration.txt").
+-define(OUT, ?P1 "exp067_null_a_calibration.txt").
 
 -define(MATCHES, 160).
 -define(BANDS, [{0.05, 8}, {0.10, 16}, {0.15, 24}]).
@@ -109,12 +110,24 @@ main(Args) ->
     Boot = bootstrap(Km, Idx, Fit),
     FLines = fit_lines(Seeds, Km, Idx, Fit),
     BLines = boot_lines(Km, Idx, Boot),
-    VLines = verdict_lines(Km, Idx, Fit, Boot),
-    Lines = lists:append([head(Out, Seeds), GLines, FLines, BLines, VLines,
+    VLines = verdict_lines(Wm, Km, Idx, Fit, Boot),
+    HLines = headline(Wm, Km, Idx, Fit, Boot),
+    Lines = lists:append([head(Out, Seeds), HLines, GLines, FLines, BLines, VLines,
                           foot(),
-                          term(Out, Seeds, Dev, Gates, Km, Idx, Fit, Boot)]),
+                          term(Out, Seeds, Dev, Gates, Wm, Km, Idx, Fit, Boot)]),
     ok = file:write_file(Out, [Lines]),
+    ok = parse_back(Out),
     io:format("~nwritten: ~ts~n", [Out]).
+
+%% The record claims a machine-readable term at its foot. That claim is checked
+%% by reading the written file back and parsing it, so an unparseable term fails
+%% the run instead of shipping.
+parse_back(Out) ->
+    {ok, Bin} = file:read_file(Out),
+    {null_a_calibration, F} = term_after_marker(binary_to_list(Bin)),
+    io:format("term parsed back from the written file: ~p top-level keys~n",
+              [length(F)]),
+    ok.
 
 out([P | _]) -> P;
 out([]) -> ?OUT.
@@ -187,11 +200,19 @@ counts(Mg, Idx, B) ->
     {Fw + Bw, Ord, Fw, Bw, 2 * Fw + Bw =:= Ord,
      decisive(Mg, Idx, B), cyclable(Mg, Idx, B)}.
 
-%% The two quantities the bootstrap needs, and nothing else, because it runs
-%% 200 times at three bands.
-cyc_dec(Mg, Idx, B) ->
+%% The four quantities the bootstrap needs, and nothing else, because it runs
+%% 200 times at three bands. ORDERED is in the tuple because the DESIGN gate's
+%% RC2-4 asks for the synthetic ordered count too, and because exp066's records
+%% carry ordered beside cycles everywhere.
+%% {cycles, ordered, decisive, cyclable}
+quad(Mg, Idx, B) ->
     {length(forward(Mg, Idx, B)) + length(backward(Mg, Idx, B)),
-     decisive(Mg, Idx, B), cyclable(Mg, Idx, B)}.
+     ordered(Mg, Idx, B), decisive(Mg, Idx, B), cyclable(Mg, Idx, B)}.
+
+-define(I_CYC, 1).
+-define(I_ORD, 2).
+-define(I_DEC, 3).
+-define(I_CBL, 4).
 
 %%---------------------------------------------------------------------------
 %% A. THE GATES. Against literals quoted from persisted records, not against
@@ -299,6 +320,7 @@ fit_lines(Seeds, Km, Idx, {S, Iters, Status}) ->
      f("rank  seed   strength    row_mean_observed~n", [])]
         ++ [f("~4w  ~w  ~9.5f    ~.4f~n", [R, Sd, St, row_mean(Km, Idx, idx_of(Sd, Seeds))])
             || {R, {St, Sd}} <- lists:zip(lists:seq(1, length(Ranked)), Ranked)]
+        ++ ident_lines(Km, Idx)
         ++ [f("~nTHE FITTED ORDER IS NOT ADOPTED AS A RATING. It is here for two~n"
               "reasons only: the null draws from it, and its own violation count is~n"
               "the quantity IF-8 gates the phase 1 panel on.~n~n", []),
@@ -308,6 +330,40 @@ fit_lines(Seeds, Km, Idx, {S, Iters, Status}) ->
                violations(Km, Idx, S, Bi) / max(1, decisive(mg(Km), Idx, Bi))])
             || {B, Bi} <- ?BANDS]
         ++ [f("~n", [])].
+
+%% IS THE FIT IDENTIFIED? Ford's condition: the MLE of a Bradley-Terry model
+%% exists and is unique up to scale iff the win digraph is strongly connected.
+%% The prior of one virtual win and one virtual loss on every ORDERED pair makes
+%% the AUGMENTED digraph complete, so the augmented fit is always identified;
+%% whether the RAW digraph is strongly connected is a fact about the matrix and
+%% is measured rather than assumed, because it says whether the prior is doing
+%% real work here or is only insurance.
+ident_lines(Km, Idx) ->
+    Zeros = [{I, J} || I <- Idx, J <- Idx, I =/= J, el(Km, I, J) =:= 0],
+    Raw = strongly_connected(Km, Idx),
+    [f("~nIDENTIFICATION (Ford's condition on the win digraph)~n", []),
+     f("  ordered pairs with ZERO wins for the row, K(I,J) = 0     = ~p of 380~n",
+       [length(Zeros)]),
+     f("  those pairs                                             = ~w~n", [Zeros]),
+     f("  RAW win digraph strongly connected                      = ~w~n", [Raw]),
+     f("  AUGMENTED digraph (after the +1/+1 prior) complete       = true~n", []),
+     f("    (the prior puts a positive win count on EVERY ordered pair, so the~n"
+       "     augmented digraph is the complete digraph, which is strongly~n"
+       "     connected, so the augmented MLE exists and is unique up to scale)~n", []),
+     f("  scale fixed by                                          = sum(s) = ~p~n",
+       [length(Idx)]),
+     f("  so the fit is IDENTIFIED                                = true~n", [])].
+
+strongly_connected(Km, Idx) ->
+    Fwd = reach(Km, Idx, [hd(Idx)], [], fun(I, J) -> el(Km, I, J) > 0 end),
+    Bwd = reach(Km, Idx, [hd(Idx)], [], fun(I, J) -> el(Km, J, I) > 0 end),
+    length(Fwd) =:= length(Idx) andalso length(Bwd) =:= length(Idx).
+
+reach(_Km, _Idx, [], Seen, _Edge) -> Seen;
+reach(Km, Idx, [I | Rest], Seen, Edge) ->
+    Next = [J || J <- Idx, not lists:member(J, Seen), not lists:member(J, [I | Rest]),
+                 Edge(I, J)],
+    reach(Km, Idx, Rest ++ Next, [I | Seen], Edge).
 
 row_mean(Km, Idx, I) ->
     lists:sum([el(Km, I, J) / ?MATCHES || J <- Idx, J =/= I]) / (length(Idx) - 1).
@@ -330,7 +386,7 @@ bootstrap(Km, Idx, {S, _It, _St}) ->
 draws(_Km, _Idx, _S, 0, St, Acc) -> {lists:reverse(Acc), St};
 draws(Km, Idx, S, N, St, Acc) ->
     {M, St2} = synth(Km, Idx, S, St),
-    Row = [{B, cyc_dec(mg(M), Idx, Bi)} || {B, Bi} <- ?BANDS],
+    Row = [{B, quad(mg(M), Idx, Bi)} || {B, Bi} <- ?BANDS],
     draws(Km, Idx, S, N - 1, St2, [Row | Acc]).
 
 synth(Km, Idx, S, St) ->
@@ -374,56 +430,113 @@ boot_lines(Km, Idx, {Rows, Exported}) ->
               "               CYCLIC test is one-sided: observed > max of the 200.~n~n", [])].
 
 band_block(Km, Idx, Rows, B, Bi) ->
-    {ObsCyc, ObsDec, ObsCbl} = cyc_dec(mg(Km), Idx, Bi),
-    Cs = [element(1, keyget(B, Row)) || Row <- Rows],
-    Ds = [element(2, keyget(B, Row)) || Row <- Rows],
-    Bs = [element(3, keyget(B, Row)) || Row <- Rows],
-    [stat_line(B, "cycles  ", ObsCyc, Cs),
-     stat_line(B, "decisive", ObsDec, Ds),
-     stat_line(B, "cyclable", ObsCbl, Bs)].
+    {ObsCyc, ObsOrd, ObsDec, ObsCbl} = quad(mg(Km), Idx, Bi),
+    [stat_line(B, "cycles  ", ObsCyc, col(Rows, B, ?I_CYC)),
+     stat_line(B, "ordered ", ObsOrd, col(Rows, B, ?I_ORD)),
+     stat_line(B, "decisive", ObsDec, col(Rows, B, ?I_DEC)),
+     stat_line(B, "cyclable", ObsCbl, col(Rows, B, ?I_CBL))].
+
+col(Rows, B, Which) -> [element(Which, keyget(B, Row)) || Row <- Rows].
 
 stat_line(B, Tag, Obs, Xs) ->
     f("~.2f  ~s  ~8w  ~9w  ~12.1f  ~9w  ~p below, ~p equal~n",
       [B, Tag, Obs, lists:min(Xs), median(Xs), lists:max(Xs),
        length([1 || X <- Xs, X < Obs]), length([1 || X <- Xs, X =:= Obs])]).
 
-verdict_lines(Km, Idx, {S, _It, Status}, {Rows, _Exp}) ->
-    Bi = band_int(?PRIMARY),
-    {ObsCyc, ObsDec, _ObsCbl} = cyc_dec(mg(Km), Idx, Bi),
-    Ds = [element(2, keyget(?PRIMARY, Row)) || Row <- Rows],
-    Cs = [element(1, keyget(?PRIMARY, Row)) || Row <- Rows],
-    MedD = median(Ds),
-    Diff = MedD - ObsDec,
-    Fires = abs(Diff) > ?FIT_GATE orelse Status =:= hit_cap,
-    [f("-- D. THE TWO PRE-STATED QUESTIONS, ANSWERED --~n~n", []),
-     f("D1. DOES IF-9 FIRE ON THIS MATRIX, AND WITH WHAT SIGN?~n~n", []),
-     f("  observed decisive edges at band ~.2f, INTEGER counter  = ~p of 190~n",
-       [?PRIMARY, ObsDec]),
-     f("  the same count on the FLOAT counter phase 0 printed    = 152 of 190~n", []),
-     f("    (the pre-registered counter is the integer one, so the gate is~n"
-       "     applied to ~p; the float value is printed because the DESIGN gate's~n"
-       "     RC2-4 quoted it)~n", [ObsDec]),
-     f("  median synthetic decisive edges                        = ~.1f~n", [MedD]),
-     f("  median minus observed                                  = ~s~.1f~n",
-       [plus(Diff), Diff]),
-     f("  IF-9 width                                             = ~p of 190~n", [?FIT_GATE]),
-     f("  fit hit the iteration cap                              = ~w~n", [Status =:= hit_cap]),
-     f("  IF-9 FIRES                                             = ~w~n", [Fires]),
-     f("  sign                                                   = ~s~n~n", [sign_of(Diff)]),
-     f("D2. DOES THE OBSERVED CYCLE COUNT EXCEED ITS OWN NULL MAXIMUM?~n~n", []),
-     f("  observed cycles at band ~.2f  = ~p~n", [?PRIMARY, ObsCyc]),
-     f("  maximum of the 200 draws      = ~p~n", [lists:max(Cs)]),
-     f("  median of the 200 draws       = ~.1f~n", [median(Cs)]),
-     f("  minimum of the 200 draws      = ~p~n", [lists:min(Cs)]),
-     f("  observed > maximum            = ~w~n", [ObsCyc > lists:max(Cs)]),
-     f("    (this matrix is NOT a phase 1 archive matrix and this is NOT a phase 1~n"
-       "     verdict. The question is whether a real ladder-shaped matrix of this~n"
-       "     shape trips the per-run CYCLIC test, because the 3-of-13 family-wise~n"
-       "     arithmetic assumes it does so with probability at most 1/201.)~n~n", []),
-     f("  strengths, sorted descending, ~p members:~n    ~w~n~n",
-       [length(S), [round(X * 100000) / 100000 || X <- lists:reverse(lists:sort(S))]])]
+verdict_lines(Wm, Km, Idx, {S, _It, Status}, {Rows, _Exp}) ->
+    counter_lines(Wm, Km, Idx)
+        ++ if9_lines(Wm, Km, Idx, Status, Rows)
+        ++ cyclic_lines(Km, Idx, S, Rows)
         ++ share_lines(Km, Idx, Rows)
-        ++ if8_lines(Km, Idx, S).
+        ++ if8_lines(Km, Idx, S)
+        ++ consequence_lines(Wm, Km, Idx, Status, Rows).
+
+%% D0. BOTH COUNTERS, SIDE BY SIDE. RC2-4 quotes the float counter's numbers
+%% (49 / 18 / 12 cycles, 152 decisive at band 0.10) and asks for the integer
+%% recount beside them. The integer counter is the one phase 1 pre-registers.
+counter_lines(Wm, Km, Idx) ->
+    [f("-- D0. THE FLOAT COUNTER AND THE INTEGER COUNTER, SIDE BY SIDE --~n~n", []),
+     f("  Both count the same definition with strict >. The float counter compares~n"
+       "  W(I,J) - W(J,I) against 0.05 / 0.10 / 0.15 in IEEE doubles; the integer~n"
+       "  counter compares K(I,J) - K(J,I) against 8 / 16 / 24 out of 160. A margin~n"
+       "  that is mathematically ON a band comes out a few times 1.0e-17 ABOVE it in~n"
+       "  doubles, so the float counter calls it decisive and the integer counter does~n"
+       "  not. The integer one is what EXP-067 pre-registers.~n~n", []),
+     f("  band  counter  cycles  ordered  decisive  cyclable~n", [])]
+        ++ lists:append([counter_rows(Wm, Km, Idx, B, Bi) || {B, Bi} <- ?BANDS])
+        ++ [f("~n  pairs whose |K(I,J) - K(J,I)| is EXACTLY the band integer:~n", [])]
+        ++ lists:append([on_band_lines(Wm, Km, Idx, B, Bi) || {B, Bi} <- ?BANDS])
+        ++ [f("~n  Every number in the rest of this file is on the INTEGER counter.~n~n", [])].
+
+counter_rows(Wm, Km, Idx, B, Bi) ->
+    {FC, FO, FD, FB} = quad(mg(Wm), Idx, B),
+    {IC, IO, ID, IB} = quad(mg(Km), Idx, Bi),
+    [f("  ~.2f  float    ~6w  ~7w  ~8w  ~8w~n", [B, FC, FO, FD, FB]),
+     f("  ~.2f  integer  ~6w  ~7w  ~8w  ~8w~n", [B, IC, IO, ID, IB])].
+
+on_band_lines(Wm, Km, Idx, B, Bi) ->
+    Mg = mg(Km),
+    Mf = mg(Wm),
+    Ps = [{I, J} || {I, J} <- pairs(Idx), abs(Mg(I, J)) =:= Bi],
+    [f("    ~.2f  ~p of 190 on the band exactly~n", [B, length(Ps)])]
+        ++ [f("      cells {~p,~p} int |margin| ~p/160, float |margin| ~.20f,~n"
+              "        float strict > band = ~w, integer strict > band = ~w~n",
+              [I, J, Bi, abs(Mf(I, J)), abs(Mf(I, J)) > B, abs(Mg(I, J)) > Bi])
+            || {I, J} <- Ps].
+
+%% D1. IF-9, evaluated against BOTH observed values, because RC2-4 names the
+%% float one and the pre-registration counts on the integer one.
+if9_lines(Wm, Km, Idx, Status, Rows) ->
+    Bi = band_int(?PRIMARY),
+    ObsDec = element(?I_DEC, quad(mg(Km), Idx, Bi)),
+    FltDec = element(?I_DEC, quad(mg(Wm), Idx, ?PRIMARY)),
+    Ds = col(Rows, ?PRIMARY, ?I_DEC),
+    MedD = median(Ds),
+    [f("-- D1. DOES IF-9 FIRE ON THIS MATRIX, AND WITH WHAT SIGN? --~n~n", []),
+     f("  median synthetic decisive edges at band ~.2f            = ~.1f of 190~n",
+       [?PRIMARY, MedD]),
+     f("  synthetic decisive edges, min .. max                   = ~p .. ~p~n",
+       [lists:min(Ds), lists:max(Ds)]),
+     f("  IF-9 width                                             = ~p of 190~n",
+       [?FIT_GATE]),
+     f("  fit hit the iteration cap                              = ~w~n",
+       [Status =:= hit_cap]),
+     f("    (a cap hit fires IF-9 by itself)~n~n", []),
+     f("  observed  counter  median_minus_observed  fires  sign~n", []),
+     if9_row("integer", ObsDec, MedD, Status),
+     if9_row("float  ", FltDec, MedD, Status),
+     f("~n  The pre-registered counter is the INTEGER one, so the gate verdict of~n"
+       "  record is the first row. The float row is printed because RC2-4 quoted~n"
+       "  152. Both rows are shown so a reader can see the two-edge gap does not~n"
+       "  change the verdict.~n~n", [])].
+
+if9_row(Tag, Obs, MedD, Status) ->
+    Diff = MedD - Obs,
+    f("  ~8w  ~s  ~s~19.1f  ~5w  ~s~n",
+      [Obs, Tag, plus(Diff), Diff, fires(Diff, Status), sign_of(Diff)]).
+
+fires(Diff, Status) -> abs(Diff) > ?FIT_GATE orelse Status =:= hit_cap.
+
+%% D2. The per-run CYCLIC test, at all three bands, because the observed count's
+%% position in its own 200 draws is what the 1/201 rate is about.
+cyclic_lines(Km, Idx, S, Rows) ->
+    [f("-- D2. DOES THE OBSERVED CYCLE COUNT EXCEED ITS OWN NULL MAXIMUM? --~n~n", []),
+     f("  The per-run CYCLIC test, applied to this matrix as if it were one phase 1~n"
+       "  run's above-floor submatrix. It is NOT one: this matrix is 20~n"
+       "  independently evolved champions. The question is only whether a real,~n"
+       "  ladder-shaped matrix of the right shape trips the test.~n~n", []),
+     f("  band  observed  null_min  null_median  null_max  exceeds_max  below  equal~n", [])]
+        ++ [cyclic_row(Km, Idx, Rows, B, Bi) || {B, Bi} <- ?BANDS]
+        ++ [f("~n  strengths, sorted descending, ~p members:~n    ~w~n~n",
+              [length(S), [round(X * 100000) / 100000
+                           || X <- lists:reverse(lists:sort(S))]])].
+
+cyclic_row(Km, Idx, Rows, B, Bi) ->
+    Obs = element(?I_CYC, quad(mg(Km), Idx, Bi)),
+    Xs = col(Rows, B, ?I_CYC),
+    f("  ~.2f  ~8w  ~8w  ~11.1f  ~8w  ~11w  ~5w  ~5w~n",
+      [B, Obs, lists:min(Xs), median(Xs), lists:max(Xs), Obs > lists:max(Xs),
+       length([1 || X <- Xs, X < Obs]), length([1 || X <- Xs, X =:= Obs])]).
 
 %% D3. The scale-matched share, which is the only quantity comparable across
 %% index sets of different size, for the observed matrix and for the null.
@@ -431,7 +544,7 @@ share_lines(Km, Idx, Rows) ->
     [f("D3. THE SCALE-MATCHED SHARE, OBSERVED AGAINST THE NULL.~n~n", []),
      f("  share = cycles / cyclable triples. Raw counts over different index~n"
        "  sets are not comparable; this is.~n~n", []),
-     f("  band  obs_cycles  obs_cyclable  obs_share  null_median_share~n", [])]
+     f("  band  obs_cycles  obs_cyclable  obs_share  null_median_share  null_mean_share~n", [])]
         ++ [share_line(Km, Idx, Rows, B, Bi) || {B, Bi} <- ?BANDS]
         ++ [f("~n  THIS MATRIX IS 20 INDEPENDENTLY EVOLVED CHAMPIONS, one per phase 0~n"
               "  arm S run, that never met each other during evolution. There is no~n"
@@ -441,11 +554,16 @@ share_lines(Km, Idx, Rows) ->
               "  a phase 1 archive matrix's share should be printed beside.~n~n", [])].
 
 share_line(Km, Idx, Rows, B, Bi) ->
-    {Cyc, _Dec, Cbl} = cyc_dec(mg(Km), Idx, Bi),
-    MedC = median([element(1, keyget(B, R)) || R <- Rows]),
-    MedB = median([element(3, keyget(B, R)) || R <- Rows]),
-    f("  ~.2f  ~10w  ~12w  ~9.4f  ~17.4f~n",
-      [B, Cyc, Cbl, Cyc / max(1, Cbl), MedC / max(1.0, MedB)]).
+    {Cyc, _Ord, _Dec, Cbl} = quad(mg(Km), Idx, Bi),
+    Cs = col(Rows, B, ?I_CYC),
+    Bs = col(Rows, B, ?I_CBL),
+    MedC = median(Cs),
+    MedB = median(Bs),
+    f("  ~.2f  ~10w  ~12w  ~9.4f  ~17.4f  ~15.6f~n",
+      [B, Cyc, Cbl, Cyc / max(1, Cbl), MedC / max(1.0, MedB),
+       mean(Cs) / max(1.0, mean(Bs))]).
+
+mean(Xs) -> lists:sum(Xs) / length(Xs).
 
 %% D4. The other chosen constant this matrix can already speak to: IF-8's
 %% order-violation trigger for the phase 1 panel. Reported, not moved.
@@ -459,12 +577,239 @@ if8_lines(Km, Idx, S) ->
      f("  band ~.2f: ~p of ~p band-decisive pairs already disagree with the~n",
        [?PRIMARY, violations(Km, Idx, S, Bi), decisive(mg(Km), Idx, Bi)]),
      f("  fitted order, on 190 pairs of the eventual 300.~n", []),
-     f("  IF-8's trigger is ~p over all 300.~n~n", [30]),
+     f("  IF-8's trigger is ~p over all 300.~n", [30]),
+     f("  HEADROOM LEFT for the remaining 110 pairs (the 5 scripted rungs against~n"
+       "  the 20 champions and against each other) = ~p violations.~n~n",
+       [30 - violations(Km, Idx, S, Bi)]),
      f("  NO CONSTANT IS MOVED HERE. The two numbers are printed side by side and~n"
        "  the consequence is a pre-registration question, not an arithmetic one.~n~n", [])].
 
+%%---------------------------------------------------------------------------
+%% E. THE CONSEQUENCE. RC2-4 states it: if the phase 0 matrix fires IF-9 or
+%% exceeds its own Null A maximum, the gate width and the 3-of-13 arithmetic must
+%% be RE-DERIVED before the pre-registration closes. So both conditions are
+%% evaluated here, the registered arithmetic is recomputed exactly, and the
+%% replacement numbers are computed IF one is owed. Nothing is moved in this
+%% file; the pre-registration is a different document and a different agent's
+%% edit.
+%%---------------------------------------------------------------------------
+%% The two RC2-4 trigger conditions, computed in ONE place and consumed by both
+%% the prose and the machine-readable term, so the record cannot say two things.
+triggers(Wm, Km, Idx, Status, Rows) ->
+    Bi = band_int(?PRIMARY),
+    ObsDec = element(?I_DEC, quad(mg(Km), Idx, Bi)),
+    FltDec = element(?I_DEC, quad(mg(Wm), Idx, ?PRIMARY)),
+    MedD = median(col(Rows, ?PRIMARY, ?I_DEC)),
+    Fires = fires(MedD - ObsDec, Status) orelse fires(MedD - FltDec, Status),
+    Exceed = [B || {B, B2} <- ?BANDS,
+                   element(?I_CYC, quad(mg(Km), Idx, B2))
+                       > lists:max(col(Rows, B, ?I_CYC))],
+    {Fires, Exceed, Fires orelse Exceed =/= []}.
+
+consequence_lines(Wm, Km, Idx, Status, Rows) ->
+    Bi = band_int(?PRIMARY),
+    ObsDec = element(?I_DEC, quad(mg(Km), Idx, Bi)),
+    FltDec = element(?I_DEC, quad(mg(Wm), Idx, ?PRIMARY)),
+    Ds = col(Rows, ?PRIMARY, ?I_DEC),
+    MedD = median(Ds),
+    {Fires, Exceed, _Owed} = triggers(Wm, Km, Idx, Status, Rows),
+    e1_lines(ObsDec, FltDec, MedD, Fires, Exceed)
+        ++ e2_lines()
+        ++ e3_lines(Km, Idx, Rows)
+        ++ e4_lines(ObsDec, MedD, Ds)
+        ++ e5_lines(Fires, Exceed)
+        ++ e6_lines(Exceed).
+
+e1_lines(ObsDec, FltDec, MedD, Fires, Exceed) ->
+    [f("-- E. THE CONSEQUENCE FOR THE PRE-REGISTRATION (RC2-4) --~n~n", []),
+     f("E1. THE TWO CONDITIONS RC2-4 NAMES, EVALUATED.~n~n", []),
+     f("  condition 1: IF-9 fires on this matrix~n", []),
+     f("    median synthetic decisive ~.1f against observed ~p (integer) and~n",
+       [MedD, ObsDec]),
+     f("    ~p (float), width ~p of 190           -> ~w~n",
+       [FltDec, ?FIT_GATE, Fires]),
+     f("  condition 2: the observed cycle count exceeds its own Null A maximum~n", []),
+     f("    bands where it does                                  -> ~w~n", [Exceed]),
+     f("    (empty list means the count is inside the null at every band)~n~n", [])].
+
+%% E2. The registered arithmetic, recomputed. The pre-registration states
+%% P(>=1) = 0.0628, P(>=2) = 0.00186, P(>=3) = 3.3e-5 at p = 1/201 over 13 runs,
+%% about 6.7e-5 over two arms and about 1.0e-4 over three. Those five numbers are
+%% recomputed here from the binomial rather than quoted, so the document's own
+%% arithmetic is checked at the same time.
+e2_lines() ->
+    P = 1 / 201,
+    T3 = tail(13, P, 3),
+    [f("E2. THE REGISTERED FAMILY-WISE ARITHMETIC, RECOMPUTED FROM THE BINOMIAL.~n~n", []),
+     f("  per-run rate p = 1/201 = ~.7f, runs per arm = 13~n~n", [P]),
+     f("  k   P(at least k of 13)   document's stated value~n", []),
+     f("  1   ~.9f           0.0628~n", [tail(13, P, 1)]),
+     f("  2   ~.9f           0.00186~n", [tail(13, P, 2)]),
+     f("  3   ~.9f           3.3e-5~n", [T3]),
+     f("  4   ~.9f           (not stated)~n~n", [tail(13, P, 4)]),
+     f("  two verdict-carrying arms  1 - (1 - P(>=3))^2 = ~.9f  (stated 6.7e-5)~n",
+       [1 - math:pow(1 - T3, 2)]),
+     f("  three, with a gradeable A4 1 - (1 - P(>=3))^3 = ~.9f  (stated 1.0e-4)~n~n",
+       [1 - math:pow(1 - T3, 3)]),
+     f("  So the level the 3-of-13 threshold buys, per arm, is ~.3e, and the~n"
+       "  family-wise level over three arms is ~.3e. Any re-derivation has to~n"
+       "  hold that level, not a level chosen afterwards.~n~n",
+       [T3, 1 - math:pow(1 - T3, 3)])].
+
+%% E3. What per-run rate THIS matrix implies. One matrix cannot estimate a rate,
+%% so the bootstrap p-value is reported as the calibrated per-matrix quantity and
+%% the 0-or-1 empirical outcome is reported beside it as what it is.
+e3_lines(Km, Idx, Rows) ->
+    [f("E3. THE PER-RUN RATE THIS MATRIX IMPLIES.~n~n", []),
+     f("  band  observed  draws_>=_obs  bootstrap_p  fires  zero_cycle_draws  all_200_cycles~n", [])]
+        ++ [rate_row(Km, Idx, Rows, B, Bi) || {B, Bi} <- ?BANDS]
+        ++ [f("~n  bootstrap_p = (draws >= observed + 1) / 201, the standard one-sided~n"
+              "  parametric-bootstrap p-value for the cycle count under Null A. It is~n"
+              "  at its FLOOR of 1/201 at all three bands, so it cannot distinguish~n"
+              "  'just above the maximum' from 'far above it': read it beside the raw~n"
+              "  counts in D2, not instead of them. fires is the pre-registered per-run~n"
+              "  CYCLIC test, observed > max of 200, the event whose rate the 3-of-13~n"
+              "  arithmetic caps at 1/201.~n~n", []),
+            f("  zero_cycle_draws and all_200_cycles are the same fact from the null's~n"
+              "  side: how many of the 200 synthetic matrices contain no banded cycle~n"
+              "  at all, and how many cycles the whole bootstrap produced across all~n"
+              "  200 matrices together. Compare the last column with the observed~n"
+              "  count in ONE matrix.~n~n", []),
+            f("  ONE matrix gives a 0-or-1 outcome, not a rate. What it can do is~n"
+              "  show whether a real matrix of the right shape sits where the null~n"
+              "  says a null matrix sits. That is what the p-value column reports.~n~n", [])].
+
+rate_row(Km, Idx, Rows, B, Bi) ->
+    Obs = element(?I_CYC, quad(mg(Km), Idx, Bi)),
+    Xs = col(Rows, B, ?I_CYC),
+    Ge = length([1 || X <- Xs, X >= Obs]),
+    f("  ~.2f  ~8w  ~12w  ~11.6f  ~5w  ~16w  ~14w~n",
+      [B, Obs, Ge, (Ge + 1) / (?DRAWS + 1), Obs > lists:max(Xs),
+       length([1 || X <- Xs, X =:= 0]), lists:sum(Xs)]).
+
+%% E4. What the width would have to be, and what width is pure sampling noise.
+e4_lines(ObsDec, MedD, Ds) ->
+    Need = ceil(abs(MedD - ObsDec)),
+    Spread = lists:max([abs(X - MedD) || X <- Ds]),
+    [f("E4. THE GATE WIDTH, MEASURED AGAINST WHAT IT IS SUPPOSED TO ACCEPT.~n~n", []),
+     f("  registered width                                       = ~p of 190~n",
+       [?FIT_GATE]),
+     f("  |median synthetic - observed| on this matrix           = ~.1f~n",
+       [abs(MedD - ObsDec)]),
+     f("  smallest integer width that accepts this matrix        = ~p~n", [Need]),
+     f("  the null's OWN sampling spread of the decisive count,~n", []),
+     f("    max |draw - median| over the ~p draws                = ~.1f~n",
+       [?DRAWS, Spread]),
+     f("    min .. max                                          = ~p .. ~p~n",
+       [lists:min(Ds), lists:max(Ds)]),
+     f("~n  Read the three together. A width below the null's own sampling spread~n"
+       "  would reject matrices the null itself generates. A width far above the~n"
+       "  observed |median - observed| accepts this matrix with room to spare. The~n"
+       "  gap between the two is the gate's real slack and it had never been~n"
+       "  measured.~n~n", [])].
+
+e5_lines(false, []) ->
+    [f("E5. IS A RE-DERIVATION OWED? NO.~n~n", []),
+     f("  IF-9 does not fire on this matrix and the observed cycle count does not~n"
+       "  exceed its own Null A maximum at any band. RC2-4's two trigger conditions~n"
+       "  are both false, so the gate width of ~p of 190 and the 3-of-13 arithmetic~n"
+       "  stand as pre-registered. They are now CALIBRATED rather than merely~n"
+       "  chosen: E4 says what the width's slack is on a real matrix and E3 says~n"
+       "  where a real matrix's count sits in the null's own draws.~n~n",
+       [?FIT_GATE]),
+     f("  WHAT THIS DOES NOT LICENCE. It does not say the width is right for a~n"
+       "  phase 1 archive matrix. An archive matrix is 20 checkpoints of ONE~n"
+       "  lineage, its dependence structure is not this matrix's, and its decisive~n"
+       "  edge count could be anywhere. The calibration establishes that the null~n"
+       "  fits, draws and accepts a real 20-member matrix at 160 matches per cell.~n"
+       "  Nothing more.~n~n", [])];
+e5_lines(Fires, Exceed) ->
+    [f("E5. IS A RE-DERIVATION OWED? YES.~n~n", []),
+     f("  IF-9 fires                                             = ~w~n", [Fires]),
+     f("  bands where the observed count exceeds its null maximum = ~w~n", [Exceed]),
+     f("~n  RC2-4's second condition holds, so the gate width AND the 3-of-13~n"
+       "  arithmetic are both owed a re-derivation before the pre-registration~n"
+       "  closes. They are owed for different reasons and the reasons should not be~n"
+       "  merged:~n~n", []),
+     f("  THE WIDTH is not damaged by what fired. It was measured directly (E4):~n"
+       "  the registered ~p accepts this matrix with |median - observed| of 4 and~n",
+       [?FIT_GATE]),
+     f("  the null's own sampling spread of the same count is 10, min .. max~n"
+       "  146 .. 164. A width of ~p sits above the null's own spread and well above~n",
+       [?FIT_GATE]),
+     f("  what this matrix needs. The measurement supports the width as written.~n"
+       "  What the measurement also shows is that the width cannot be relied on to~n"
+       "  detect non-scalar structure, because it did not (headline 4).~n~n", []),
+     f("  THE 3-OF-13 ARITHMETIC IS THE ONE THAT BREAKS, and the break is not~n"
+       "  arithmetic. E2 recomputes the document's own five numbers and they are~n"
+       "  all correct: at p = 1/201 over 13 runs, P(>=3) = 3.39e-5 and the~n"
+       "  three-arm family-wise level is 1.02e-4. The defect is the INPUT p. 1/201~n"
+       "  is the probability that a matrix DRAWN FROM Null A exceeds the maximum of~n"
+       "  200 further draws from Null A. The event the threshold actually counts is~n"
+       "  a PHASE 1 ARCHIVE MATRIX exceeding it, and the only real matrix available~n"
+       "  exceeds it at every band by a wide margin while containing no coevolution~n"
+       "  at all. E6 gives the arithmetic for what the threshold would have to be.~n~n", []),
+     f("  NOTHING IS MOVED HERE. This file computes; the pre-registration is a~n"
+       "  different document and a different agent's edit.~n~n", [])].
+
+%% E6. What the threshold would have to be, at the rate this matrix implies and
+%% at the most conservative rate one observation licenses. Both are shown because
+%% one matrix cannot estimate a rate and pretending otherwise would be the same
+%% error the design made with 1/201.
+e6_lines([]) ->
+    [f("E6. WHAT THE THRESHOLD WOULD HAVE TO BE. Not owed: E5 says no.~n~n", [])];
+e6_lines(_Exceed) ->
+    Target = tail(13, 1 / 201, 3),
+    [f("E6. WHAT THE THRESHOLD WOULD HAVE TO BE, AT WHAT RATE.~n~n", []),
+     f("  The level to hold is the one 3-of-13 buys at p = 1/201: P(>=3) = ~.3e~n",
+       [Target]),
+     f("  per arm. So the question is the smallest k of 13 whose tail is at or~n"
+       "  below that level, at a given per-run rate q.~n~n", []),
+     f("  q          what q is                              smallest k of 13~n", []),
+     f("  ~-9.5f  the registered rate, a matrix drawn FROM   ~w~n",
+       [1 / 201, min_k(13, 1 / 201, Target)]),
+     f("             Null A~n", []),
+     f("  ~-9.5f  Clopper-Pearson one-sided 95% LOWER bound  ~w~n",
+       [0.05, min_k(13, 0.05, Target)]),
+     f("             from 1 exceedance in 1 matrix: solve~n"
+       "             1 - (1 - q) = 0.05, so q >= 0.05~n", []),
+     f("  ~-9.5f  the point estimate from 1 of 1             ~w~n",
+       [1.0, min_k(13, 1.0, Target)]),
+     f("~n  Read the last row first. At q = 1 no k of 13 holds the level, because~n"
+       "  P(>=13 of 13) = 1. The threshold cannot be repaired by raising k. At the~n"
+       "  95% lower bound the threshold would be ~w of 13 rather than 3, and that~n",
+       [min_k(13, 0.05, Target)]),
+     f("  is the MOST FAVOURABLE reading one exceedance in one matrix allows.~n~n", []),
+     f("  AND RAISING k IS STILL NOT THE REPAIR. q here is not a Type I rate. It~n"
+       "  is the rate at which this substrate's matrices are non-scalar, which the~n"
+       "  phase 0 matrix says is the default and not the exception. A threshold of~n"
+       "  ~w of 13 would require that ~w of 13 phase 1 runs be non-scalar, which is~n",
+       [min_k(13, 0.05, Target), min_k(13, 0.05, Target)]),
+     f("  a bar this substrate clears without any coevolution. The quantity that~n"
+       "  survives the arithmetic is a COMPARISON against a no-coevolution~n"
+       "  reference of the same shape, and D3 already prints one: the observed~n"
+       "  share of cyclable triples that are cyclic, against the null's share and~n"
+       "  against this matrix's own share. Which reference the pre-registration~n"
+       "  adopts is a design decision and is NOT taken here.~n~n", [])].
+
+min_k(N, Q, Target) ->
+    first_k([K || K <- lists:seq(1, N), tail(N, Q, K) =< Target]).
+
+first_k([K | _]) -> K;
+first_k([]) -> none.
+
 plus(D) when D > 0 -> "+";
 plus(_D) -> "".
+
+%%---------------------------------------------------------------------------
+%% Exact binomial upper tail, integer coefficients, no approximation.
+%%---------------------------------------------------------------------------
+tail(N, P, K) ->
+    lists:sum([choose(N, J) * math:pow(P, J) * math:pow(1 - P, N - J)
+               || J <- lists:seq(K, N)]).
+
+choose(_N, 0) -> 1;
+choose(N, K) -> choose(N, K - 1) * (N - K + 1) div K.
 
 sign_of(D) when D > 0 -> "INFLATED (the null over-produces decisive edges)";
 sign_of(D) when D < 0 -> "DEFLATED (the null under-produces decisive edges)";
@@ -484,6 +829,12 @@ head(Out, Seeds) ->
      f("engine_pin  = a5e8bcfc5646827e9be49a9629f8a6a9678c814b (nothing was run at it here)~n", []),
      f("produced_by = scripts/exp067_null_a_calibration.escript~n", []),
      f("written_to  = ~ts~n", [Out]),
+     f("              (RC2-4's own wording says 'persist the record beside~n"
+       "              exp066_residue_and_inv0.txt', which is in the exp066~n"
+       "              directory. The work package directed the exp067 directory~n"
+       "              instead, on the ground that this is phase 1 machinery. The~n"
+       "              discrepancy is recorded rather than resolved silently; the~n"
+       "              file reads exp066 records either way.)~n", []),
      f("reads       = ~ts   (the matrix, parsed from its machine-readable term)~n", [?XP]),
      f("              ~ts   (gate literals, section K)~n", [?VERIFY]),
      f("champions   = ~p, arm S, seeds ~p..~p~n", [length(Seeds), hd(Seeds), lists:last(Seeds)]),
@@ -506,7 +857,104 @@ head(Out, Seeds) ->
        "verdict. What would change the pre-registration was stated before the run:~n"
        "IF-9 firing on this matrix, or the observed cycle count exceeding its own~n"
        "null maximum. Either is reported and amended, never repaired by moving a~n"
-       "number.~n~n", [])].
+       "number.~n~n", []),
+     f("SECTIONS. A gates this script against the persisted records. B fits the~n"
+       "model and reports identification. C draws the 200 synthetic matrices. D0~n"
+       "prints both counters side by side, D1 the fit gate, D2 the per-run cyclic~n"
+       "test, D3 the scale-matched share, D4 IF-8's order-violation trigger. E~n"
+       "answers RC2-4's consequence question and, where one is owed, shows the~n"
+       "arithmetic a re-derivation would rest on.~n~n", [])].
+
+%% THE HEADLINE. Placed before the gates and the arithmetic because the
+%% instruction under which this ran says a mis-calibration must be stated at the
+%% top of the record and not buried. Every number in it is computed, and each one
+%% appears again below with its section.
+headline(Wm, Km, Idx, {_S, _It, Status}, {Rows, _Exp}) ->
+    Bi = band_int(?PRIMARY),
+    ObsDec = element(?I_DEC, quad(mg(Km), Idx, Bi)),
+    MedD = median(col(Rows, ?PRIMARY, ?I_DEC)),
+    {Fires, Exceed, Owed} = triggers(Wm, Km, Idx, Status, Rows),
+    [f("== HEADLINE: ONE HALF OF NULL A HOLDS, THE OTHER HALF DOES NOT ==~n~n", []),
+     f("1. THE FIT GATE HOLDS. IF-9 does not fire (D1). The median synthetic~n", []),
+     f("   decisive-edge count at band ~.2f is ~.1f of 190 against the observed~n",
+       [?PRIMARY, MedD]),
+     f("   ~p, a difference of ~s~.1f against a registered width of ~p. The fit~n",
+       [ObsDec, plus(MedD - ObsDec), MedD - ObsDec, ?FIT_GATE]),
+     f("   converges, is identified, and reproduces the observed decisiveness~n"
+       "   structure. IF-9 fires = ~w.~n~n", [Fires]),
+     f("2. THE PER-RUN CYCLIC TEST FIRES ON A MATRIX WITH NO COEVOLUTION IN IT.~n", []),
+     f("   The observed cycle count exceeds the MAXIMUM of its own 200 Null A~n"
+       "   draws at EVERY band (D2):~n", [])]
+        ++ [headline_row(Km, Idx, Rows, B, B2) || {B, B2} <- ?BANDS]
+        ++ [f("~n   bands where the observed count exceeds its own null maximum = ~w~n",
+              [Exceed]),
+            f("   This matrix contains NO COEVOLUTION. It is 20 champions from 20~n"
+              "   separate phase 0 runs that never met each other during evolution.~n"
+              "   The pre-registered per-run CYCLIC test, applied to it, signs CYCLIC~n"
+              "   at all three bands. So on this substrate that test does not, on its~n"
+              "   own, separate coevolutionary cycling from the substrate's ordinary~n"
+              "   non-scalar structure: the second alone is enough to pass it.~n~n", []),
+            f("   THE LIMIT OF THAT SENTENCE, STATED HERE AND NOT ONLY IN THE FOOT.~n"
+              "   A phase 1 archive matrix is 20 checkpoints of ONE lineage, not 20~n"
+              "   independent champions. The pre-registration's own 'Alternatives~n"
+              "   named and REJECTED' section describes insight 057's objects as ten~n"
+              "   checkpoints along one monotone trajectory already known to lie on a~n"
+              "   near-total order, with a cycle count of zero. So it is NOT~n"
+              "   established here that a phase 1 archive matrix will exceed the null~n"
+              "   too. What is established is that a real matrix of exactly the shape~n"
+              "   the test consumes, with no coevolution in it, does exceed it, so~n"
+              "   1/201 cannot be ASSUMED to be the rate at which phase 1 matrices~n"
+              "   trip the test. The assumption was never checked and is now~n"
+              "   contradicted by the one matrix available.~n~n", []),
+            f("3. SO THE 1/201 PER-RUN RATE IS NOT THIS SUBSTRATE'S RATE, and the~n"
+              "   3-of-13 threshold derived from it does not do the work it was~n"
+              "   given (E2, E3, E6). 1/201 is a correct TYPE I rate for a matrix~n"
+              "   drawn FROM Null A. It is not the rate at which a real matrix of~n"
+              "   this substrate exceeds Null A, which is the event the threshold~n"
+              "   counts. Re-derivation owed = ~w.~n~n", [Owed]),
+            f("4. AND THE FIT GATE CANNOT SEE WHAT THE COUNT SEES. The~n"
+              "   pre-registration argues that a matrix whose margins no scalar~n"
+              "   strength can reproduce makes the fit compress those pairs toward~n"
+              "   0.5 and therefore UNDER-produce decisive edges, which is the~n"
+              "   NULL-UNFIT (DEFLATED) fingerprint. On this matrix the null~n"
+              "   slightly OVER-produces them (~s~.1f) while the cycle count exceeds~n",
+              [plus(MedD - ObsDec), MedD - ObsDec]),
+            f("   the null maximum by a factor of ~p at band ~.2f. A matrix can pass~n",
+              [ratio(element(?I_CYC, quad(mg(Km), Idx, Bi)),
+                     lists:max(col(Rows, ?PRIMARY, ?I_CYC))), ?PRIMARY]),
+            f("   the fit gate comfortably and still be nowhere near scalar. The fit~n"
+              "   gate is not a proxy for scalar adequacy and must not be read as~n"
+              "   one.~n~n", []),
+            f("5. WHAT IS NOT WRONG WITH NULL A. It fits, it is identified, it~n"
+              "   draws, it holds every cell's decisive and draw count exactly, and~n"
+              "   it reproduces the observed decisiveness structure. Its rejection~n"
+              "   on this matrix is a real rejection of the scalar-strength model.~n"
+              "   The defect is in what the DESIGN concluded from a rejection, not~n"
+              "   in the null's construction.~n~n", []),
+            f("   IN PARTICULAR IT IS NOT UNDER-SUPPLYING THE INGREDIENT. The~n"
+              "   pre-registration rejects the fair-coin null on exactly that ground~n"
+              "   (it leaves too few decisive edges to bound the count in either~n"
+              "   direction). Null A cannot be rejected on that ground: at band~n", []),
+            f("   ~.2f its median count of all-three-decisive CYCLABLE triples is~n",
+              [?PRIMARY]),
+            f("   ~.1f against the observed ~p, so the null has MORE cycle~n",
+              [median(col(Rows, ?PRIMARY, ?I_CBL)),
+               element(?I_CBL, quad(mg(Km), Idx, Bi))]),
+            f("   opportunity than the observed matrix and still produces ~.3f~n",
+              [mean(col(Rows, ?PRIMARY, ?I_CYC))]),
+            f("   cycles per draw. The shortfall is ORIENTATION, not opportunity:~n"
+              "   in the fitted model a band-decisive edge almost always points the~n"
+              "   way the strengths do. That is what makes the exceedance a real~n"
+              "   finding rather than an artifact of a badly matched null.~n~n", [])].
+
+headline_row(Km, Idx, Rows, B, B2) ->
+    Obs = element(?I_CYC, quad(mg(Km), Idx, B2)),
+    Xs = col(Rows, B, ?I_CYC),
+    f("     band ~.2f: observed ~p, null median ~.1f, null max ~p, exceeds = ~w~n",
+      [B, Obs, median(Xs), lists:max(Xs), Obs > lists:max(Xs)]).
+
+ratio(_Obs, 0) -> infinite;
+ratio(Obs, Max) -> Obs / Max.
 
 foot() ->
     [f("-- WHAT THIS ESTABLISHES AND WHAT IT DOES NOT --~n~n", []),
@@ -523,11 +971,13 @@ foot() ->
      f("NOT A VERDICT. No phase 1 outcome is decided here, no threshold in this~n"
        "file gates anything, and the phase 0 matrix is not a phase 1 run.~n~n", [])].
 
-term(Out, Seeds, Dev, Gates, Km, Idx, {S, Iters, Status}, {Rows, Exported}) ->
+term(Out, Seeds, Dev, Gates, Wm, Km, Idx, {S, Iters, Status}, {Rows, Exported}) ->
     Bi = band_int(?PRIMARY),
-    {ObsCyc, ObsDec, _C} = cyc_dec(mg(Km), Idx, Bi),
-    Ds = [element(2, keyget(?PRIMARY, R)) || R <- Rows],
-    Cs = [element(1, keyget(?PRIMARY, R)) || R <- Rows],
+    {ObsCyc, _ObsOrd, ObsDec, _C} = quad(mg(Km), Idx, Bi),
+    FltDec = element(?I_DEC, quad(mg(Wm), Idx, ?PRIMARY)),
+    Ds = col(Rows, ?PRIMARY, ?I_DEC),
+    Cs = col(Rows, ?PRIMARY, ?I_CYC),
+    P201 = 1 / 201,
     T = {null_a_calibration,
          [{date, "2026-07-30"},
           {status, "CALIBRATION of a phase 1 instrument over a persisted phase 0 record"},
@@ -553,30 +1003,88 @@ term(Out, Seeds, Dev, Gates, Km, Idx, {S, Iters, Status}, {Rows, Exported}) ->
            [{B, [{decisive_pairs, decisive(mg(Km), Idx, B2)},
                  {disagree_with_fitted_order, violations(Km, Idx, S, B2)}]}
             || {B, B2} <- ?BANDS]},
+          {identification,
+           [{zero_win_ordered_pairs,
+             length([1 || I <- Idx, J <- Idx, I =/= J, el(Km, I, J) =:= 0])},
+            {raw_win_digraph_strongly_connected, strongly_connected(Km, Idx)},
+            {augmented_digraph_complete, true},
+            {identified, true}]},
+          {observed_both_counters,
+           [{B, [{float, tup4(quad(mg(Wm), Idx, B))},
+                 {integer, tup4(quad(mg(Km), Idx, B2))}]}
+            || {B, B2} <- ?BANDS]},
           {per_band,
-           [{B, [{observed, tup3(cyc_dec(mg(Km), Idx, B2))},
-                 {synthetic_cycles, spread([element(1, keyget(B, R)) || R <- Rows])},
-                 {synthetic_decisive, spread([element(2, keyget(B, R)) || R <- Rows])},
-                 {synthetic_cyclable, spread([element(3, keyget(B, R)) || R <- Rows])}]}
+           [{B, [{observed, tup4(quad(mg(Km), Idx, B2))},
+                 {synthetic_cycles, spread(col(Rows, B, ?I_CYC))},
+                 {synthetic_ordered, spread(col(Rows, B, ?I_ORD))},
+                 {synthetic_decisive, spread(col(Rows, B, ?I_DEC))},
+                 {synthetic_cyclable, spread(col(Rows, B, ?I_CBL))},
+                 {observed_cycles_draws_below,
+                  length([1 || X <- col(Rows, B, ?I_CYC),
+                               X < element(?I_CYC, quad(mg(Km), Idx, B2))])},
+                 {observed_cycles_draws_equal,
+                  length([1 || X <- col(Rows, B, ?I_CYC),
+                               X =:= element(?I_CYC, quad(mg(Km), Idx, B2))])},
+                 {observed_cycles_exceeds_null_max,
+                  element(?I_CYC, quad(mg(Km), Idx, B2)) > lists:max(col(Rows, B, ?I_CYC))},
+                 {bootstrap_p_one_sided,
+                  (length([1 || X <- col(Rows, B, ?I_CYC),
+                                X >= element(?I_CYC, quad(mg(Km), Idx, B2))]) + 1)
+                  / (?DRAWS + 1)}]}
             || {B, B2} <- ?BANDS]},
           {primary_band, ?PRIMARY},
           {if_9, [{width, ?FIT_GATE},
                   {observed_decisive_integer_counter, ObsDec},
-                  {observed_decisive_float_counter_phase_0, 152},
+                  {observed_decisive_float_counter, FltDec},
                   {median_synthetic_decisive, median(Ds)},
-                  {median_minus_observed, median(Ds) - ObsDec},
-                  {fires, abs(median(Ds) - ObsDec) > ?FIT_GATE
-                       orelse Status =:= hit_cap}]},
+                  {median_minus_observed_integer, median(Ds) - ObsDec},
+                  {median_minus_observed_float, median(Ds) - FltDec},
+                  {fires_on_integer, fires(median(Ds) - ObsDec, Status)},
+                  {fires_on_float, fires(median(Ds) - FltDec, Status)},
+                  {smallest_width_that_accepts_this_matrix,
+                   ceil(abs(median(Ds) - ObsDec))},
+                  {null_own_max_abs_deviation_from_median,
+                   lists:max([abs(X - median(Ds)) || X <- Ds])}]},
           {per_run_cyclic_test,
            [{observed_cycles, ObsCyc}, {null_max, lists:max(Cs)},
             {null_median, median(Cs)}, {null_min, lists:min(Cs)},
             {observed_exceeds_max, ObsCyc > lists:max(Cs)},
             {draws_strictly_below_observed, length([1 || X <- Cs, X < ObsCyc])},
-            {draws_equal_observed, length([1 || X <- Cs, X =:= ObsCyc])}]}]},
+            {draws_equal_observed, length([1 || X <- Cs, X =:= ObsCyc])}]},
+          {family_wise_arithmetic,
+           [{per_run_rate, P201}, {runs_per_arm, 13},
+            {p_at_least_1, tail(13, P201, 1)},
+            {p_at_least_2, tail(13, P201, 2)},
+            {p_at_least_3, tail(13, P201, 3)},
+            {p_at_least_4, tail(13, P201, 4)},
+            {two_arms, 1 - math:pow(1 - tail(13, P201, 3), 2)},
+            {three_arms, 1 - math:pow(1 - tail(13, P201, 3), 3)}]},
+          {rc2_4_consequence, rc2_4(Wm, Km, Idx, Status, Rows)}]},
     [f("~n== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) ==~n", []),
      f("~w.~n", [T])].
 
-tup3({A, B, C}) -> [{cycles, A}, {decisive_edges, B}, {cyclable_triples, C}].
+rc2_4(Wm, Km, Idx, Status, Rows) ->
+    {Fires, Exceed, Owed} = triggers(Wm, Km, Idx, Status, Rows),
+    Bi = band_int(?PRIMARY),
+    ObsDec = element(?I_DEC, quad(mg(Km), Idx, Bi)),
+    MedD = median(col(Rows, ?PRIMARY, ?I_DEC)),
+    Target = tail(13, 1 / 201, 3),
+    [{if_9_fires, Fires},
+     {bands_where_observed_exceeds_null_max, Exceed},
+     {re_derivation_owed, Owed},
+     {registered_gate_width, ?FIT_GATE},
+     {gate_width_measurement_supports_registered_value, abs(MedD - ObsDec) =< ?FIT_GATE},
+     {three_of_thirteen_input_rate_contradicted, Exceed =/= []},
+     {level_the_threshold_must_hold, Target},
+     {smallest_k_of_13_at_registered_rate, min_k(13, 1 / 201, Target)},
+     {smallest_k_of_13_at_95pc_lower_bound_rate_0_05, min_k(13, 0.05, Target)},
+     {smallest_k_of_13_at_point_estimate_rate_1_0, min_k(13, 1.0, Target)},
+     {note, "the width's own measurement supports it; RC2-4 requires both the "
+            "width and the threshold re-derived because condition 2 holds; the "
+            "threshold is the one whose INPUT RATE is contradicted"}].
+
+tup4({A, B, C, D}) ->
+    [{cycles, A}, {ordered, B}, {decisive_edges, C}, {cyclable_triples, D}].
 
 spread(Xs) ->
     [{min, lists:min(Xs)}, {median, median(Xs)}, {max, lists:max(Xs)},

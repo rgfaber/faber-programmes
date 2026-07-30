@@ -1,0 +1,470 @@
+== EXP-067 phase 1: NULL A EXERCISED ON PHASE 0'S 20-CHAMPION MATRIX ==
+
+date        = 2026-07-30
+status      = CALIBRATION of a phase 1 instrument over a persisted phase 0
+              record. Not a phase 1 measurement, not a phase 1 result,
+              signs nothing on its own.
+engine_pin  = a5e8bcfc5646827e9be49a9629f8a6a9678c814b (nothing was run at it here)
+produced_by = scripts/exp067_null_a_calibration.escript
+written_to  = /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp067_coevolution_cycling/exp067_null_a_calibration.txt
+              (RC2-4's own wording says 'persist the record beside
+              exp066_residue_and_inv0.txt', which is in the exp066
+              directory. The work package directed the exp067 directory
+              instead, on the ground that this is phase 1 machinery. The
+              discrepancy is recorded rather than resolved silently; the
+              file reads exp066 records either way.)
+reads       = /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt   (the matrix, parsed from its machine-readable term)
+              /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_within_tier_verify.txt   (gate literals, section K)
+champions   = 20, arm S, seeds 2001..2020
+bands       = 0.05, 0.10, 0.15 on the integer grid as 8, 16, 24 of 160.
+              FIXED. Not swept, not moved, not chosen after a count.
+rng         = exsss seeded {3661,0,0}, the REGISTERED Null A seed at MatrixIndex 0.
+              200 draws. The state after the last draw is exported and
+              printed, so the whole bootstrap is reproducible.
+no genome loaded, no match replayed, no arm re-run, no engine module read.
+
+WHY THIS FILE EXISTS. The EXP-067 DESIGN gate round 2 (2026-07-30,
+BUILD_WITH_CHANGES) raised RC2-4: Null A is phase 1's PRIMARY null and the
+only genuinely new numeric machine in the design, and it had never been run
+on a real matrix. Two of its numbers were uncalibrated:
+
+  - IF-9's fit gate width, 20 decisive edges of 190.
+  - The per-run exceedance rate of at most 1/201, on which the 3-of-13
+    family-wise arithmetic rests.
+
+A matrix of exactly the right shape was already on disk, so the null meets
+real data HERE rather than mid-experiment on the branch that decides the
+verdict. What would change the pre-registration was stated before the run:
+IF-9 firing on this matrix, or the observed cycle count exceeding its own
+null maximum. Either is reported and amended, never repaired by moving a
+number.
+
+SECTIONS. A gates this script against the persisted records. B fits the
+model and reports identification. C draws the 200 synthetic matrices. D0
+prints both counters side by side, D1 the fit gate, D2 the per-run cyclic
+test, D3 the scale-matched share, D4 IF-8's order-violation trigger. E
+answers RC2-4's consequence question and, where one is owed, shows the
+arithmetic a re-derivation would rest on.
+
+== HEADLINE: ONE HALF OF NULL A HOLDS, THE OTHER HALF DOES NOT ==
+
+1. THE FIT GATE HOLDS. IF-9 does not fire (D1). The median synthetic
+   decisive-edge count at band 0.10 is 154.0 of 190 against the observed
+   150, a difference of +4.0 against a registered width of 20. The fit
+   converges, is identified, and reproduces the observed decisiveness
+   structure. IF-9 fires = false.
+
+2. THE PER-RUN CYCLIC TEST FIRES ON A MATRIX WITH NO COEVOLUTION IN IT.
+   The observed cycle count exceeds the MAXIMUM of its own 200 Null A
+   draws at EVERY band (D2):
+     band 0.05: observed 49, null median 1.0, null max 5, exceeds = true
+     band 0.10: observed 18, null median 0.0, null max 1, exceeds = true
+     band 0.15: observed 12, null median 0.0, null max 0, exceeds = true
+
+   bands where the observed count exceeds its own null maximum = [0.05,0.1,0.15]
+   This matrix contains NO COEVOLUTION. It is 20 champions from 20
+   separate phase 0 runs that never met each other during evolution.
+   The pre-registered per-run CYCLIC test, applied to it, signs CYCLIC
+   at all three bands. So on this substrate that test does not, on its
+   own, separate coevolutionary cycling from the substrate's ordinary
+   non-scalar structure: the second alone is enough to pass it.
+
+   THE LIMIT OF THAT SENTENCE, STATED HERE AND NOT ONLY IN THE FOOT.
+   A phase 1 archive matrix is 20 checkpoints of ONE lineage, not 20
+   independent champions. The pre-registration's own 'Alternatives
+   named and REJECTED' section describes insight 057's objects as ten
+   checkpoints along one monotone trajectory already known to lie on a
+   near-total order, with a cycle count of zero. So it is NOT
+   established here that a phase 1 archive matrix will exceed the null
+   too. What is established is that a real matrix of exactly the shape
+   the test consumes, with no coevolution in it, does exceed it, so
+   1/201 cannot be ASSUMED to be the rate at which phase 1 matrices
+   trip the test. The assumption was never checked and is now
+   contradicted by the one matrix available.
+
+3. SO THE 1/201 PER-RUN RATE IS NOT THIS SUBSTRATE'S RATE, and the
+   3-of-13 threshold derived from it does not do the work it was
+   given (E2, E3, E6). 1/201 is a correct TYPE I rate for a matrix
+   drawn FROM Null A. It is not the rate at which a real matrix of
+   this substrate exceeds Null A, which is the event the threshold
+   counts. Re-derivation owed = true.
+
+4. AND THE FIT GATE CANNOT SEE WHAT THE COUNT SEES. The
+   pre-registration argues that a matrix whose margins no scalar
+   strength can reproduce makes the fit compress those pairs toward
+   0.5 and therefore UNDER-produce decisive edges, which is the
+   NULL-UNFIT (DEFLATED) fingerprint. On this matrix the null
+   slightly OVER-produces them (+4.0) while the cycle count exceeds
+   the null maximum by a factor of 18.0 at band 0.10. A matrix can pass
+   the fit gate comfortably and still be nowhere near scalar. The fit
+   gate is not a proxy for scalar adequacy and must not be read as
+   one.
+
+5. WHAT IS NOT WRONG WITH NULL A. It fits, it is identified, it
+   draws, it holds every cell's decisive and draw count exactly, and
+   it reproduces the observed decisiveness structure. Its rejection
+   on this matrix is a real rejection of the scalar-strength model.
+   The defect is in what the DESIGN concluded from a rejection, not
+   in the null's construction.
+
+   IN PARTICULAR IT IS NOT UNDER-SUPPLYING THE INGREDIENT. The
+   pre-registration rejects the fair-coin null on exactly that ground
+   (it leaves too few decisive edges to bound the count in either
+   direction). Null A cannot be rejected on that ground: at band
+   0.10 its median count of all-three-decisive CYCLABLE triples is
+   611.5 against the observed 582, so the null has MORE cycle
+   opportunity than the observed matrix and still produces 0.035
+   cycles per draw. The shortfall is ORIENTATION, not opportunity:
+   in the fitted model a band-decisive edge almost always points the
+   way the strengths do. That is what makes the exceedance a real
+   finding rather than an artifact of a badly matched null.
+
+-- A. GATES: THIS SCRIPT AGAINST THE PERSISTED RECORDS --
+
+champions parsed = 20, seeds 2001..2020
+worst distance of any cell from its integer numerator over 160 = 0.0
+  (so K(I,J) = W(I,J) * 160 is exact and the integer counter is lossless)
+
+tag          band  mine                      stated                    verdict
+float_full   0.05  {49,73,24,25,169}         {49,73,24,25,169}         AGREE
+float_full   0.10  {18,28,10,8,152}          {18,28,10,8,152}          AGREE
+float_full   0.15  {12,18,6,6,141}           {12,18,6,6,141}           AGREE
+exact_full   0.05  {168,789,49}              {168,789,49}              AGREE
+exact_full   0.10  {150,582,18}              {150,582,18}              AGREE
+exact_full   0.15  {141,487,12}              {141,487,12}              AGREE
+
+float_full = {cycles,ordered,forward,backward,decisive} against
+             /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt (its own counts, float counter)
+exact_full = {decisive,cyclable,cycles} against /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_within_tier_verify.txt
+             section K (the exact-arithmetic recount)
+Both gate. Any DISAGREE stops the script.
+
+-- B. THE BRADLEY-TERRY FIT (Null A's model, fitted to the observed matrix) --
+
+iterations = 114 of a cap of 10000, status converged
+tolerance  = relative change below 1.0e-10 in EVERY s_I
+prior      = one virtual win and one virtual loss on every ORDERED pair
+normalised = sum(s) = 20
+cap hit    = false   (a cap hit would fire IF-9 by itself)
+
+rank  seed   strength    row_mean_observed
+   1  2016    4.19469    0.8352
+   2  2015    1.89879    0.6918
+   3  2020    1.54580    0.6352
+   4  2017    1.19876    0.5977
+   5  2010    1.12580    0.5829
+   6  2007    1.05441    0.5487
+   7  2003    0.97813    0.5457
+   8  2014    0.94080    0.5211
+   9  2011    0.89418    0.5118
+  10  2013    0.87640    0.5135
+  11  2012    0.81199    0.4934
+  12  2018    0.77780    0.4852
+  13  2009    0.69287    0.4609
+  14  2006    0.64223    0.4467
+  15  2004    0.46570    0.3704
+  16  2001    0.45976    0.3668
+  17  2019    0.41491    0.3447
+  18  2002    0.41105    0.3414
+  19  2008    0.37488    0.3201
+  20  2005    0.24105    0.2316
+
+IDENTIFICATION (Ford's condition on the win digraph)
+  ordered pairs with ZERO wins for the row, K(I,J) = 0     = 1 of 380
+  those pairs                                             = [{5,16}]
+  RAW win digraph strongly connected                      = true
+  AUGMENTED digraph (after the +1/+1 prior) complete       = true
+    (the prior puts a positive win count on EVERY ordered pair, so the
+     augmented digraph is the complete digraph, which is strongly
+     connected, so the augmented MLE exists and is unique up to scale)
+  scale fixed by                                          = sum(s) = 20
+  so the fit is IDENTIFIED                                = true
+
+THE FITTED ORDER IS NOT ADOPTED AS A RATING. It is here for two
+reasons only: the null draws from it, and its own violation count is
+the quantity IF-8 gates the phase 1 panel on.
+
+band  decisive_pairs  disagree_with_fitted_order  share
+0.05             168                          36  0.2143
+0.10             150                          26  0.1733
+0.15             141                          23  0.1631
+
+-- C. THE 200 SYNTHETIC MATRICES --
+
+rng          = exsss, seed {3661,0,0}, the REGISTERED Null A seed with
+               MatrixIndex 0 for this phase 0 matrix
+exported_seed_state_after = {exsss,[217753459242762793|87565821519516937]}
+draws        = 200
+held fixed   = every cell's decisive count N(I,J), so every cell's draw
+               count is unchanged too
+
+band  quantity  observed  synth_min  synth_median  synth_max  obs_position
+0.05  cycles          49          0           1.0          5  200 below, 0 equal
+0.05  ordered         73          0           1.0          7  200 below, 0 equal
+0.05  decisive       168        164         171.0        182  29 below, 11 equal
+0.05  cyclable       789        730         841.0       1001  34 below, 2 equal
+0.10  cycles          18          0           0.0          1  200 below, 0 equal
+0.10  ordered         28          0           0.0          2  200 below, 0 equal
+0.10  decisive       150        146         154.0        164  14 below, 12 equal
+0.10  cyclable       582        507         611.5        740  48 below, 0 equal
+0.15  cycles          12          0           0.0          0  200 below, 0 equal
+0.15  ordered         18          0           0.0          0  200 below, 0 equal
+0.15  decisive       141        130         138.0        148  140 below, 14 equal
+0.15  cyclable       487        360         439.0        543  178 below, 1 equal
+
+obs_position = how many of the 200 draws are STRICTLY BELOW the
+               observed value, then how many EQUAL it. The per-run
+               CYCLIC test is one-sided: observed > max of the 200.
+
+-- D0. THE FLOAT COUNTER AND THE INTEGER COUNTER, SIDE BY SIDE --
+
+  Both count the same definition with strict >. The float counter compares
+  W(I,J) - W(J,I) against 0.05 / 0.10 / 0.15 in IEEE doubles; the integer
+  counter compares K(I,J) - K(J,I) against 8 / 16 / 24 out of 160. A margin
+  that is mathematically ON a band comes out a few times 1.0e-17 ABOVE it in
+  doubles, so the float counter calls it decisive and the integer counter does
+  not. The integer one is what EXP-067 pre-registers.
+
+  band  counter  cycles  ordered  decisive  cyclable
+  0.05  float        49       73       169       802
+  0.05  integer      49       73       168       789
+  0.10  float        18       28       152       604
+  0.10  integer      18       28       150       582
+  0.15  float        12       18       141       487
+  0.15  integer      12       18       141       487
+
+  pairs whose |K(I,J) - K(J,I)| is EXACTLY the band integer:
+    0.05  3 of 190 on the band exactly
+      cells {2,14} int |margin| 8/160, float |margin| 0.05000000000000004441,
+        float strict > band = true, integer strict > band = false
+      cells {11,20} int |margin| 8/160, float |margin| 0.04999999999999998890,
+        float strict > band = false, integer strict > band = false
+      cells {13,15} int |margin| 8/160, float |margin| 0.04999999999999993339,
+        float strict > band = false, integer strict > band = false
+    0.10  2 of 190 on the band exactly
+      cells {5,8} int |margin| 16/160, float |margin| 0.10000000000000003331,
+        float strict > band = true, integer strict > band = false
+      cells {11,18} int |margin| 16/160, float |margin| 0.10000000000000003331,
+        float strict > band = true, integer strict > band = false
+    0.15  2 of 190 on the band exactly
+      cells {1,4} int |margin| 24/160, float |margin| 0.14999999999999996669,
+        float strict > band = false, integer strict > band = false
+      cells {8,19} int |margin| 24/160, float |margin| 0.14999999999999996669,
+        float strict > band = false, integer strict > band = false
+
+  Every number in the rest of this file is on the INTEGER counter.
+
+-- D1. DOES IF-9 FIRE ON THIS MATRIX, AND WITH WHAT SIGN? --
+
+  median synthetic decisive edges at band 0.10            = 154.0 of 190
+  synthetic decisive edges, min .. max                   = 146 .. 164
+  IF-9 width                                             = 20 of 190
+  fit hit the iteration cap                              = false
+    (a cap hit fires IF-9 by itself)
+
+  observed  counter  median_minus_observed  fires  sign
+       150  integer  +                4.0  false  INFLATED (the null over-produces decisive edges)
+       152  float    +                2.0  false  INFLATED (the null over-produces decisive edges)
+
+  The pre-registered counter is the INTEGER one, so the gate verdict of
+  record is the first row. The float row is printed because RC2-4 quoted
+  152. Both rows are shown so a reader can see the two-edge gap does not
+  change the verdict.
+
+-- D2. DOES THE OBSERVED CYCLE COUNT EXCEED ITS OWN NULL MAXIMUM? --
+
+  The per-run CYCLIC test, applied to this matrix as if it were one phase 1
+  run's above-floor submatrix. It is NOT one: this matrix is 20
+  independently evolved champions. The question is only whether a real,
+  ladder-shaped matrix of the right shape trips the test.
+
+  band  observed  null_min  null_median  null_max  exceeds_max  below  equal
+  0.05        49         0          1.0         5         true    200      0
+  0.10        18         0          0.0         1         true    200      0
+  0.15        12         0          0.0         0         true    200      0
+
+  strengths, sorted descending, 20 members:
+    [4.19469,1.89879,1.5458,1.19876,1.1258,1.05441,0.97813,0.9408,0.89418,0.8764,0.81199,0.7778,0.69287,0.64223,0.4657,0.45976,0.41491,0.41105,0.37488,0.24105]
+
+D3. THE SCALE-MATCHED SHARE, OBSERVED AGAINST THE NULL.
+
+  share = cycles / cyclable triples. Raw counts over different index
+  sets are not comparable; this is.
+
+  band  obs_cycles  obs_cyclable  obs_share  null_median_share  null_mean_share
+  0.05          49           789     0.0621             0.0012         0.001163
+  0.10          18           582     0.0309             0.0000         0.000057
+  0.15          12           487     0.0246             0.0000         0.000000
+
+  THIS MATRIX IS 20 INDEPENDENTLY EVOLVED CHAMPIONS, one per phase 0
+  arm S run, that never met each other during evolution. There is no
+  coevolution anywhere in it and no Red Queen anywhere in it. So these
+  shares are what this substrate's competent controllers do to each
+  other WITHOUT any coevolutionary dynamic, and they are the reference
+  a phase 1 archive matrix's share should be printed beside.
+
+D4. IF-8's ORDER-VIOLATION TRIGGER, MEASURED ON THE CELLS THAT EXIST.
+
+  IF-8 voids instrument I1 when more than 30 of the 25-member panel's 300
+  band-decisive pairs disagree with its own fitted order. The 190
+  champion-versus-champion cells of that panel are these cells, and SC3a
+  forces the panel to reproduce them exactly.
+
+  band 0.10: 26 of 150 band-decisive pairs already disagree with the
+  fitted order, on 190 pairs of the eventual 300.
+  IF-8's trigger is 30 over all 300.
+  HEADROOM LEFT for the remaining 110 pairs (the 5 scripted rungs against
+  the 20 champions and against each other) = 4 violations.
+
+  NO CONSTANT IS MOVED HERE. The two numbers are printed side by side and
+  the consequence is a pre-registration question, not an arithmetic one.
+
+-- E. THE CONSEQUENCE FOR THE PRE-REGISTRATION (RC2-4) --
+
+E1. THE TWO CONDITIONS RC2-4 NAMES, EVALUATED.
+
+  condition 1: IF-9 fires on this matrix
+    median synthetic decisive 154.0 against observed 150 (integer) and
+    152 (float), width 20 of 190           -> false
+  condition 2: the observed cycle count exceeds its own Null A maximum
+    bands where it does                                  -> [0.05,0.1,0.15]
+    (empty list means the count is inside the null at every band)
+
+E2. THE REGISTERED FAMILY-WISE ARITHMETIC, RECOMPUTED FROM THE BINOMIAL.
+
+  per-run rate p = 1/201 = 0.0049751, runs per arm = 13
+
+  k   P(at least k of 13)   document's stated value
+  1   0.062780757           0.0628
+  2   0.001861506           0.00186
+  3   0.000033928           3.3e-5
+  4   0.000000423           (not stated)
+
+  two verdict-carrying arms  1 - (1 - P(>=3))^2 = 0.000067855  (stated 6.7e-5)
+  three, with a gradeable A4 1 - (1 - P(>=3))^3 = 0.000101781  (stated 1.0e-4)
+
+  So the level the 3-of-13 threshold buys, per arm, is 3.39e-5, and the
+  family-wise level over three arms is 1.02e-4. Any re-derivation has to
+  hold that level, not a level chosen afterwards.
+
+E3. THE PER-RUN RATE THIS MATRIX IMPLIES.
+
+  band  observed  draws_>=_obs  bootstrap_p  fires  zero_cycle_draws  all_200_cycles
+  0.05        49             0     0.004975   true                85             195
+  0.10        18             0     0.004975   true               193               7
+  0.15        12             0     0.004975   true               200               0
+
+  bootstrap_p = (draws >= observed + 1) / 201, the standard one-sided
+  parametric-bootstrap p-value for the cycle count under Null A. It is
+  at its FLOOR of 1/201 at all three bands, so it cannot distinguish
+  'just above the maximum' from 'far above it': read it beside the raw
+  counts in D2, not instead of them. fires is the pre-registered per-run
+  CYCLIC test, observed > max of 200, the event whose rate the 3-of-13
+  arithmetic caps at 1/201.
+
+  zero_cycle_draws and all_200_cycles are the same fact from the null's
+  side: how many of the 200 synthetic matrices contain no banded cycle
+  at all, and how many cycles the whole bootstrap produced across all
+  200 matrices together. Compare the last column with the observed
+  count in ONE matrix.
+
+  ONE matrix gives a 0-or-1 outcome, not a rate. What it can do is
+  show whether a real matrix of the right shape sits where the null
+  says a null matrix sits. That is what the p-value column reports.
+
+E4. THE GATE WIDTH, MEASURED AGAINST WHAT IT IS SUPPOSED TO ACCEPT.
+
+  registered width                                       = 20 of 190
+  |median synthetic - observed| on this matrix           = 4.0
+  smallest integer width that accepts this matrix        = 4
+  the null's OWN sampling spread of the decisive count,
+    max |draw - median| over the 200 draws                = 10.0
+    min .. max                                          = 146 .. 164
+
+  Read the three together. A width below the null's own sampling spread
+  would reject matrices the null itself generates. A width far above the
+  observed |median - observed| accepts this matrix with room to spare. The
+  gap between the two is the gate's real slack and it had never been
+  measured.
+
+E5. IS A RE-DERIVATION OWED? YES.
+
+  IF-9 fires                                             = false
+  bands where the observed count exceeds its null maximum = [0.05,0.1,0.15]
+
+  RC2-4's second condition holds, so the gate width AND the 3-of-13
+  arithmetic are both owed a re-derivation before the pre-registration
+  closes. They are owed for different reasons and the reasons should not be
+  merged:
+
+  THE WIDTH is not damaged by what fired. It was measured directly (E4):
+  the registered 20 accepts this matrix with |median - observed| of 4 and
+  the null's own sampling spread of the same count is 10, min .. max
+  146 .. 164. A width of 20 sits above the null's own spread and well above
+  what this matrix needs. The measurement supports the width as written.
+  What the measurement also shows is that the width cannot be relied on to
+  detect non-scalar structure, because it did not (headline 4).
+
+  THE 3-OF-13 ARITHMETIC IS THE ONE THAT BREAKS, and the break is not
+  arithmetic. E2 recomputes the document's own five numbers and they are
+  all correct: at p = 1/201 over 13 runs, P(>=3) = 3.39e-5 and the
+  three-arm family-wise level is 1.02e-4. The defect is the INPUT p. 1/201
+  is the probability that a matrix DRAWN FROM Null A exceeds the maximum of
+  200 further draws from Null A. The event the threshold actually counts is
+  a PHASE 1 ARCHIVE MATRIX exceeding it, and the only real matrix available
+  exceeds it at every band by a wide margin while containing no coevolution
+  at all. E6 gives the arithmetic for what the threshold would have to be.
+
+  NOTHING IS MOVED HERE. This file computes; the pre-registration is a
+  different document and a different agent's edit.
+
+E6. WHAT THE THRESHOLD WOULD HAVE TO BE, AT WHAT RATE.
+
+  The level to hold is the one 3-of-13 buys at p = 1/201: P(>=3) = 3.39e-5
+  per arm. So the question is the smallest k of 13 whose tail is at or
+  below that level, at a given per-run rate q.
+
+  q          what q is                              smallest k of 13
+  0.00498    the registered rate, a matrix drawn FROM   3
+             Null A
+  0.05000    Clopper-Pearson one-sided 95% LOWER bound  6
+             from 1 exceedance in 1 matrix: solve
+             1 - (1 - q) = 0.05, so q >= 0.05
+  1.00000    the point estimate from 1 of 1             none
+
+  Read the last row first. At q = 1 no k of 13 holds the level, because
+  P(>=13 of 13) = 1. The threshold cannot be repaired by raising k. At the
+  95% lower bound the threshold would be 6 of 13 rather than 3, and that
+  is the MOST FAVOURABLE reading one exceedance in one matrix allows.
+
+  AND RAISING k IS STILL NOT THE REPAIR. q here is not a Type I rate. It
+  is the rate at which this substrate's matrices are non-scalar, which the
+  phase 0 matrix says is the default and not the exception. A threshold of
+  6 of 13 would require that 6 of 13 phase 1 runs be non-scalar, which is
+  a bar this substrate clears without any coevolution. The quantity that
+  survives the arithmetic is a COMPARISON against a no-coevolution
+  reference of the same shape, and D3 already prints one: the observed
+  share of cyclable triples that are cyclic, against the null's share and
+  against this matrix's own share. Which reference the pre-registration
+  adopts is a design decision and is NOT taken here.
+
+-- WHAT THIS ESTABLISHES AND WHAT IT DOES NOT --
+
+ESTABLISHES. That Null A, as pre-registered, fits and draws on a real
+20-member matrix at 160 matches per cell; what its fit reproduces of the
+observed decisiveness structure; whether IF-9's chosen width accepts a
+matrix the null is meant to describe; and where a real, largely
+ladder-shaped matrix's cycle count sits in the null's own 200 draws.
+
+DOES NOT ESTABLISH. Nothing about coevolution and nothing about phase 1.
+This matrix is 20 INDEPENDENTLY EVOLVED champions from twenty separate
+phase 0 runs, not 20 checkpoints of one coevolutionary lineage, so its
+dependence structure is not an archive matrix's. It calibrates the
+instrument; it does not predict what the instrument will read.
+
+NOT A VERDICT. No phase 1 outcome is decided here, no threshold in this
+file gates anything, and the phase 0 matrix is not a phase 1 run.
+
+
+== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) ==
+{null_a_calibration,[{date,[50,48,50,54,45,48,55,45,51,48]},{status,[67,65,76,73,66,82,65,84,73,79,78,32,111,102,32,97,32,112,104,97,115,101,32,49,32,105,110,115,116,114,117,109,101,110,116,32,111,118,101,114,32,97,32,112,101,114,115,105,115,116,101,100,32,112,104,97,115,101,32,48,32,114,101,99,111,114,100]},{produced_by,[115,99,114,105,112,116,115,47,101,120,112,48,54,55,95,110,117,108,108,95,97,95,99,97,108,105,98,114,97,116,105,111,110,46,101,115,99,114,105,112,116]},{written_to,[47,104,111,109,101,47,114,108,47,119,111,114,107,47,103,105,116,104,117,98,46,99,111,109,47,114,103,102,97,98,101,114,47,102,97,98,101,114,45,112,114,111,103,114,97,109,109,101,115,47,112,114,111,103,114,97,109,109,101,115,47,112,55,95,99,111,101,118,111,108,117,116,105,111,110,47,101,120,112,48,54,55,95,99,111,101,118,111,108,117,116,105,111,110,95,99,121,99,108,105,110,103,47,101,120,112,48,54,55,95,110,117,108,108,95,97,95,99,97,108,105,98,114,97,116,105,111,110,46,116,120,116]},{reads,[[47,104,111,109,101,47,114,108,47,119,111,114,107,47,103,105,116,104,117,98,46,99,111,109,47,114,103,102,97,98,101,114,47,102,97,98,101,114,45,112,114,111,103,114,97,109,109,101,115,47,112,114,111,103,114,97,109,109,101,115,47,112,55,95,99,111,101,118,111,108,117,116,105,111,110,47,101,120,112,48,54,54,95,99,111,109,112,101,116,101,110,99,101,95,102,108,111,111,114,47,101,120,112,48,54,54,95,99,114,111,115,115,112,108,97,121,46,116,120,116],[47,104,111,109,101,47,114,108,47,119,111,114,107,47,103,105,116,104,117,98,46,99,111,109,47,114,103,102,97,98,101,114,47,102,97,98,101,114,45,112,114,111,103,114,97,109,109,101,115,47,112,114,111,103,114,97,109,109,101,115,47,112,55,95,99,111,101,118,111,108,117,116,105,111,110,47,101,120,112,48,54,54,95,99,111,109,112,101,116,101,110,99,101,95,102,108,111,111,114,47,101,120,112,48,54,54,95,119,105,116,104,105,110,95,116,105,101,114,95,118,101,114,105,102,121,46,116,120,116]]},{engine_pin,[97,53,101,56,98,99,102,99,53,54,52,54,56,50,55,101,57,98,101,52,57,97,57,54,50,57,102,56,97,54,97,57,54,55,56,99,56,49,52,98]},{no_genome_loaded,true},{no_match_replayed,true},{no_arm_re_run,true},{champions,20},{seeds,[2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020]},{bands,[{0.05,8,160},{0.1,16,160},{0.15,24,160}]},{counter,[105,110,116,101,103,101,114,44,32,115,116,114,105,99,116,32,62,32,111,110,32,119,105,110,115,32,111,117,116,32,111,102,32,49,54,48]},{worst_cell_distance_from_integer_numerator,0.0},{gates,[{float_full,0.05,[{mine,{49,73,24,25,169}},{stated,{49,73,24,25,169}},{agree,true}]},{float_full,0.1,[{mine,{18,28,10,8,152}},{stated,{18,28,10,8,152}},{agree,true}]},{float_full,0.15,[{mine,{12,18,6,6,141}},{stated,{12,18,6,6,141}},{agree,true}]},{exact_full,0.05,[{mine,{168,789,49}},{stated,{168,789,49}},{agree,true}]},{exact_full,0.1,[{mine,{150,582,18}},{stated,{150,582,18}},{agree,true}]},{exact_full,0.15,[{mine,{141,487,12}},{stated,{141,487,12}},{agree,true}]}]},{rng,[{alg,exsss},{seed,{3661,0,0}},{draws,200},{exported_state_after,{exsss,[217753459242762793|87565821519516937]}}]},{fit,[{prior,[111,110,101,32,118,105,114,116,117,97,108,32,119,105,110,32,97,110,100,32,111,110,101,32,118,105,114,116,117,97,108,32,108,111,115,115,32,112,101,114,32,111,114,100,101,114,101,100,32,112,97,105,114]},{tolerance,1.0e-10},{cap,10000},{iterations,114},{status,converged},{hit_cap,false},{normalised_sum,20},{strengths,[{2001,0.4597576642648565},{2002,0.41104795242203596},{2003,0.9781320127613136},{2004,0.46569778490197283},{2005,0.2410500529128993},{2006,0.6422333779534315},{2007,1.0544054006566552},{2008,0.374883165965219},{2009,0.692871131263395},{2010,1.125803736917793},{2011,0.8941806365106608},{2012,0.8119905273081143},{2013,0.8764014396766397},{2014,0.9407991435030372},{2015,1.8987884521621419},{2016,4.194686911410726},{2017,1.1987622555852337},{2018,0.7778018385276934},{2019,0.41490562297501205},{2020,1.545800892321166}]}]},{fitted_order_violations,[{0.05,[{decisive_pairs,168},{disagree_with_fitted_order,36}]},{0.1,[{decisive_pairs,150},{disagree_with_fitted_order,26}]},{0.15,[{decisive_pairs,141},{disagree_with_fitted_order,23}]}]},{identification,[{zero_win_ordered_pairs,1},{raw_win_digraph_strongly_connected,true},{augmented_digraph_complete,true},{identified,true}]},{observed_both_counters,[{0.05,[{float,[{cycles,49},{ordered,73},{decisive_edges,169},{cyclable_triples,802}]},{integer,[{cycles,49},{ordered,73},{decisive_edges,168},{cyclable_triples,789}]}]},{0.1,[{float,[{cycles,18},{ordered,28},{decisive_edges,152},{cyclable_triples,604}]},{integer,[{cycles,18},{ordered,28},{decisive_edges,150},{cyclable_triples,582}]}]},{0.15,[{float,[{cycles,12},{ordered,18},{decisive_edges,141},{cyclable_triples,487}]},{integer,[{cycles,12},{ordered,18},{decisive_edges,141},{cyclable_triples,487}]}]}]},{per_band,[{0.05,[{observed,[{cycles,49},{ordered,73},{decisive_edges,168},{cyclable_triples,789}]},{synthetic_cycles,[{min,0},{median,1.0},{max,5},{mean,0.975}]},{synthetic_ordered,[{min,0},{median,1.0},{max,7},{mean,1.43}]},{synthetic_decisive,[{min,164},{median,171.0},{max,182},{mean,171.355}]},{synthetic_cyclable,[{min,730},{median,841.0},{max,1001},{mean,838.525}]},{observed_cycles_draws_below,200},{observed_cycles_draws_equal,0},{observed_cycles_exceeds_null_max,true},{bootstrap_p_one_sided,0.004975124378109453}]},{0.1,[{observed,[{cycles,18},{ordered,28},{decisive_edges,150},{cyclable_triples,582}]},{synthetic_cycles,[{min,0},{median,0.0},{max,1},{mean,0.035}]},{synthetic_ordered,[{min,0},{median,0.0},{max,2},{mean,0.065}]},{synthetic_decisive,[{min,146},{median,154.0},{max,164},{mean,154.405}]},{synthetic_cyclable,[{min,507},{median,611.5},{max,740},{mean,614.49}]},{observed_cycles_draws_below,200},{observed_cycles_draws_equal,0},{observed_cycles_exceeds_null_max,true},{bootstrap_p_one_sided,0.004975124378109453}]},{0.15,[{observed,[{cycles,12},{ordered,18},{decisive_edges,141},{cyclable_triples,487}]},{synthetic_cycles,[{min,0},{median,0.0},{max,0},{mean,0.0}]},{synthetic_ordered,[{min,0},{median,0.0},{max,0},{mean,0.0}]},{synthetic_decisive,[{min,130},{median,138.0},{max,148},{mean,138.6}]},{synthetic_cyclable,[{min,360},{median,439.0},{max,543},{mean,441.62}]},{observed_cycles_draws_below,200},{observed_cycles_draws_equal,0},{observed_cycles_exceeds_null_max,true},{bootstrap_p_one_sided,0.004975124378109453}]}]},{primary_band,0.1},{if_9,[{width,20},{observed_decisive_integer_counter,150},{observed_decisive_float_counter,152},{median_synthetic_decisive,154.0},{median_minus_observed_integer,4.0},{median_minus_observed_float,2.0},{fires_on_integer,false},{fires_on_float,false},{smallest_width_that_accepts_this_matrix,4},{null_own_max_abs_deviation_from_median,10.0}]},{per_run_cyclic_test,[{observed_cycles,18},{null_max,1},{null_median,0.0},{null_min,0},{observed_exceeds_max,true},{draws_strictly_below_observed,200},{draws_equal_observed,0}]},{family_wise_arithmetic,[{per_run_rate,0.004975124378109453},{runs_per_arm,13},{p_at_least_1,0.06278075655132542},{p_at_least_2,0.0018615057271615762},{p_at_least_3,3.392820243666039e-5},{p_at_least_4,4.226144833702751e-7},{two_arms,6.78552537503041e-5},{three_arms,1.0178115398018495e-4}]},{rc2_4_consequence,[{if_9_fires,false},{bands_where_observed_exceeds_null_max,[0.05,0.1,0.15]},{re_derivation_owed,true},{registered_gate_width,20},{gate_width_measurement_supports_registered_value,true},{three_of_thirteen_input_rate_contradicted,true},{level_the_threshold_must_hold,3.392820243666039e-5},{smallest_k_of_13_at_registered_rate,3},{smallest_k_of_13_at_95pc_lower_bound_rate_0_05,6},{smallest_k_of_13_at_point_estimate_rate_1_0,none},{note,[116,104,101,32,119,105,100,116,104,39,115,32,111,119,110,32,109,101,97,115,117,114,101,109,101,110,116,32,115,117,112,112,111,114,116,115,32,105,116,59,32,82,67,50,45,52,32,114,101,113,117,105,114,101,115,32,98,111,116,104,32,116,104,101,32,119,105,100,116,104,32,97,110,100,32,116,104,101,32,116,104,114,101,115,104,111,108,100,32,114,101,45,100,101,114,105,118,101,100,32,98,101,99,97,117,115,101,32,99,111,110,100,105,116,105,111,110,32,50,32,104,111,108,100,115,59,32,116,104,101,32,116,104,114,101,115,104,111,108,100,32,105,115,32,116,104,101,32,111,110,101,32,119,104,111,115,101,32,73,78,80,85,84,32,82,65,84,69,32,105,115,32,99,111,110,116,114,97,100,105,99,116,101,100]}]}]}.
