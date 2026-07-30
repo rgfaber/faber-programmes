@@ -71,6 +71,13 @@
 %% The post-hoc addendum: the dropped won_opp_shots column and arm C's attempt
 %% accounting, recomputed from the archive and APPENDED to the feed.
 -export([addendum/0, addendum/1]).
+%% The two flag fixes: IF-10 widened, and PH-GEN, a NEW post-hoc generalisation
+%% diagnostic that is NOT a repair of IF-8. Both recomputed from the archive.
+-export([flag_fixes/0, flag_fixes/1]).
+%% The rates scripted_null/1 threw away, recovered, plus the search for an
+%% intransitivity anchor built only from pre-registered measurements, plus the
+%% corrected match-level null beside the as-built one.
+-export([recovered/0, recovered/1]).
 -export([gates/0, gates/1]).
 %% Protocol step 2: the frozen constants. Scripted bots only, no pilot involved.
 -export([constants/0, constants/1]).
@@ -862,9 +869,26 @@ boot_one(Ps, N) ->
 %% N: the scripted-ladder null against the floor bot on the same 160 matches.
 %% Measured at authoring at or below 0.0125 (sitting_duck 0/160, spinner 0/160,
 %% rammer 2/160, circle_strafer 0/160).
+%%
+%% FIXED 2026-07-30: THE FULL TRIPLE, NOT THE WIN RATE ALONE. This kept only
+%% element 1 of rates/1 and threw the LOSS and DRAW rates away, so N could not
+%% distinguish a rung the floor bot BEATS from a rung it merely never loses to. A
+%% W of 0.0 is consistent with 160 losses and with 160 draws, and those are
+%% different facts about the ladder: the first is an EDGE from the floor bot to
+%% that rung, the second is no edge at all. The discarded L is what decides it,
+%% which is why one of the three legs of any candidate intransitive triple through
+%% the floor bot was unreadable in the as-run record. recovered/1 uses this.
+%%
+%% THE AS-RUN FEED IS NOT AMENDED. Its N line carries four win rates and that is
+%% what the run of 2026-07-29 computed; a FUTURE run's line carries four
+%% {Kind, W, L, D} tuples instead.
 scripted_null(Starts) ->
-    [{K, win_rate(heldout({script, K}, ?FLOOR, Starts))}
-     || K <- robo_gauntlet:kinds(), K =/= ?FLOOR].
+    [rc_rung_cell(K, Starts) || K <- robo_gauntlet:kinds(), K =/= ?FLOOR].
+
+%% One scripted rung against the floor bot, from the RUNG's side, all three rates.
+rc_rung_cell(K, Starts) ->
+    {W, L, D} = rates(heldout({script, K}, ?FLOOR, Starts)),
+    {K, W, L, D}.
 
 %% R: the best-of-30 random-genome held-out win rate, at the frozen encoding.
 %%
@@ -946,6 +970,14 @@ flags(Rs, K, Inert) ->
       "read ONLY on a FAILED or INCONCLUSIVE verdict: the negative is budget-limited"},
      {'IF-10 LADDER-INVERSION', inverted(Med#res.profile),
       "an OBSERVABLE. NOT claimed as intransitivity; that is phase 1's question"},
+     %% IF-10 reads ONE seed and an arm is not its median champion: on arm D five
+     %% of ten champions tripped even the as-run predicate while the median draw
+     %% landed on one that did not. Both counts are emitted, over the whole arm, so
+     %% the widening is visible in the feed instead of only in a probe.
+     {'note IF-10 seeds inverted, WIDENED predicate', inverted_count(Rs),
+      "four lower rungs, draw-parked counted as not beaten; count over the ARM"},
+     {'note IF-10 seeds inverted, AS-RUN predicate', inverted_count_as_run(Rs),
+      "duck-or-spinner and draw-blind, the predicate the 2026-07-29 run used"},
      %% Read ONLY when there is a won match to read it on: with no wins the mean
      %% is UNDEFINED, not zero, and a modifier that fires on every zero-win arm
      %% would label exactly the verdicts it says nothing about.
@@ -973,10 +1005,55 @@ gain(Ms) ->
     Prev = median([element(2, lists:nth(length(M) - 1, M)) || M <- Ms]),
     Last - Prev.
 
-inverted(Profile) ->
+%% IF-10's predicate, WIDENED 2026-07-30. The signed insight calls the as-run
+%% narrowness a DEFECT rather than a scoping note, and this is that fix. Three
+%% changes, and NOT ONE OF THEM MOVES A THRESHOLD:
+%%
+%%   1. THE FOUR LOWER RUNGS, not two. The as-run list held sitting_duck and
+%%      spinner only, so it never looked at the rammer or the circle_strafer, and
+%%      arm D's median champion, seed 2007, loses the RAMMER 0.36875 to 0.63125
+%%      while the flag stays quiet.
+%%   2. DRAW-PARKED COUNTS AS NOT BEATEN. L > W alone is draw-blind: arm D seed
+%%      2004 goes 0.0125 W / 0.00625 L / 0.98125 D against the SITTING DUCK, a
+%%      champion that cannot kill a stationary target inside the turn cap, and
+%%      passes on a technicality. THE THRESHOLD IS D > 0.5 AND IT IS NOT A
+%%      TUNABLE: it is the definition of "the majority outcome of this rung is a
+%%      draw" on a fixed 160 matches, the same reading the insight's prose uses,
+%%      and there is no value to fit because half is what majority means.
+%%   3. REPORTED PER SEED WITH A COUNT, in flags/3, as well as on the median
+%%      champion, because the median champion is ONE seed of ten.
+%%
+%% THE FEED OF 2026-07-29 IS NOT AMENDED BY THIS. IF-10 quiet on all three arms
+%% is what that run reported and it stands; what changes is what a FUTURE run
+%% reports, and the recomputation over the archive lives in flag_fixes/1.
+inverted(Profile) -> lists:any(fun lower_unbeaten/1, Profile).
+
+%% One rung cell of a profile: a LOWER rung the champion has not beaten, either
+%% because it loses more than it wins or because the rung is parked in draws.
+lower_unbeaten({K, W, L, D}) ->
+    lists:member(K, [sitting_duck, spinner, rammer, circle_strafer])
+        andalso (L > W orelse D > 0.5).
+
+%% The AS-RUN predicate, kept VERBATIM. It is no longer what IF-10 reads; it is
+%% here so old and new can be printed side by side over the same profiles, which
+%% is the only way a reader can see what the widening changed rather than take it.
+inverted_as_run(Profile) ->
     lists:any(fun({K, W, L, _D}) ->
                   lists:member(K, [sitting_duck, spinner]) andalso L > W
               end, Profile).
+
+%% Which lower rungs trip the widened predicate, and on which of its two grounds.
+%% A cell can satisfy both; loses is reported first because losing is the stronger
+%% statement.
+unbeaten_rungs(Profile) ->
+    [{K, unbeaten_why(C)} || {K, _W, _L, _D} = C <- Profile, lower_unbeaten(C)].
+
+unbeaten_why({_K, W, L, _D}) when L > W -> loses;
+unbeaten_why(_Cell) -> draw_parked.
+
+inverted_count(Rs) -> length([1 || R <- Rs, inverted(R#res.profile)]).
+
+inverted_count_as_run(Rs) -> length([1 || R <- Rs, inverted_as_run(R#res.profile)]).
 
 %% The MEDIAN CHAMPION, by held-out win rate. Every IF code above that speaks of
 %% "the median champion" reads this one seed, not a pooled average.
@@ -1363,14 +1440,15 @@ xp_null_analytic(N) ->
 
 xp_null_sign(N, Draws) ->
     Idx = lists:seq(1, N),
-    Ms = [xp_from_pairs(N, [{I, J, xp_coin()} || {I, J} <- xp_pairs(Idx)])
+    Ms = [xp_from_wins(N, [{I, J, xp_coin_w()} || {I, J} <- xp_pairs(Idx)])
           || _ <- lists:seq(1, Draws)],
-    {null_sign_only, [{model, "fair coin per edge, margin +/-1.0, all edges decisive"},
+    {null_sign_only, [{model, "fair coin per edge, winner takes the whole cell, "
+                              "margin +/-1.0, all edges decisive"},
                       {draws, Draws} | xp_null_stats(Ms, Idx)]}.
 
 xp_null_match(N, Draws, M) ->
     Idx = lists:seq(1, N),
-    Ms = [xp_from_pairs(N, [{I, J, xp_flips(M) * 2.0 / M - 1.0} || {I, J} <- xp_pairs(Idx)])
+    Ms = [xp_from_wins(N, [{I, J, xp_flips(M) / M} || {I, J} <- xp_pairs(Idx)])
           || _ <- lists:seq(1, Draws)],
     {null_match_level, [{model, "fair coin per MATCH, " ++ integer_to_list(M) ++ " per cell"},
                         {draws, Draws} | xp_null_stats(Ms, Idx)]}.
@@ -1386,13 +1464,46 @@ xp_cyc_n(M, Idx, B) ->
     {F, Bw} = xp_cycles(xp_mg(M), Idx, B),
     F + Bw.
 
+%% THE AS-RUN COIN, in MARGIN units. Used only by recovered/1's side-by-side null
+%% table, never to build a reported null. Kept because a defect that is described
+%% but not computed cannot be checked.
 xp_coin() -> element(rand:uniform(2), {-1.0, 1.0}).
+
+%% The sign-only coin in WIN-RATE units: the winner takes the whole cell. ONE
+%% rand:uniform(2) call, exactly as xp_coin/0, so the two draw the same stream and
+%% a comparison between them is a comparison of encodings and not of samples.
+xp_coin_w() -> element(rand:uniform(2), {0.0, 1.0}).
 
 xp_flips(M) -> length([1 || _ <- lists:seq(1, M), rand:uniform(2) =:= 1]).
 
-%% A margin matrix from its I<J half. Antisymmetric by construction, so no
-%% synthetic tournament can accidentally be built with two winners on one edge.
-xp_from_pairs(N, Vals) ->
+%%% THE SYNTHETIC MATRIX. FIXED 2026-07-30, AT THE SOURCE.
+%%%
+%%% WHAT WAS WRONG. xp_from_pairs/2 stored a MARGIN V at {I,J} and -V at {J,I},
+%%% and xp_mg/1 is a WIN-RATE differencing operator, so it returned
+%%% V - (-V) = 2V. Every synthetic margin was DOUBLE the margin it represented and
+%%% every band was therefore effectively HALVED against the synthetic nulls: the
+%%% record's band-0.10 match-level row is really a band-0.05 row. The OBSERVED
+%%% matrix holds win rates and is differenced correctly, so only the two synthetic
+%%% nulls were affected, and only the match-level one moves numerically, because
+%%% |2 * (+/-1)| clears every band either way.
+%%%
+%%% THE FIX IS THE UNITS, NOT A FACTOR AT THE CALL SITE. A synthetic cell now
+%%% stores the two WIN RATES of that cell, which is exactly what xp_matrix/2
+%%% stores for the observed matrix, so ONE differencing operator is correct for
+%%% both and a band means the same thing on both. Antisymmetry is still by
+%%% construction: the two cells of a pair sum to 1.0, so no synthetic tournament
+%%% can be built with two winners on one edge, and there are no synthetic draws.
+xp_from_wins(N, Vals) ->
+    Look = maps:from_list(lists:append([[{{I, J}, W}, {{J, I}, 1.0 - W}]
+                                        || {I, J, W} <- Vals])),
+    Idx = lists:seq(1, N),
+    list_to_tuple([list_to_tuple([maps:get({I, J}, Look, 0.0) || J <- Idx]) || I <- Idx]).
+
+%% THE AS-RUN CONSTRUCTION, KEPT VERBATIM AND RENAMED. It no longer builds any
+%% reported null; recovered/1 calls it to put the as-built column beside the
+%% corrected one on the SAME draws. DO NOT BUILD A NULL WITH THIS: it stores a
+%% margin where the counter expects a win rate.
+xp_from_pairs_as_run(N, Vals) ->
     Look = maps:from_list(lists:append([[{{I, J}, V}, {{J, I}, -V}] || {I, J, V} <- Vals])),
     Idx = lists:seq(1, N),
     list_to_tuple([list_to_tuple([maps:get({I, J}, Look, 0.0) || J <- Idx]) || I <- Idx]).
@@ -1708,6 +1819,1979 @@ add_tail() ->
     "which is where its numbers must be read from. The first pass of that probe "
     "persisted nothing at all, which is the defect this addendum's sibling fixes.\n"
     "== END ADDENDUM ==\n".
+
+%%%============================================================================
+%%% THE TWO FLAG FIXES. POST HOC, 2026-07-30, recomputed from the champion
+%%% archive. NO ARM IS RE-RUN and no genome is modified.
+%%%
+%%% FIX A, IF-10. inverted/1 above is now the WIDENED predicate and
+%%% inverted_as_run/1 holds the as-run one verbatim, so both are computed over the
+%%% same profiles and printed side by side. The reasons are on inverted/1 itself.
+%%% The feed of 2026-07-29 is NOT amended: IF-10 quiet on all three arms is what
+%%% that run reported and it stands. What changes is what a FUTURE run reports.
+%%%
+%%% FIX B, PH-GEN, AND IT IS NOT A REPAIR OF IF-8. IF-8 as pre-registered reads
+%%% train_w >= B AND held-out < B. train_w is 1.0000 for 40 of 40 champions, and
+%%% not by accident: the train split is 6 starts times 2 seats = 12 matches, and
+%%% ladder/3 clears a rung only when EVERY match of that rung has a positive
+%%% margin, over exactly those same 12 matches, so any champion whose archived
+%%% fitness cleared the gun rung had 12 positive margins there. The left conjunct
+%%% is vacuously true everywhere and IF-8 collapses to the negation of half the
+%%% CLEARED test. THAT IS PERMANENT AND IT IS NOT REPAIRED HERE. IF-8 was
+%%% untestable with this instrument, its quiet state carries no information about
+%%% memorisation, and nothing below changes that.
+%%%
+%%% PH-GEN is a NEW, POST-HOC diagnostic. The name is deliberately not an IF code
+%%% and must never be written as one. It does not restore IF-8, it does not
+%%% license reading IF-8's quiet state as a result, and it was not pre-registered.
+%%%
+%%% WHAT PH-GEN READS. The honest THREE-WAY split. split/1 cuts one deterministic
+%%% 120-start generator into train 1..6, held-out 7..86 and calibration 87..116,
+%%% disjoint by index construction and asserted by gate_starts/0. The 30
+%%% calibration starts were used to build and tune arm C and to measure NO
+%%% champion, so they are a genuine third set. Per champion, against the floor
+%%% bot: 12, 60 and 160 matches; the win rate on each; and the mean of margin/1 in
+%%% whole units on each. The margin is the FLOORED one the fitness itself reads,
+%%% because the death floor has to be applied on both sides for two splits to be
+%%% comparable at all. The feed's own margin column does NOT floor, so it is not
+%%% comparable across splits and appears here only to tie a row back to the feed.
+%%%
+%%% EVALUATING AN ARCHIVED CHAMPION ON THE CALIBRATION STARTS IS A MATCH REPLAY,
+%%% NOT AN ARM RE-RUN. The path is heldout/3 -> duel/3 -> play_seat/5 -> play/2 ->
+%%% robo_sim, with pilot_act/4 and robo_gauntlet:act/4 as the two controllers.
+%%% Nothing under arm/2, seed_run/4, one_run/4, fitness_fun/5 or the col_*
+%%% collector is called, so no optimiser runs. ladder/3 IS called, on the train
+%%% starts only, to recompute each champion's archived FITNESS as a provenance
+%%% check: ladder/3 is the fitness FUNCTION, not the optimiser.
+%%%============================================================================
+
+%% One archived champion, remeasured on all three splits. A record, so an emit
+%% cannot silently take the wrong column.
+-record(fx, {
+    arm, seed, layers, fit,
+    profile = [],                    %% [{Kind, W, L, D}] on the HELD-OUT 80
+    old = false,                     %% IF-10 under the as-run predicate
+    new = false,                     %% IF-10 under the widened predicate
+    trips = [],                      %% [{Kind, loses | draw_parked}]
+    fit_recomputed = 0.0,            %% ladder/3 on the train starts
+    tw = 0.0, tfl = 0.0, tdm = 0.0,  %% train: W, floored margin, raw margin
+    cw = 0.0, cfl = 0.0, cdm = 0.0,  %% calibration: the same three
+    hw = 0.0, hfl = 0.0, hdm = 0.0   %% held out: the same three
+}).
+
+flag_fixes() -> flag_fixes(#{}).
+
+flag_fixes(Opts0) ->
+    Opts = merged(Opts0),
+    K = constants(Opts),
+    Arms = [fx_arm(Opts, A) || A <- maps:get(addendum_arms, Opts)],
+    ok = file:write_file(maps:get(fx_out, Opts), [fx_record(Opts, K, Arms)]),
+    Note = fx_feed_note(Opts, Arms),
+    [ok = add_append(P, Note) || P <- maps:get(addendum_feeds, Opts)],
+    io:format("~s", [Note]),
+    {flag_fixes,
+     [{record, maps:get(fx_out, Opts)},
+      {feeds, maps:get(addendum_feeds, Opts)},
+      {if10, [{A, length(Rows), fx_old(Rows), fx_new(Rows)} || {arm, A, Rows} <- Arms]}]}.
+
+fx_arm(Opts, Arm) ->
+    Rows = pmap(fun(Ch) -> fx_row(Ch, Opts) end,
+                champion_read(add_path(Opts, Arm)), maps:get(workers, Opts)),
+    {arm, Arm, Rows}.
+
+fx_row({champion, Arm, Seed, Layers, Q, Fit, _Evals}, Opts) ->
+    Net = {net, Layers, Q},
+    Prof = profile(Net, heldout_starts(Opts)),
+    {TW, TFl, TDm} = fx_split(Net, train_starts(Opts)),
+    {CW, CFl, CDm} = fx_split(Net, calib_starts(Opts)),
+    {HW, HFl, HDm} = fx_split(Net, heldout_starts(Opts)),
+    #fx{arm = Arm, seed = Seed, layers = Layers, fit = Fit, profile = Prof,
+        old = inverted_as_run(Prof), new = inverted(Prof),
+        trips = unbeaten_rungs(Prof),
+        fit_recomputed = ladder(Net, rungs(Arm), train_starts(Opts)),
+        tw = TW, tfl = TFl, tdm = TDm,
+        cw = CW, cfl = CFl, cdm = CDm,
+        hw = HW, hfl = HFl, hdm = HDm}.
+
+%% One split against the floor bot: win rate, the FLOORED mean margin in whole
+%% units, and the raw dealt-minus-taken mean the feed's margin column carries.
+fx_split(Net, Starts) ->
+    Os = heldout(Net, ?FLOOR, Starts),
+    {win_rate(Os), mean([margin(O) || O <- Os]) / ?FP, mean_margin(Os)}.
+
+fx_old(Rows) -> length([1 || R <- Rows, R#fx.old]).
+fx_new(Rows) -> length([1 || R <- Rows, R#fx.new]).
+
+%% The median champion by the run's OWN rule, median_res/1, reused rather than
+%% restated so the two cannot drift. The champion list is in ascending seed order,
+%% which is the order arm/2 produced, so the lower median lands on the same seed.
+fx_median(Rows) ->
+    Med = median_res([#res{seed = R#fx.seed, w = R#fx.hw} || R <- Rows]),
+    lists:keyfind(Med#res.seed, #fx.seed, Rows).
+
+%% THE TIER LABELS ARE NOT NEW AND NOTHING HERE CHOOSES THEM. This is the
+%% operational rule the two-attractors probe already published (held-out W below
+%% 0.62 is the near-parity mode, above 0.93 the kill mode), which reproduces the
+%% signed insight's 13 / 1 / 6 partition of arm S seed for seed. It is applied
+%% UNCHANGED to arms L and D, where no partition was published, and a champion
+%% between the two is reported as mid rather than pushed into a tier.
+tier(W) when W < 0.62 -> low;
+tier(W) when W > 0.93 -> high;
+tier(_W) -> mid.
+
+fx_cell(Profile, K) ->
+    {K, W, _L, D} = lists:keyfind(K, 1, Profile),
+    {W, D}.
+
+%%%----------------------------------------------------------------------------
+%%% The record file.
+%%%----------------------------------------------------------------------------
+fx_record(Opts, K, Arms) ->
+    [fx_head(Opts, K), fx_sec_a(Arms), fx_sec_b(K, Arms), fx_sec_c(Arms), fx_sec_d(),
+     fx_term(Opts, Arms)].
+
+fx_head(Opts, K) ->
+    io_lib:format(
+      "== EXP-066 FLAG FIXES: IF-10 WIDENED, PLUS ONE NEW POST-HOC GENERALISATION~n"
+      "   DIAGNOSTIC, BOTH RECOMPUTED FROM THE CHAMPION ARCHIVE ==~n~n"
+      "Date: 2026-07-30. Engine pin a5e8bcfc5646827e9be49a9629f8a6a9678c814b.~n"
+      "Produced by: experiments/exp066_single_population_floor_tests.erl, flag_fixes/1,~n"
+      "  driven by scripts/exp066_flag_fixes.sh. Archive read: ~s~n"
+      "  (exp066_champions_s.eterm 20, _l.eterm 10, _d.eterm 10; 40 champions).~n~n"
+      "NO ARM WAS RE-RUN AND NO GENOME WAS MODIFIED. Every number below comes from~n"
+      "replaying archived champions through matches at the engine pin. The call path~n"
+      "is heldout/3 -> duel/3 -> play_seat/5 -> play/2 -> robo_sim; ladder/3 is also~n"
+      "called, on the 6 train starts only, to recompute each champion's archived~n"
+      "FITNESS as a provenance check. ladder/3 is the fitness function, not the~n"
+      "optimiser: nothing under arm/2, seed_run/4, one_run/4, fitness_fun/5 or the~n"
+      "col_* collector is called anywhere in this record.~n~n"
+      "WHAT THIS RECORD IS. Two things the signed insight~n"
+      "066-evolution-clears-the-robo-rumble-competence-floor.md names as owed work in~n"
+      "its final section, item 4.~n~n"
+      "  FIX A  IF-10 LADDER-INVERSION. A defect fix to a PRE-REGISTERED predicate:~n"
+      "         it read two of the four lower rungs and was draw-blind. Both~n"
+      "         predicates are computed over the same profiles and printed side by~n"
+      "         side. The as-run feed is NOT amended and IF-10's quiet state there~n"
+      "         stands as what the run of 2026-07-29 reported.~n~n"
+      "  FIX B  PH-GEN, a NEW POST-HOC three-split generalisation diagnostic. IT IS~n"
+      "         NOT A REPAIR OF IF-8 and PH-GEN is NOT an IF code. IF-8 was~n"
+      "         untestable with this instrument, that fact is permanent, and nothing~n"
+      "         here restores it or licenses reading its quiet state as a result.~n~n"
+      "WHAT THIS RECORD IS NOT. It is not pre-registered, it signs nothing, and no~n"
+      "threshold in it was chosen to produce a result. The one threshold FIX A adds~n"
+      "is D > 0.5, which is the definition of a majority on a fixed 160 matches.~n"
+      "The tier labels are the two-attractors probe's already published rule, reused~n"
+      "unchanged. Where a computation separates nothing, this record says so.~n~n"
+      "REPRODUCIBILITY, AND THE ONE RANDOM NUMBER. Every match here is a deterministic~n"
+      "integer simulation on a deterministic start set, so no measurement in this~n"
+      "record comes off rand. The ONE quantity that does is B, quoted in section B: it~n"
+      "comes from constants/1's START-LEVEL BOOTSTRAP over predictive_gun against its~n"
+      "own clone, seeded from BOOT_SEED = 66 with 10,000 resamples, both fixed in the~n"
+      "runner's source, so B = ~.4f is reproducible and is the same B the run of~n"
+      "2026-07-29 froze. Two independent executions of flag_fixes/1 produced~n"
+      "byte-identical copies of this file.~n~n"
+      "THIS FILE IS REGENERABLE, THE FEED NOTE IS NOT. flag_fixes/1 overwrites this~n"
+      "record, so it can be re-run at will (scripts/exp066_flag_fixes.sh record). The~n"
+      "note it appends to the two feed copies is APPEND-ONLY and was written once, on~n"
+      "2026-07-30; re-running the appending mode would add a second copy of it.~n",
+      [maps:get(archive_dir, Opts), maps:get(b, K)]).
+
+%%%----------------------------------------------------------------------------
+%%% FIX A.
+%%%----------------------------------------------------------------------------
+fx_sec_a(Arms) ->
+    [io_lib:format(
+       "~n~n-- A. FIX A: IF-10 LADDER-INVERSION, AS-RUN PREDICATE BESIDE THE WIDENED ONE --~n~n"
+       "AS-RUN (what the run of 2026-07-29 computed), inverted_as_run/1:~n"
+       "  any rung K of [sitting_duck, spinner] with L > W~n~n"
+       "WIDENED (what a future run computes), inverted/1:~n"
+       "  any rung K of [sitting_duck, spinner, rammer, circle_strafer]~n"
+       "  with L > W orelse D > 0.5~n~n"
+       "THE THREE CHANGES, AND WHY NONE OF THEM IS A THRESHOLD MOVE.~n"
+       "  1. FOUR LOWER RUNGS, not two. The as-run list never looked at the rammer or~n"
+       "     the circle_strafer. Arm D's median champion, seed 2007, loses the RAMMER,~n"
+       "     and IF-10 stayed quiet. Nothing was reweighted: two rungs that were~n"
+       "     already in every profile were simply read.~n"
+       "  2. DRAW-PARKED COUNTS AS NOT BEATEN. L > W alone is draw-blind. The~n"
+       "     threshold is D > 0.5 and it is NOT a tunable: it is what 'the majority~n"
+       "     outcome of this rung is a draw' means on a fixed 160 matches. Half is~n"
+       "     not a fitted value. No other value was tried.~n"
+       "  3. PER SEED WITH A COUNT, not only on the median champion. flags/3 now~n"
+       "     emits both counts over the whole arm. The median champion is one seed.~n"
+       "     The two counts in the table below are computed by inverted/1 and~n"
+       "     inverted_as_run/1, which are the same two functions flags/3's new note~n"
+       "     lines call, over the same held-out profiles, so a future run's feed will~n"
+       "     carry these same numbers rather than numbers of a second kind.~n~n"
+       "All profiles below are RECOMPUTED from the archived genome on the same 80~n"
+       "held-out starts, all five rungs, 160 matches per rung. L is omitted from the~n"
+       "table because rates/1 makes W + L + D exactly 1.0, so W and D determine it.~n~n"
+       "arm  champions  as-run FIRES  widened FIRES  median champ  as-run  widened~n", []),
+     [fx_a_arm(A) || A <- Arms],
+     io_lib:format(
+       "~nPER SEED. W/D per lower rung on the held-out 80. tier is the two-attractors~n"
+       "probe's published rule on held-out W against the floor bot (below 0.62 low,~n"
+       "above 0.93 high, else mid), reused unchanged.~n~n"
+       "arm seed tier    duck W/D    spinner W/D    rammer W/D   strafer W/D"
+       "    as-run widened~n", []),
+     [[fx_a_row(R) || R <- Rows] || {arm, _A, Rows} <- Arms],
+     io_lib:format(
+       "~nWHICH RUNGS TRIP THE WIDENED PREDICATE, AND ON WHICH GROUND. loses means~n"
+       "L > W on that rung; draw_parked means D > 0.5. A cell can satisfy both and~n"
+       "loses is reported first because losing is the stronger statement. Champions~n"
+       "that trip nothing are absent from this list.~n~n", []),
+     [[fx_a_trip(R) || R <- Rows, R#fx.new] || {arm, _A, Rows} <- Arms],
+     fx_a_prediction(Arms)].
+
+fx_a_arm({arm, A, Rows}) ->
+    Med = fx_median(Rows),
+    io_lib:format("~3s ~10w ~13w ~14w ~13w ~7s ~8s~n",
+                  [atom_to_list(A), length(Rows), fx_old(Rows), fx_new(Rows),
+                   Med#fx.seed, add_flag(Med#fx.old), add_flag(Med#fx.new)]).
+
+fx_a_row(R) ->
+    {DW, DD} = fx_cell(R#fx.profile, sitting_duck),
+    {SW, SD} = fx_cell(R#fx.profile, spinner),
+    {RW, RD} = fx_cell(R#fx.profile, rammer),
+    {CW, CD} = fx_cell(R#fx.profile, circle_strafer),
+    io_lib:format("~3s ~4w ~-5s ~6.4f/~6.4f ~6.4f/~6.4f ~6.4f/~6.4f ~6.4f/~6.4f "
+                  " ~-6s ~s~n",
+                  [atom_to_list(R#fx.arm), R#fx.seed, atom_to_list(tier(R#fx.hw)),
+                   DW, DD, SW, SD, RW, RD, CW, CD,
+                   add_flag(R#fx.old), add_flag(R#fx.new)]).
+
+fx_a_trip(R) ->
+    io_lib:format("  arm ~s seed ~w  W=~.4f  trips ~w~n",
+                  [atom_to_list(R#fx.arm), R#fx.seed, R#fx.hw, R#fx.trips]).
+
+%% The insight predicted, IN ADVANCE of this recomputation, that widening the
+%% member list "flips IF-10 loud on arm D with no change of criterion, no new
+%% threshold and no re-run". IF-10 reads the median champion, so that is where the
+%% prediction is tested. It is reported as it comes out.
+fx_a_prediction(Arms) -> fx_a_pred(lists:keyfind(d, 2, Arms)).
+
+fx_a_pred(false) ->
+    "\nTHE INSIGHT'S PREDICTION IS NOT TESTED HERE: arm D was not measured in this\n"
+    "configuration.\n";
+fx_a_pred({arm, d, Rows}) ->
+    Med = fx_median(Rows),
+    io_lib:format(
+      "~nTHE INSIGHT'S PREDICTION, TESTED. It predicted that widening the member list~n"
+      "flips IF-10 LOUD on arm D with no change of criterion and no re-run. IF-10~n"
+      "reads the median champion, so that is where it is tested.~n"
+      "  arm D median champion  = seed ~w, held-out W = ~.4f~n"
+      "  IF-10 as-run           = ~s~n"
+      "  IF-10 widened          = ~s~n"
+      "  rungs tripping         = ~w~n"
+      "  PREDICTION HELD        = ~w~n",
+      [Med#fx.seed, Med#fx.hw, add_flag(Med#fx.old), add_flag(Med#fx.new),
+       Med#fx.trips, Med#fx.old =:= false andalso Med#fx.new =:= true]).
+
+%%%----------------------------------------------------------------------------
+%%% FIX B.
+%%%----------------------------------------------------------------------------
+fx_sec_b(K, Arms) ->
+    [io_lib:format(
+       "~n~n-- B. FIX B: PH-GEN, A NEW POST-HOC THREE-SPLIT GENERALISATION DIAGNOSTIC --~n~n"
+       "PH-GEN IS NOT AN IF CODE AND IS NOT A REPAIR OF IF-8. Read this first.~n~n"
+       "WHAT IF-8 WAS. 'IF-8 MEMORISATION' fires when train_w >= B and held-out W <~n"
+       "B, with B = ~.4f. train_w reads 1.0000 for 40 of 40 champions, and that is~n"
+       "forced by the design rather than observed: the train split is 6 starts times~n"
+       "2 seats = 12 matches, one step is 1/12 = 0.0833, and ladder/3 clears a rung~n"
+       "only when EVERY match of it has a positive margin over exactly those same 12~n"
+       "matches. Any champion whose archived fitness cleared the gun rung therefore~n"
+       "had 12 positive margins there, and in every case 12 wins. The left conjunct~n"
+       "is vacuously true everywhere, so IF-8 collapses to 'the median champion is~n"
+       "below B', which is the negation of half the CLEARED test and carries no~n"
+       "train-to-held-out contrast at all.~n~n"
+       "THAT STANDS. IF-8 was untestable with this instrument, its quiet state in the~n"
+       "feed says nothing about memorisation, and PH-GEN does not change that. IF-8 is~n"
+       "not modified, not rescored and not reinterpreted anywhere in this record.~n~n"
+       "WHAT PH-GEN IS. A NEW diagnostic, post hoc, unregistered, first computed~n"
+       "2026-07-30. It reads the honest three-way split of one deterministic 120-start~n"
+       "generator:~n"
+       "  train        starts   1..6    6 starts, 12 matches   the optimiser saw these~n"
+       "  held out     starts   7..86  80 starts, 160 matches  the gate lives here~n"
+       "  calibration  starts  87..116 30 starts, 60 matches   built arm C, measured~n"
+       "                                                       NO champion~n"
+       "Disjoint by index construction and asserted by gate_starts/0. Starts 117..120~n"
+       "are generated and deliberately unused.~n~n"
+       "HOW CLEAN THE THIRD SET ACTUALLY IS, stated exactly. During the RUN the~n"
+       "calibration starts scored arm C and nothing else: no evolution arm and no~n"
+       "champion was ever measured on them, and nothing was ever selected using them.~n"
+       "They have since been READ ONCE, post hoc: exp066_two_attractors_probe.txt~n"
+       "section K reports the calibration win rate of all 20 arm S champions, and the~n"
+       "calW column below reproduces it. So for arm S this is a re-read of an already~n"
+       "published post-hoc measurement, not a first look, and it is not a held-back~n"
+       "test set in the strict sense any more. For arms L and D it is a first look.~n"
+       "Either way nothing was selected on it, which is the property that matters.~n~n"
+       "TWO QUANTITIES PER SPLIT, both against the floor bot. (a) the win rate, the~n"
+       "same rule the gate uses, draws counting as not beating. (b) the mean of~n"
+       "margin/1 in whole units: the FLOORED margin, which applies the one-bar death~n"
+       "floor on both sides. Floored is what makes two splits comparable and is also~n"
+       "exactly what the fitness reads. THE FEED'S OWN margin COLUMN DOES NOT FLOOR,~n"
+       "so it is not comparable across splits; it appears in section C only, to tie~n"
+       "each row back to the feed.~n~n"
+       "REPLAY, NOT A RE-RUN. Scoring an archived champion on the calibration starts~n"
+       "is heldout/3 -> duel/3 -> play_seat/5 -> play/2 -> robo_sim. No optimiser is~n"
+       "reachable from that path. Confirmed by reading the code, and stated here.~n~n"
+       "WHAT IS NEW HERE AND WHAT IS NOT, per column.~n"
+       "  train_fl, held_fl, ARM S    NOT NEW. exp066_two_attractors_probe.txt~n"
+       "                              section G carries them as train_gun, heldout_gun~n"
+       "                              and gap, computed by a different script from the~n"
+       "                              same archive. They must agree digit for digit,~n"
+       "                              and that agreement is this table's cross-check.~n"
+       "  calW, ARM S                 NOT NEW. Section K of the same probe carries it.~n"
+       "                              Same cross-check.~n"
+       "  cal_fl, EVERY ARM           NEW. No record carried a floored margin on the~n"
+       "                              calibration starts for any champion.~n"
+       "  every column, ARMS L and D  NEW. No floored margin on any split, and no~n"
+       "                              calibration measurement, existed for those 20.~n",
+       [maps:get(b, K)]),
+     io_lib:format(
+       "~n~nB1. WIN RATE ON EACH SPLIT, AND THE GAPS.~n~n"
+       "t-c is train minus calibration, t-h train minus held out, c-h calibration~n"
+       "minus held out. A positive gap is a champion doing better on the split the~n"
+       "optimiser saw.~n~n"
+       "arm seed tier   trainW    calW   heldW      t-c      t-h      c-h~n", []),
+     [[fx_b1_row(R) || R <- Rows] || {arm, _A, Rows} <- Arms],
+     io_lib:format(
+       "~n~nB2. FLOORED MARGIN ON EACH SPLIT, WHOLE UNITS, AND THE GAPS.~n~n"
+       "The gun rung only, which is the rung the gate is defined on. Same three~n"
+       "splits, same gap convention.~n~n"
+       "arm seed tier  train_fl   cal_fl  held_fl      t-c      t-h      c-h~n", []),
+     [[fx_b2_row(R) || R <- Rows] || {arm, _A, Rows} <- Arms],
+     fx_b_resolution(Arms),
+     fx_b_saturation(Arms)].
+
+fx_b1_row(R) ->
+    io_lib:format("~3s ~4w ~-5s ~7.4f ~7.4f ~7.4f  ~7.4f  ~7.4f  ~7.4f~n",
+                  [atom_to_list(R#fx.arm), R#fx.seed, atom_to_list(tier(R#fx.hw)),
+                   R#fx.tw, R#fx.cw, R#fx.hw,
+                   R#fx.tw - R#fx.cw, R#fx.tw - R#fx.hw, R#fx.cw - R#fx.hw]).
+
+fx_b2_row(R) ->
+    io_lib:format("~3s ~4w ~-5s ~9.2f ~8.2f ~8.2f  ~7.2f  ~7.2f  ~7.2f~n",
+                  [atom_to_list(R#fx.arm), R#fx.seed, atom_to_list(tier(R#fx.hw)),
+                   R#fx.tfl, R#fx.cfl, R#fx.hfl,
+                   R#fx.tfl - R#fx.cfl, R#fx.tfl - R#fx.hfl, R#fx.cfl - R#fx.hfl]).
+
+%%%----------------------------------------------------------------------------
+%%% Does PH-GEN have any resolution? Reported as it comes out. The ranges are a
+%%% description of numbers that already exist: no cut point is chosen anywhere
+%%% below, and an overlap is printed as an overlap.
+%%%----------------------------------------------------------------------------
+fx_b_resolution(Arms) ->
+    Rows = lists:append([Rs || {arm, _A, Rs} <- Arms]),
+    [io_lib:format(
+       "~n~nB3. DOES PH-GEN SEPARATE THE TWO MODES? THE RANGES, PER ARM, PER TIER.~n~n"
+       "The question the ceilinged flag could not answer: is the split visible in a~n"
+       "train-to-held-out contrast at all? Below, for each arm and each tier, the min~n"
+       "and max of one quantity WITHIN that tier, then whether the low and high tiers'~n"
+       "ranges overlap. NO CUT POINT IS CHOSEN HERE, nothing is fitted, and a quantity~n"
+       "that does not separate is printed as not separating. Ranges carry four~n"
+       "decimals; the same margins appear to two decimals in B2.~n~n"
+       "READ THE (circular) TAG FIRST. THE TIERS ARE DEFINED BY HELD-OUT W, so any~n"
+       "quantity computed on the held-out split is not independent of the labels it is~n"
+       "being asked to separate, and a clean split of such a quantity is close to a~n"
+       "restatement of the definition. The W gap is the worst case and is marked so:~n"
+       "train W is exactly 1.0000 for ~w of ~w champions, so train-minus-held-out W is~n"
+       "1.0000 minus held-out W identically, and its tier separation is a TAUTOLOGY~n"
+       "and no evidence of anything. Lines marked (independent) use only the train and~n"
+       "calibration splits, neither of which enters the tier definition; those are the~n"
+       "lines that carry information.~n~n",
+       [fx_ceil(Rows, fun(R) -> R#fx.tw end), length(Rows)]),
+     [fx_res_arm(A) || A <- Arms]].
+
+fx_res_arm({arm, A, Rows}) ->
+    [io_lib:format("arm ~s, ~w champions, tier sizes ~w~n",
+                   [atom_to_list(A), length(Rows), fx_sizes(Rows)]),
+     fx_res_line("FLOORED margin, TRAIN only    (independent)",
+                 fx_ranges(Rows, fun(R) -> R#fx.tfl end)),
+     fx_res_line("FLOORED margin, CALIBRATION   (independent)",
+                 fx_ranges(Rows, fun(R) -> R#fx.cfl end)),
+     fx_res_line("W on CALIBRATION              (independent)",
+                 fx_ranges(Rows, fun(R) -> R#fx.cw end)),
+     fx_res_line("FLOORED gap, train minus held (held-out)  ",
+                 fx_ranges(Rows, fun(R) -> R#fx.tfl - R#fx.hfl end)),
+     fx_res_line("FLOORED margin, HELD OUT      (held-out)  ",
+                 fx_ranges(Rows, fun(R) -> R#fx.hfl end)),
+     fx_res_line("W gap, train minus held out   (circular)  ",
+                 fx_ranges(Rows, fun(R) -> R#fx.tw - R#fx.hw end)),
+     io_lib:format("~n", [])].
+
+fx_res_line(Label, Ranges) ->
+    io_lib:format("  ~s -> ~s~n"
+                  "     low ~-19s mid ~-19s high ~s~n",
+                  [Label, fx_ovtext(fx_overlap(Ranges)),
+                   fx_rtext(lists:keyfind(low, 1, Ranges)),
+                   fx_rtext(lists:keyfind(mid, 1, Ranges)),
+                   fx_rtext(lists:keyfind(high, 1, Ranges))]).
+
+fx_ranges(Rows, Fun) ->
+    [{T, fx_range([Fun(R) || R <- Rows, tier(R#fx.hw) =:= T])} || T <- [low, mid, high]].
+
+fx_range([]) -> empty;
+fx_range(Vs) -> {lists:min(Vs), lists:max(Vs)}.
+
+fx_rtext({_T, empty}) -> "(none)";
+fx_rtext({_T, {Min, Max}}) -> io_lib:format("~.4f..~.4f", [Min, Max]).
+
+fx_overlap(Ranges) ->
+    fx_ov(element(2, lists:keyfind(low, 1, Ranges)),
+          element(2, lists:keyfind(high, 1, Ranges))).
+
+fx_ov(empty, _High) -> not_testable;
+fx_ov(_Low, empty) -> not_testable;
+fx_ov({_LMin, LMax}, {HMin, _HMax}) when LMax < HMin -> {disjoint, high_above};
+fx_ov({LMin, _LMax}, {_HMin, HMax}) when HMax < LMin -> {disjoint, low_above};
+fx_ov(_Low, _High) -> overlapping.
+
+fx_ovtext(not_testable) -> "NOT TESTABLE, one tier is empty here";
+fx_ovtext(overlapping) -> "OVERLAPPING, does NOT separate the tiers";
+fx_ovtext({disjoint, low_above}) -> "DISJOINT, near-parity ABOVE kill mode";
+fx_ovtext({disjoint, high_above}) -> "DISJOINT, kill mode ABOVE near-parity".
+
+fx_sizes(Rows) ->
+    [{T, length([1 || R <- Rows, tier(R#fx.hw) =:= T])} || T <- [low, mid, high]].
+
+%%%----------------------------------------------------------------------------
+%%% Does PH-GEN saturate too? Asked because the flag it stands beside did.
+%%%----------------------------------------------------------------------------
+fx_b_saturation(Arms) ->
+    Rows = lists:append([Rs || {arm, _A, Rs} <- Arms]),
+    io_lib:format(
+      "~n~nB4. DOES PH-GEN SATURATE TOO? IF-8 FAILED BECAUSE ITS INSTRUMENT SAT AT A~n"
+      "CEILING, SO THE SAME QUESTION IS ASKED OF PH-GEN.~n~n"
+      "Champions at a win rate of exactly 1.0000, out of ~w:~n"
+      "  train        ~w of ~w  (12 matches; the ceiling IS the fitness rule, see above)~n"
+      "  calibration  ~w of ~w  (60 matches)~n"
+      "  held out     ~w of ~w  (160 matches)~n~n"
+      "The FLOORED margin has no ceiling and reaches none. Over all ~w champions:~n"
+      "  train        min ~.2f  max ~.2f~n"
+      "  calibration  min ~.2f  max ~.2f~n"
+      "  held out     min ~.2f  max ~.2f~n~n"
+      "READING, AND IT IS HALF A NEGATIVE. The WIN RATE leg of PH-GEN SATURATES on the~n"
+      "train split exactly as IF-8's train_w does and for exactly the same reason, so~n"
+      "one of PH-GEN's two legs inherits the defect it was built beside. It is~n"
+      "reported rather than dropped, and it partially saturates on the other two~n"
+      "splits as well. The FLOORED MARGIN leg does not saturate on any split and it is~n"
+      "the leg that carries the diagnostic. Whether either leg RESOLVES anything is~n"
+      "section B3's question, and the answer is whatever B3 printed, including where~n"
+      "B3 marks a separation circular.~n",
+      [length(Rows),
+       fx_ceil(Rows, fun(R) -> R#fx.tw end), length(Rows),
+       fx_ceil(Rows, fun(R) -> R#fx.cw end), length(Rows),
+       fx_ceil(Rows, fun(R) -> R#fx.hw end), length(Rows),
+       length(Rows),
+       lists:min([R#fx.tfl || R <- Rows]), lists:max([R#fx.tfl || R <- Rows]),
+       lists:min([R#fx.cfl || R <- Rows]), lists:max([R#fx.cfl || R <- Rows]),
+       lists:min([R#fx.hfl || R <- Rows]), lists:max([R#fx.hfl || R <- Rows])]).
+
+fx_ceil(Rows, Fun) -> length([1 || R <- Rows, Fun(R) >= 1.0]).
+
+%%%----------------------------------------------------------------------------
+%%% Provenance.
+%%%----------------------------------------------------------------------------
+fx_sec_c(Arms) ->
+    Rows = lists:append([Rs || {arm, _A, Rs} <- Arms]),
+    Ds = [abs(R#fx.fit - R#fx.fit_recomputed) || R <- Rows],
+    [io_lib:format(
+       "~n~n-- C. PROVENANCE: IS THE ARCHIVED GENOME THE CHAMPION THE FEED MEASURED? --~n~n"
+       "Two checks, both mechanical.~n~n"
+       "CHECK 1, THE FITNESS. ladder/3 is re-run on the 6 train starts with the arm's~n"
+       "own rung list (all five for S and L, the gun rung alone for D) and compared~n"
+       "with the Fit field stored in the archive. Champions whose recomputed fitness~n"
+       "is EXACTLY the archived float: ~w of ~w. Largest absolute difference: ~e.~n~n"
+       "CHECK 2, THE HELD-OUT COLUMNS. The recomputed held-out W and the recomputed~n"
+       "raw (UNFLOORED) held-out margin are printed below beside nothing, because the~n"
+       "value they must equal lives in the feed rather than in this file. Compare~n"
+       "each row with the same seed's W= and margin= fields in the feed's arm block:~n"
+       "  arm S seeds 2001..2020  exp066_floor_feed.txt lines 35..74~n"
+       "  arm L seeds 2001..2010  lines 251..270~n"
+       "  arm D seeds 2001..2010  lines 367..386~n"
+       "and with the rung profiles at lines 135..234 (S), 301..350 (L), 417..466 (D).~n"
+       "scripts/exp066_verify_flag_fixes.escript does that comparison mechanically,~n"
+       "parsing both the feed and this record's machine-readable term.~n~n"
+       "arm seed  fit_archive  fit_recomputed        heldW  held_margin_raw~n",
+       [length([1 || R <- Rows, R#fx.fit =:= R#fx.fit_recomputed]),
+        length(Rows), lists:max(Ds)]),
+     [[fx_c_row(R) || R <- Rows2] || {arm, _A, Rows2} <- Arms],
+     io_lib:format(
+       "~nThe raw margin column is the feed's own convention, dealt minus taken with~n"
+       "NO death floor, and it is NOT comparable with section B2's floored columns.~n"
+       "It is here for one purpose: to tie each row to the feed.~n", [])].
+
+fx_c_row(R) ->
+    io_lib:format("~3s ~4w ~12.4f ~15.4f ~12.4f ~16.2f~n",
+                  [atom_to_list(R#fx.arm), R#fx.seed, R#fx.fit, R#fx.fit_recomputed,
+                   R#fx.hw, R#fx.hdm]).
+
+fx_sec_d() ->
+    "\n\n-- D. WHAT THIS RECORD DOES NOT DO --\n\n"
+    "It does not amend the feed above its own appended note. The as-run feed of\n"
+    "2026-07-29 reports IF-10 quiet on all three arms and that is what the run\n"
+    "reported; the widened predicate is what a FUTURE run will report, and both are\n"
+    "printed here so the difference is visible.\n\n"
+    "It does not repair IF-8, claim IF-8 now works, or re-read IF-8's quiet state as\n"
+    "evidence about memorisation. IF-8 was untestable with this instrument.\n\n"
+    "It does not touch the signed insight. A pointer there is a separate act.\n\n"
+    "It does not claim intransitivity. A champion that beats the floor bot while\n"
+    "leaving a lower rung unbeaten is an OBSERVABLE, which is what IF-10 was always\n"
+    "declared to be. Whether that is intransitivity is phase 1's question and needs\n"
+    "the third leg of the triple, which is not measured here.\n\n"
+    "It does not re-run an arm, modify a genome, or move a pre-registered threshold.\n"
+    "The pre-registered constants B, R_line and D_min are untouched.\n"
+    "It does not sign anything.\n".
+
+%%%----------------------------------------------------------------------------
+%%% One machine-readable term at the foot, tuples and lists only.
+%%%----------------------------------------------------------------------------
+fx_term(Opts, Arms) ->
+    io_lib:format(
+      "~n~n== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) ==~n~w.~n",
+      [{flag_fixes,
+        [{date, "2026-07-30"},
+         {status, "POST HOC. FIX A is a defect fix to a pre-registered predicate. "
+                  "FIX B is a NEW post-hoc diagnostic and is NOT a repair of IF-8."},
+         {engine_pin, "a5e8bcfc5646827e9be49a9629f8a6a9678c814b"},
+         {produced_by, "exp066_single_population_floor_tests:flag_fixes/1"},
+         {archive_dir, maps:get(archive_dir, Opts)},
+         {splits, [{train, 6, 12}, {calibration, 30, 60}, {heldout, 80, 160}]},
+         {if10_as_run, [{rungs, [sitting_duck, spinner]}, {test, "L > W"}]},
+         {if10_widened,
+          [{rungs, [sitting_duck, spinner, rammer, circle_strafer]},
+           {test, "L > W orelse D > 0.5"}]},
+         {tier_rule, "held-out W below 0.62 low, above 0.93 high, else mid; the "
+                     "two-attractors probe's published rule, reused unchanged"},
+         {row_shape,
+          {row, seed, tier, if10_as_run, if10_widened, trips,
+           train_w, calib_w, heldout_w,
+           train_floored, calib_floored, heldout_floored,
+           train_raw, calib_raw, heldout_raw,
+           fit_archive, fit_recomputed, heldout_profile}},
+         {arms, [fx_term_arm(A) || A <- Arms]}]}]).
+
+fx_term_arm({arm, A, Rows}) ->
+    Med = fx_median(Rows),
+    {arm, A,
+     [{champions, length(Rows)},
+      {if10_as_run_fires, fx_old(Rows)},
+      {if10_widened_fires, fx_new(Rows)},
+      {median_champion, Med#fx.seed, Med#fx.old, Med#fx.new},
+      {tier_sizes, fx_sizes(Rows)},
+      {rows, [fx_term_row(R) || R <- Rows]}]}.
+
+fx_term_row(R) ->
+    {row, R#fx.seed, tier(R#fx.hw), R#fx.old, R#fx.new, R#fx.trips,
+     R#fx.tw, R#fx.cw, R#fx.hw, R#fx.tfl, R#fx.cfl, R#fx.hfl,
+     R#fx.tdm, R#fx.cdm, R#fx.hdm, R#fx.fit, R#fx.fit_recomputed, R#fx.profile}.
+
+%%%----------------------------------------------------------------------------
+%%% The append-only note that goes into BOTH copies of the feed. Short: the feed
+%%% is not the place for 40 rows of a post-hoc recomputation, and the record is.
+%%%----------------------------------------------------------------------------
+fx_feed_note(Opts, Arms) ->
+    [io_lib:format(
+       "~n~n== ADDENDUM 2, appended 2026-07-30, POST HOC: THE TWO FLAG FIXES ==~n~n"
+       "WHAT THIS IS. Everything above the first addendum was written by run/1 on~n"
+       "2026-07-29 and nothing above this line is changed or re-run. This note~n"
+       "records two changes to the RUNNER's flag machinery, both recomputed from the~n"
+       "archived champion genomes at engine pin~n"
+       "a5e8bcfc5646827e9be49a9629f8a6a9678c814b. NO ARM WAS RE-RUN and no genome was~n"
+       "modified: archived champions were replayed through matches, which is the same~n"
+       "thing the first addendum did.~n~n"
+       "THE NUMBERS ARE NOT HERE. They are in~n"
+       "  ~s~n"
+       "per seed, per arm, as-run predicate beside widened, plus the three-way split~n"
+       "table. That file is the record for both fixes; this note is a pointer with~n"
+       "the headline counts.~n~n"
+       "FIX A, IF-10 LADDER-INVERSION, a defect fix to a pre-registered predicate.~n"
+       "The as-run predicate read [sitting_duck, spinner] and tested L > W, so it~n"
+       "never looked at the rammer or the circle_strafer and could not see a rung~n"
+       "parked in draws. inverted/1 now reads all four lower rungs and counts a rung~n"
+       "as not beaten when L > W or when D > 0.5, which is the definition of a~n"
+       "majority on 160 matches and not a fitted value. flags/3 now also emits the~n"
+       "count over the whole arm, under BOTH predicates, because IF-10 reads one~n"
+       "median champion.~n~n"
+       "  arm  champions  as-run FIRES  widened FIRES  median champ as-run / widened~n",
+       [maps:get(fx_out, Opts)]),
+     [fx_note_arm(A) || A <- Arms],
+     [fx_note_seeds(A) || A <- Arms],
+     io_lib:format(
+       "~nEVERY IF-10 LINE ABOVE THIS ADDENDUM STANDS AS WRITTEN. Those lines report~n"
+       "what the run of 2026-07-29 computed. A future run computes the widened~n"
+       "predicate and its IF-10 lines will differ from the ones above; that is the~n"
+       "point of the fix and it is recorded here so the difference is not a surprise.~n~n"
+       "FIX B, AND IT IS NOT A REPAIR OF IF-8. IF-8 MEMORISATION reads trainW >= B~n"
+       "and held-out < B. trainW is 1.0000 for 40 of 40 champions above, and that is~n"
+       "forced by the design: the train split is 12 matches and ladder/3 clears a~n"
+       "rung only when all 12 of its margins are positive, so any champion that~n"
+       "cleared the gun rung had 12 wins there. The left conjunct is vacuously true~n"
+       "and IF-8 collapses to the negation of half the CLEARED test. IF-8 WAS~n"
+       "UNTESTABLE WITH THIS INSTRUMENT AND THAT FACT STANDS PERMANENTLY. It is not~n"
+       "repaired, rescored or reinterpreted.~n~n"
+       "What was built instead is PH-GEN, a NEW POST-HOC diagnostic with a name that~n"
+       "is deliberately not an IF code. It reports, per champion, the win rate and~n"
+       "the FLOORED margin (margin/1, whole units) on all three splits: train 12~n"
+       "matches, calibration 60, held out 160, plus the gaps. The 30 calibration~n"
+       "starts scored arm C during the run and no champion, so nothing was ever~n"
+       "selected on them; for arm S they have since been read once, post hoc, by~n"
+       "exp066_two_attractors_probe.txt section K, so this is a re-read there and a~n"
+       "first look for arms L and D. PH-GEN is unregistered, signs nothing, and does~n"
+       "not license any reading of IF-8's quiet state.~n", []),
+     fx_note_found(Arms),
+     io_lib:format(
+       "~nPRODUCED BY. experiments/exp066_single_population_floor_tests.erl,~n"
+       "flag_fixes/1, added 2026-07-30, driven by scripts/exp066_flag_fixes.sh. The~n"
+       "same amendment widens inverted/1 and adds the two per-arm IF-10 counts to~n"
+       "flags/3. The as-run copy archived beside the champions contains none of this.~n"
+       "== END ADDENDUM 2 ==~n",
+       [])].
+
+fx_note_arm({arm, A, Rows}) ->
+    Med = fx_median(Rows),
+    io_lib:format("  ~3s ~10w ~13w ~14w  seed ~w: ~s / ~s~n",
+                  [atom_to_list(A), length(Rows), fx_old(Rows), fx_new(Rows),
+                   Med#fx.seed, add_flag(Med#fx.old), add_flag(Med#fx.new)]).
+
+%% The identities, not only the counts: a count without seeds cannot be checked
+%% against the per-seed profiles printed above this addendum.
+fx_note_seeds({arm, A, Rows}) ->
+    io_lib:format("  arm ~s seeds firing, as-run  : ~w~n"
+                  "  arm ~s seeds firing, widened : ~w~n",
+                  [atom_to_list(A), [R#fx.seed || R <- Rows, R#fx.old],
+                   atom_to_list(A), [R#fx.seed || R <- Rows, R#fx.new]]).
+
+%% PH-GEN's result, in the feed, because a pointer that carries only a definition
+%% leaves the reader unable to tell whether the new diagnostic did anything.
+fx_note_found(Arms) ->
+    Rows = lists:append([Rs || {arm, _A, Rs} <- Arms]),
+    [io_lib:format(
+       "~nWHAT PH-GEN FOUND, AND HALF OF IT IS A NEGATIVE.~n"
+       "  (a) THE WIN-RATE LEG SATURATES, exactly as IF-8's trainW does and for the~n"
+       "      same reason: train W is 1.0000 for ~w of ~w champions, so~n"
+       "      train-minus-held-out W is 1.0000 minus held-out W identically and~n"
+       "      separates nothing that held-out W does not already separate. That leg~n"
+       "      inherits the defect it was built beside. It is reported, not dropped.~n"
+       "  (b) THE FLOORED-MARGIN LEG DOES NOT SATURATE on any split, and where the~n"
+       "      question is testable it separates the two modes on the splits that do~n"
+       "      NOT define them. Three quantities, in order: the floored margin on~n"
+       "      train, the floored margin on calibration, the win rate on calibration.~n"
+       "      Whether the near-parity and kill-mode tiers' ranges overlap, per arm:~n~n"
+       "      arm  floored@train  floored@calib        W@calib~n",
+       [fx_ceil(Rows, fun(R) -> R#fx.tw end), length(Rows)]),
+     [fx_note_sep(A) || A <- Arms],
+     io_lib:format("~n", []),
+     io_lib:format(
+       "      Tiers are the two-attractors probe's published rule on held-out W~n"
+       "      (below 0.62 near-parity, above 0.93 kill mode), reused unchanged. Arm D~n"
+       "      has NO near-parity champion, so the question is not testable there and~n"
+       "      is reported as not testable rather than answered.~n"
+       "  (c) CROSS-CHECK, AND WHAT IS ACTUALLY NEW. Arm S's train and held-out~n"
+       "      floored gun margins already existed in exp066_two_attractors_probe.txt~n"
+       "      section G, and its calibration win rates in section K, both computed by~n"
+       "      a different script from the same archive. They agree digit for digit.~n"
+       "      NEW here: the floored margin on the CALIBRATION starts, for every arm,~n"
+       "      and every column for arms L and D, which had no floored margin on any~n"
+       "      split and no calibration measurement at all.~n"
+       "      The calibration starts scored arm C during the run and no champion, so~n"
+       "      nothing was ever selected on them; for arm S they have since been read~n"
+       "      once, by that probe, so this is a re-read rather than a first look.~n"
+       "  (d) PROVENANCE. ladder/3 re-run on the 6 train starts reproduces the~n"
+       "      archived fitness EXACTLY, as a float, for ~w of ~w champions.~n"
+       "      scripts/exp066_verify_flag_fixes.escript checks the recomputed rung~n"
+       "      profiles against the as-run profiles printed above this addendum.~n",
+       [length([1 || R <- Rows, R#fx.fit =:= R#fx.fit_recomputed]), length(Rows)])].
+
+fx_note_sep({arm, A, Rows}) ->
+    io_lib:format("      ~3s ~14s ~14s ~14s~n",
+                  [atom_to_list(A),
+                   fx_short(fx_overlap(fx_ranges(Rows, fun(R) -> R#fx.tfl end))),
+                   fx_short(fx_overlap(fx_ranges(Rows, fun(R) -> R#fx.cfl end))),
+                   fx_short(fx_overlap(fx_ranges(Rows, fun(R) -> R#fx.cw end)))]).
+
+fx_short(not_testable) -> "NOT TESTABLE";
+fx_short(overlapping) -> "OVERLAPS";
+fx_short({disjoint, _Dir}) -> "DISJOINT".
+
+%%%============================================================================
+%%% FIX C AND FIX D, both recomputed from the champion archive, 2026-07-30.
+%%%
+%%% FIX C. scripted_null/1 kept element 1 of rates/1 and discarded the LOSS and
+%%% DRAW rates. That is not a cosmetic loss. A win rate of 0.0 is consistent with
+%%% 160 losses and with 160 draws, and those are different facts: the first is an
+%%% EDGE from the floor bot to that rung, the second is no edge at all. So the
+%%% as-run record could not say whether the floor bot BEATS the lower rungs, and
+%%% one leg of every candidate intransitive triple running through the floor bot
+%%% was unreadable. The number is recovered here and used.
+%%%
+%%% WHAT IS MEASURED. Every scripted opponent against every one of the 40
+%%% archived champions, BOTH DIRECTIONS MEASURED SEPARATELY, on the 80
+%%% PRE-REGISTERED held-out starts, both seats, 160 matches per ordered cell. Both
+%%% directions of a pair are two independent calls into the match loop and the
+%%% transpose identity between them is CHECKED per pair rather than assumed, which
+%%% is what xp_symmetry_one/3 does for the cross-play matrix. Plus the full 5 x 5
+%%% scripted round robin, so triples of one champion and two rungs are testable.
+%%%
+%%% THE RELATION IS STATED ONCE AND NOT MOVED. A beats B iff W(A,B) > 0.5, where
+%%% W(A,B) is A's win rate over the 160 matches of that ordered cell and a win
+%%% requires B dead and A alive. DRAWS COUNT AS NOT BEATING, which is exp066's
+%%% convention for the primary endpoint throughout: a draw is not a win, so it
+%%% does not help A beat B any more than a loss does. This is the STRICTER of the
+%%% two readings a reader might reach for, because W > 0.5 implies W > L while the
+%%% reverse does not, so nothing below is obtained by loosening the relation. NO
+%%% SECOND RELATION IS INTRODUCED ANYWHERE IN THIS RECORD.
+%%%
+%%% FIX D. The match-level null was mis-scaled by two. That is fixed in
+%%% xp_from_wins/2, at the source, and the as-run construction is kept verbatim as
+%%% xp_from_pairs_as_run/2 so the two columns can be computed from the SAME draws.
+%%% exp066_crossplay.txt is NOT re-emitted: its null_match_level block is as-built
+%%% and the audit beside it quotes those numbers.
+%%%
+%%% NO ARM IS RE-RUN AND NO GENOME IS MODIFIED. Archived champions are replayed
+%%% through matches, which is what the first addendum and the cross-play probe
+%%% already did. The call path is duels/3 -> duel/3 -> play_seat/5 -> play/2 ->
+%%% robo_sim. Nothing under arm/2, seed_run/4, one_run/4, fitness_fun/5 or the
+%%% col_* collector is reachable from it.
+%%%============================================================================
+
+recovered() -> recovered(#{}).
+
+recovered(Opts0) ->
+    Opts = merged(Opts0),
+    Starts = heldout_starts(Opts),
+    K = constants(Opts),
+    Objs = rc_objects(Opts),
+    Pairs = rc_cells(Opts, Objs, Starts),
+    Tris = rc_search(Objs, Pairs),
+    Nulls = rc_nulls(Opts),
+    ok = file:write_file(maps:get(rc_out, Opts),
+                         [rc_record(Opts, K, Objs, Starts, Pairs, Tris, Nulls)]),
+    Note = rc_feed_note(Opts, Pairs, Tris, Nulls),
+    [ok = add_append(P, Note) || P <- maps:get(addendum_feeds, Opts)],
+    io:format("~s", [Note]),
+    {recovered,
+     [{record, maps:get(rc_out, Opts)},
+      {feeds, maps:get(addendum_feeds, Opts)},
+      {objects, length(Objs)},
+      {pairs_measured, length(Pairs)},
+      {transpose_exact, length([1 || {pair, _A, _B, _C, _F, _R, true, _M} <- Pairs])},
+      {cyclic_triples, length([1 || {tri, _Ids, _T, _O, true, _F, _Cl} <- Tris])},
+      {cyclic_preregistered,
+       length([1 || {tri, _Ids, _T, _O, true, _F, preregistered} <- Tris])}]}.
+
+%%%----------------------------------------------------------------------------
+%%% The objects. Five scripted bots and the 40 archived champions. An object's ID
+%%% carries no genome, so it is safe to print and to compare; the SUBJECT beside
+%%% it is what goes into the match loop.
+%%%----------------------------------------------------------------------------
+rc_objects(Opts) ->
+    [{obj, {script, Kind}, {script, Kind}} || Kind <- robo_gauntlet:kinds()]
+        ++ [{obj, {champ, A, S}, {net, L, Q}}
+            || Arm <- maps:get(addendum_arms, Opts),
+               {champion, A, S, L, Q, _F, _E} <- champion_read(add_path(Opts, Arm))].
+
+rc_subject(Objs, Id) -> element(3, lists:keyfind(Id, 2, Objs)).
+
+rc_label({script, K}) -> atom_to_list(K);
+rc_label({champ, A, S}) -> atom_to_list(A) ++ integer_to_list(S).
+
+%% A rate back to the exact match count it came from. Every rate here is k/160, so
+%% the integer is the reproducible number and the float is the readable one.
+rc_n(R, M) -> round(R * M).
+
+%%%----------------------------------------------------------------------------
+%%% Which pairs are measured, and the PROVENANCE of each.
+%%%
+%%%   preregistered  both directions of this pair are a measurement the
+%%%                  pre-registered run already made on the pre-registered starts:
+%%%                  champion against rung is profile/2, which the feed prints per
+%%%                  seed, and rung against the floor bot is N, which the feed
+%%%                  prints in the frozen-constants block.
+%%%   new_post_hoc   a rung against a rung other than the floor bot. The as-run N
+%%%                  only played each rung against the floor bot, so these six
+%%%                  pairs are NEW and are labelled NEW wherever they are used.
+%%%   unmeasured     champion against champion. Not measured here. Cross-play
+%%%                  exists for arm S only and lives in an UNREGISTERED probe, so
+%%%                  it cannot enter a registered anchor; triples needing it are
+%%%                  reported as untestable rather than filled in.
+%%%----------------------------------------------------------------------------
+rc_pair_class({script, ?FLOOR}, {script, _K}) -> preregistered;
+rc_pair_class({script, _K}, {script, ?FLOOR}) -> preregistered;
+rc_pair_class({script, _K1}, {script, _K2}) -> new_post_hoc;
+rc_pair_class({script, _K}, {champ, _A, _S}) -> preregistered;
+rc_pair_class({champ, _A, _S}, {script, _K}) -> preregistered;
+rc_pair_class({champ, _A1, _S1}, {champ, _A2, _S2}) -> unmeasured.
+
+rc_ids(Objs) -> [Id || {obj, Id, _S} <- Objs].
+
+rc_pairs(Objs) ->
+    Ids = rc_ids(Objs),
+    [{A, B} || A <- Ids, B <- Ids, A < B, rc_pair_class(A, B) =/= unmeasured].
+
+rc_cells(Opts, Objs, Starts) ->
+    pmap(fun(P) -> rc_pair(Objs, Starts, P) end, rc_pairs(Objs), maps:get(workers, Opts)).
+
+%% BOTH DIRECTIONS MEASURED, not one derived from the other. duel/3 plays seat a
+%% and seat b at every start, and the engine is deterministic, so the two games
+%% behind the reverse cell are the same two simulations read from the other side
+%% and the reverse rates must be the forward rates with W and L exchanged. That is
+%% a check worth 160 extra matches per pair, not an assumption.
+rc_pair(Objs, Starts, {A, B}) ->
+    {W, L, D} = rates(duels(rc_subject(Objs, A), rc_subject(Objs, B), Starts)),
+    {RW, RL, RD} = rates(duels(rc_subject(Objs, B), rc_subject(Objs, A), Starts)),
+    {pair, A, B, rc_pair_class(A, B), {W, L, D}, {RW, RL, RD},
+     {RW, RL, RD} =:= {L, W, D}, 2 * length(Starts)}.
+
+%%%----------------------------------------------------------------------------
+%%% THE RELATION AND THE TRIPLE SEARCH.
+%%%
+%%% beats(A,B) iff W(A,B) > 0.5. Exactly one of beats(A,B) and beats(B,A) can hold,
+%%% since W(A,B) + W(B,A) =< 1, so a pair is either oriented one way or carries no
+%%% edge at all. A pair with no edge is the honest outcome of a pair parked in
+%%% draws, and it is counted rather than broken.
+%%%
+%%% A triple is CYCLIC iff its three edges all exist and form a 3-cycle. The two
+%%% orientations are mutually exclusive on three distinct vertices, which is the
+%%% same argument xp_cycles/3 rests on.
+%%%----------------------------------------------------------------------------
+rc_search(Objs, Pairs) ->
+    Wm = rc_wmap(Pairs),
+    Cm = rc_cmap(Pairs),
+    [rc_tri(Wm, Cm, T) || T <- rc_triples(rc_ids(Objs))].
+
+rc_wmap(Pairs) ->
+    maps:from_list(
+      lists:append([[{{A, B}, W}, {{B, A}, RW}]
+                    || {pair, A, B, _C, {W, _L, _D}, {RW, _RL, _RD}, _Ok, _M} <- Pairs])).
+
+rc_cmap(Pairs) -> maps:from_list([{{A, B}, C} || {pair, A, B, C, _F, _R, _Ok, _M} <- Pairs]).
+
+rc_triples(Ids) -> [{A, B, C} || A <- Ids, B <- Ids, C <- Ids, A < B, B < C].
+
+rc_w(Wm, A, B) -> maps:get({A, B}, Wm, 0.0).
+
+rc_beats(Wm, A, B) -> rc_w(Wm, A, B) > 0.5.
+
+rc_oriented(Wm, A, B) -> rc_beats(Wm, A, B) orelse rc_beats(Wm, B, A).
+
+rc_measured(Wm, A, B) -> maps:is_key({A, B}, Wm) andalso maps:is_key({B, A}, Wm).
+
+rc_tri(Wm, Cm, {A, B, C}) ->
+    Meas = rc_measured(Wm, A, B) andalso rc_measured(Wm, B, C) andalso rc_measured(Wm, A, C),
+    Or = rc_oriented(Wm, A, B) andalso rc_oriented(Wm, B, C) andalso rc_oriented(Wm, A, C),
+    Fwd = rc_beats(Wm, A, B) andalso rc_beats(Wm, B, C) andalso rc_beats(Wm, C, A),
+    Bwd = rc_beats(Wm, A, C) andalso rc_beats(Wm, C, B) andalso rc_beats(Wm, B, A),
+    {tri, {A, B, C}, Meas, Or, Fwd orelse Bwd, Fwd, rc_tclass(Cm, {A, B, C})}.
+
+rc_tclass(Cm, {A, B, C}) ->
+    rc_tclass_of([rc_pclass(Cm, A, B), rc_pclass(Cm, B, C), rc_pclass(Cm, A, C)]).
+
+rc_pclass(Cm, A, B) -> maps:get({A, B}, Cm, unmeasured).
+
+rc_tclass_of(Cs) ->
+    rc_tc(lists:member(unmeasured, Cs), lists:member(new_post_hoc, Cs)).
+
+rc_tc(true, _New) -> unmeasured;
+rc_tc(false, true) -> extended;
+rc_tc(false, false) -> preregistered.
+
+%% The three edges of a cyclic triple in cycle order, so the record prints a path
+%% and a reader can check each leg against the tables above it.
+rc_path({A, B, C}, true) -> [{A, B}, {B, C}, {C, A}];
+rc_path({A, B, C}, false) -> [{A, C}, {C, B}, {B, A}].
+
+%%%----------------------------------------------------------------------------
+%%% FIX D's tables. Four sample sets, each from a FRESHLY seeded generator, so the
+%%% as-built and corrected columns of a given null are the same draws under two
+%%% encodings and the comparison is of encodings, not of samples. The seed is
+%%% XP_SEED, the same constant the cross-play probe fixes, so these columns are
+%%% directly comparable with scripts/exp066_verify_null_scaling.escript, which
+%%% seeds from 660 as well.
+%%%----------------------------------------------------------------------------
+rc_nulls(Opts) ->
+    N = maps:get(rc_null_n, Opts),
+    M = maps:get(rc_null_cell, Opts),
+    Draws = maps:get(xp_null_draws, Opts),
+    Idx = lists:seq(1, N),
+    S0 = rc_draw(fun() -> rc_sign_as_run(N, Draws) end),
+    S1 = rc_draw(fun() -> rc_sign_fixed(N, Draws) end),
+    M0 = rc_draw(fun() -> rc_match_as_run(N, Draws, M) end),
+    M1 = rc_draw(fun() -> rc_match_fixed(N, Draws, M) end),
+    M2 = rc_draw(fun() -> rc_match_half(N, Draws, M) end),
+    M3 = rc_draw(fun() -> rc_int_draws(N, Draws, M) end),
+    {nulls,
+     [{champions, N}, {matches_per_cell, M}, {draws, Draws}, {seed, ?XP_SEED},
+      {sign_as_built, rc_stats(S0, Idx)},
+      {sign_corrected, rc_stats(S1, Idx)},
+      {match_as_built, rc_stats(M0, Idx)},
+      {match_corrected, rc_stats(M1, Idx)},
+      {match_corrected_half_encoding, rc_stats(M2, Idx)},
+      {match_corrected_exact_integer, rc_int_stats(M3, Idx, M)},
+      {abs_margin_span,
+       [{sign_as_built, rc_absmg(S0, Idx)}, {sign_corrected, rc_absmg(S1, Idx)},
+        {match_as_built, rc_absmg(M0, Idx)}, {match_corrected, rc_absmg(M1, Idx)}]},
+      {sign_identical,
+       rc_stats(S0, Idx) =:= rc_stats(S1, Idx)},
+      {match_identical,
+       rc_stats(M0, Idx) =:= rc_stats(M1, Idx)},
+      {corrected_encodings_identical,
+       rc_stats(M1, Idx) =:= rc_stats(M2, Idx)}]}.
+
+rc_draw(F) ->
+    _ = rand:seed(exsss, {?XP_SEED, ?XP_SEED * 7 + 1, ?XP_SEED * 13 + 3}),
+    F().
+
+rc_sign_as_run(N, Draws) ->
+    Idx = lists:seq(1, N),
+    [xp_from_pairs_as_run(N, [{I, J, xp_coin()} || {I, J} <- xp_pairs(Idx)])
+     || _ <- lists:seq(1, Draws)].
+
+rc_sign_fixed(N, Draws) ->
+    Idx = lists:seq(1, N),
+    [xp_from_wins(N, [{I, J, xp_coin_w()} || {I, J} <- xp_pairs(Idx)])
+     || _ <- lists:seq(1, Draws)].
+
+rc_match_as_run(N, Draws, M) ->
+    Idx = lists:seq(1, N),
+    [xp_from_pairs_as_run(N, [{I, J, xp_flips(M) * 2.0 / M - 1.0} || {I, J} <- xp_pairs(Idx)])
+     || _ <- lists:seq(1, Draws)].
+
+rc_match_fixed(N, Draws, M) ->
+    Idx = lists:seq(1, N),
+    [xp_from_wins(N, [{I, J, xp_flips(M) / M} || {I, J} <- xp_pairs(Idx)])
+     || _ <- lists:seq(1, Draws)].
+
+%% THE THIRD ENCODING, the one scripts/exp066_verify_null_scaling.escript uses for
+%% its corrected column: halve the margin and store plus and minus half. Included
+%% because it does NOT agree with xp_from_wins/2 at every band, and the record has
+%% to say so and say why rather than pick whichever matched.
+rc_match_half(N, Draws, M) ->
+    Idx = lists:seq(1, N),
+    [xp_from_pairs_as_run(N, [{I, J, (xp_flips(M) * 2.0 / M - 1.0) / 2}
+                              || {I, J} <- xp_pairs(Idx)])
+     || _ <- lists:seq(1, Draws)].
+
+%%% THE SAME BAND TEST WITH NO FLOAT IN IT. A NEW POST-HOC DIAGNOSTIC.
+%%%
+%%% WHY IT EXISTS. Every synthetic margin is (2K - M)/M for an integer K, and all
+%%% three pre-registered bands are exact multiples of the margin quantum 2/M: at
+%%% M = 160, 0.05 is 8/160, 0.10 is 16/160 and 0.15 is 24/160. So EVERY draw
+%%% contains edges whose margin equals the band exactly, where "margin > band" is
+%%% mathematically FALSE, and whose float rendering decides the answer instead. The
+%%% two float encodings round those edges in OPPOSITE directions and therefore
+%%% disagree, which is why this column is here.
+%%%
+%%% Mg > B is exactly 2K - M > B * M, and B * M is 8, 16 and 24, integers. The
+%%% counters are xp_ordered/3 and xp_cycles/3 unchanged, called with an integer
+%%% margin and an integer threshold. THE BAND IS NOT MOVED: the same test is
+%%% computed without rounding error. This is NEW, post hoc, unregistered, and it
+%%% does not replace the float columns; it stands beside them.
+rc_int_draws(N, Draws, M) ->
+    Idx = lists:seq(1, N),
+    [rc_int_one(Idx, M) || _ <- lists:seq(1, Draws)].
+
+rc_int_one(Idx, M) ->
+    maps:from_list(lists:append([rc_int_cell(M, P) || P <- xp_pairs(Idx)])).
+
+rc_int_cell(M, {I, J}) ->
+    K = xp_flips(M),
+    [{{I, J}, 2 * K - M}, {{J, I}, M - 2 * K}].
+
+rc_int_mg(Map) -> fun(I, J) -> maps:get({I, J}, Map, 0) end.
+
+rc_int_stats(Maps, Idx, M) -> [rc_int_stat(Maps, Idx, M, B) || B <- xp_bands()].
+
+rc_int_stat(Maps, Idx, M, B) ->
+    Thr = round(B * M),
+    Ord = [xp_ordered(rc_int_mg(Mp), Idx, Thr) || Mp <- Maps],
+    Cyc = [rc_int_cyc(Mp, Idx, Thr) || Mp <- Maps],
+    Dec = [rc_dec(rc_int_mg(Mp), Idx, Thr) || Mp <- Maps],
+    On = [rc_int_on(Mp, Idx, Thr) || Mp <- Maps],
+    {at_band, B, [{integer_threshold, Thr}, {threshold_exact, abs(B * M - Thr) < 1.0e-9},
+               {ordered_median, median(Ord)}, {ordered_range, spread(Ord)},
+               {cycles_median, median(Cyc)}, {cycles_range, spread(Cyc)},
+               {decisive_median, median(Dec)},
+               {edges_exactly_on_band_median, median(On)},
+               {of_pairs, length(xp_pairs(Idx))}]}.
+
+rc_int_cyc(Mp, Idx, Thr) ->
+    {F, Bw} = xp_cycles(rc_int_mg(Mp), Idx, Thr),
+    F + Bw.
+
+rc_int_on(Mp, Idx, Thr) ->
+    length([1 || {I, J} <- xp_pairs(Idx), abs(maps:get({I, J}, Mp)) =:= Thr]).
+
+rc_stats(Ms, Idx) -> [rc_stat(Ms, Idx, B) || B <- xp_bands()].
+
+rc_stat(Ms, Idx, B) ->
+    Ord = [xp_ordered(xp_mg(M), Idx, B) || M <- Ms],
+    Cyc = [xp_cyc_n(M, Idx, B) || M <- Ms],
+    Dec = [rc_dec(xp_mg(M), Idx, B) || M <- Ms],
+    {at_band, B, [{ordered_median, median(Ord)}, {ordered_range, spread(Ord)},
+               {cycles_median, median(Cyc)}, {cycles_range, spread(Cyc)},
+               {decisive_median, median(Dec)}, {of_pairs, length(xp_pairs(Idx))}]}.
+
+rc_dec(Mg, Idx, B) -> length([1 || {I, J} <- xp_pairs(Idx), abs(Mg(I, J)) > B]).
+
+%% The direct evidence of the doubling: the span of |margin| over every pair of
+%% every draw. The as-built sign-only column reads 2.0 where the model it claims to
+%% sample has margins of 1.0.
+rc_absmg(Ms, Idx) ->
+    As = lists:append([[abs((xp_mg(M))(I, J)) || {I, J} <- xp_pairs(Idx)] || M <- Ms]),
+    spread(As).
+
+%%%----------------------------------------------------------------------------
+%%% The record.
+%%%----------------------------------------------------------------------------
+rc_record(Opts, K, Objs, Starts, Pairs, Tris, Nulls) ->
+    Rm = rc_rmap(Pairs),
+    Wm = rc_wmap(Pairs),
+    %% The matches per ordered cell, taken from the start set actually used rather
+    %% than written as a literal, so a reduced configuration cannot print a rate
+    %% back as a count out of a match total it never played.
+    M = 2 * length(Starts),
+    [rc_head(Opts, Objs, Starts, Pairs),
+     rc_sec_a(K, Rm, M),
+     rc_sec_b(Objs, Pairs, Rm, M),
+     rc_sec_c(Rm, M),
+     rc_sec_d(Pairs, Rm, M),
+     rc_sec_e(Objs, Wm, Rm, Tris, M),
+     rc_sec_f(Nulls),
+     rc_sec_g(),
+     rc_term(Opts, Pairs, Tris, Nulls)].
+
+rc_rmap(Pairs) ->
+    maps:from_list(
+      lists:append([[{{A, B}, F}, {{B, A}, R}]
+                    || {pair, A, B, _C, F, R, _Ok, _M} <- Pairs])).
+
+rc_okmap(Pairs) -> maps:from_list([{{A, B}, Ok} || {pair, A, B, _C, _F, _R, Ok, _M} <- Pairs]).
+
+rc_key(A, B) when A < B -> {A, B};
+rc_key(A, B) -> {B, A}.
+
+rc_rates(Rm, A, B) -> maps:get({A, B}, Rm).
+
+rc_champ_ids(Objs) -> [Id || {obj, {champ, _A, _S} = Id, _Sub} <- Objs].
+
+rc_head(Opts, Objs, Starts, Pairs) ->
+    io_lib:format(
+      "== EXP-066: THE RATES scripted_null/1 THREW AWAY, RECOVERED; AND THE~n"
+      "   MATCH-LEVEL NULL'S SCALE, FIXED AT THE SOURCE ==~n~n"
+      "Date: 2026-07-30. Engine pin a5e8bcfc5646827e9be49a9629f8a6a9678c814b.~n"
+      "Produced by: experiments/exp066_single_population_floor_tests.erl,~n"
+      "  recovered/1, driven by scripts/exp066_recovered.sh. Archive read: ~s~n"
+      "  (exp066_champions_s.eterm 20, _l.eterm 10, _d.eterm 10; 40 champions).~n~n"
+      "NO ARM WAS RE-RUN AND NO GENOME WAS MODIFIED. Every rate below comes from~n"
+      "replaying archived champions and scripted bots through matches at the engine~n"
+      "pin. The call path is duels/3 -> duel/3 -> play_seat/5 -> play/2 -> robo_sim.~n"
+      "Nothing under arm/2, seed_run/4, one_run/4, fitness_fun/5 or the col_*~n"
+      "collector is reachable from it, so no optimiser runs anywhere in this record.~n~n"
+      "TWO FIXES, ONE RECORD.~n~n"
+      "  FIX C  scripted_null/1 kept element 1 of rates/1 and discarded the LOSS and~n"
+      "         DRAW rates. A win rate of 0.0 is consistent with 160 losses and with~n"
+      "         160 draws, and those are different facts about the ladder, so the~n"
+      "         as-run record could not say whether the floor bot BEATS a lower rung~n"
+      "         or merely never loses to it. Recovered here, in full, for every~n"
+      "         scripted opponent against every champion and against every other~n"
+      "         scripted opponent, and then used to ask whether a genuine~n"
+      "         intransitive triple exists inside the pre-registered arms.~n~n"
+      "  FIX D  the synthetic nulls were mis-scaled by a factor of two. Fixed in~n"
+      "         xp_from_wins/2; the as-run construction is kept verbatim as~n"
+      "         xp_from_pairs_as_run/2 so both columns come off the SAME draws.~n~n"
+      "WHAT IS MEASURED, EXACTLY. ~w objects: 5 scripted bots and ~w archived~n"
+      "champions. ~w pairs, ~w ORDERED CELLS, ~w matches per ordered cell (~w~n"
+      "PRE-REGISTERED held-out starts, both seats), ~w matches in total. Both~n"
+      "directions of every pair are measured by two separate calls into the match~n"
+      "loop and the transpose identity between them is CHECKED per pair.~n~n"
+      "WHAT IS NOT MEASURED. Champion against champion. That play exists for arm S~n"
+      "only and lives in an UNREGISTERED probe (exp066_crossplay.txt), so it cannot~n"
+      "enter an anchor that is meant to rest on pre-registered measurement. Triples~n"
+      "needing such a pair are reported as UNTESTABLE, not filled in.~n~n"
+      "REPRODUCIBILITY AND THE SEEDS. Every match here is a deterministic integer~n"
+      "simulation on a deterministic start set, so no rate in this record comes off~n"
+      "rand. Two quantities do. (1) The frozen constant B quoted in section A comes~n"
+      "from constants/1's start-level bootstrap, seeded from BOOT_SEED = 66 with~n"
+      "10,000 resamples, both fixed in the runner's source. (2) Every number in~n"
+      "section F is drawn from rand seeded at XP_SEED = ~w, freshly per column, 200~n"
+      "draws, which is the same seed and draw count~n"
+      "scripts/exp066_verify_null_scaling.escript uses.~n~n"
+      "THIS FILE IS REGENERABLE, THE FEED NOTE IS NOT. recovered/1 overwrites this~n"
+      "record, so it can be re-run at will (scripts/exp066_recovered.sh record). Two~n"
+      "independent executions produced byte-identical copies of it. The note it~n"
+      "appends to the two feed copies is APPEND-ONLY and was written once, on~n"
+      "2026-07-30; re-running the appending mode would add a second copy of it.~n",
+      [maps:get(archive_dir, Opts), length(Objs), length(rc_champ_ids(Objs)),
+       length(Pairs), 2 * length(Pairs), 2 * length(Starts), length(Starts),
+       2 * length(Pairs) * 2 * length(Starts), ?XP_SEED]).
+
+%%%----------------------------------------------------------------------------
+%%% A. The recovered number itself.
+%%%----------------------------------------------------------------------------
+rc_sec_a(K, Rm, M) ->
+    [io_lib:format(
+       "~n~n-- A. FIX C: THE NUMBER scripted_null/1 DISCARDED --~n~n"
+       "THE AS-RUN CODE.~n"
+       "    scripted_null(Starts) ->~n"
+       "        [{K, win_rate(heldout({script, K}, ?FLOOR, Starts))}~n"
+       "         || K <- robo_gauntlet:kinds(), K =/= ?FLOOR].~n~n"
+       "win_rate/1 is element(1, rates(Os)) and rates/1 returns {W, L, D}. So the~n"
+       "loss rate and the draw rate were computed and then thrown away on the same~n"
+       "line. The feed's N line (exp066_floor_feed.txt lines 16..19) carries four win~n"
+       "rates and nothing else.~n~n"
+       "WHY THAT IS NOT COSMETIC. W = 0.0 is consistent with 160 losses and with 160~n"
+       "draws. The first says the floor bot BEATS that rung, which is an EDGE. The~n"
+       "second says the pair is parked and there is NO edge. One leg of every~n"
+       "candidate intransitive triple that runs through the floor bot is exactly that~n"
+       "distinction, so the as-run record could not close such a triple even when the~n"
+       "other two legs were sitting in it.~n~n"
+       "THE FIXED CODE returns {K, W, L, D}, taken straight from rates/1. What~n"
+       "constants/1 now reports, verbatim, on the pre-registered held-out starts~n"
+       "(~w matches per rung, subject = the RUNG, opponent = predictive_gun):~n~n"
+       "  ~p~n~n"
+       "AND THE SAME PAIRS READ AS A TABLE, with the reverse direction measured~n"
+       "separately. Counts are exact match counts out of ~w; every rate here is~n"
+       "k/~w.~n~n"
+       "  rung             rung vs gun W/L/D   gun vs rung W/L/D   the as-run N said   RECOVERED: the floor bot~n",
+       [M, maps:get(n_scripted, K), M, M]),
+     [rc_a_row(Rm, M, Kind) || Kind <- robo_gauntlet:kinds(), Kind =/= ?FLOOR],
+     io_lib:format(
+       "~nB = ~.4f, the pre-registered bar, is quoted here only because section E~n"
+       "refers to it. It is untouched.~n",
+       [maps:get(b, K)])].
+
+rc_a_row(Rm, M, Kind) ->
+    Rung = {script, Kind},
+    Gun = {script, ?FLOOR},
+    {W, L, D} = rc_rates(Rm, Rung, Gun),
+    {GW, GL, GD} = rc_rates(Rm, Gun, Rung),
+    io_lib:format("  ~-15s ~4w/~4w/~4w      ~4w/~4w/~4w        W = ~.5f only    ~s~n",
+                  [atom_to_list(Kind), rc_n(W, M), rc_n(L, M), rc_n(D, M),
+                   rc_n(GW, M), rc_n(GL, M), rc_n(GD, M), W,
+                   rc_beat_text(GW, GD, M)]).
+
+rc_beat_text(W, _D, M) when W > 0.5 ->
+    io_lib:format("BEATS it, ~w of ~w", [rc_n(W, M), M]);
+rc_beat_text(_W, D, M) when D > 0.5 ->
+    io_lib:format("does NOT beat it; parked in draws, ~w of ~w", [rc_n(D, M), M]);
+rc_beat_text(W, _D, M) ->
+    io_lib:format("does NOT beat it, only ~w of ~w", [rc_n(W, M), M]).
+
+%%%----------------------------------------------------------------------------
+%%% B. The full table.
+%%%----------------------------------------------------------------------------
+rc_sec_b(Objs, Pairs, Rm, M) ->
+    Om = rc_okmap(Pairs),
+    [io_lib:format(
+       "~n~n-- B. THE FULL W/L/D TABLE: EVERY SCRIPTED OPPONENT AGAINST EVERY ONE OF~n"
+       "      THE ~w CHAMPIONS, BOTH DIRECTIONS --~n~n"
+       "Pre-registered held-out starts, both seats, ~w matches per ordered cell.~n"
+       "Counts are exact and integer; the two rate columns are the same numbers as~n"
+       "k/~w. champ W/L/D is the CHAMPION's side, rung W/L/D is the RUNG's side, and~n"
+       "each is a separate call into the match loop rather than a transpose of the~n"
+       "other. tr is the transpose identity {RW,RL,RD} =:= {L,W,D}: ok means the two~n"
+       "independent measurements agree exactly, which they must, since duel/3 plays~n"
+       "both seats and the engine is deterministic.~n~n"
+       "The champ W/L/D column of the predictive_gun row is the arms' own primary~n"
+       "endpoint and the whole row set is profile/2, so every number in this table~n"
+       "except the rung side of it is a recomputation of something the feed already~n"
+       "prints per seed (lines 135..234 for arm S, 301..350 for L, 417..466 for D).~n~n"
+       "arm seed rung             champ W/L/D of ~w     rung W/L/D of ~w    champ W    rung W  tr~n",
+       [length(rc_champ_ids(Objs)), M, M, M, M]),
+     [[rc_b_row(Rm, Om, M, Ch, Kind) || Kind <- robo_gauntlet:kinds()]
+      || Ch <- rc_champ_ids(Objs)]].
+
+rc_b_row(Rm, Om, M, {champ, A, S} = Ch, Kind) ->
+    Rung = {script, Kind},
+    {W, L, D} = rc_rates(Rm, Ch, Rung),
+    {RW, RL, RD} = rc_rates(Rm, Rung, Ch),
+    io_lib:format("~3s ~4w ~-16s ~4w/~4w/~4w      ~4w/~4w/~4w    ~7.5f  ~7.5f  ~s~n",
+                  [atom_to_list(A), S, atom_to_list(Kind),
+                   rc_n(W, M), rc_n(L, M), rc_n(D, M),
+                   rc_n(RW, M), rc_n(RL, M), rc_n(RD, M), W, RW,
+                   rc_ok_text(maps:get(rc_key(Ch, Rung), Om))]).
+
+rc_ok_text(true) -> "ok";
+rc_ok_text(false) -> "MISMATCH".
+
+%%%----------------------------------------------------------------------------
+%%% C. The scripted round robin.
+%%%----------------------------------------------------------------------------
+rc_sec_c(Rm, M) ->
+    Kinds = robo_gauntlet:kinds(),
+    [io_lib:format(
+       "~n~n-- C. THE SCRIPTED ROUND ROBIN, ALL FIVE RUNGS AGAINST ONE ANOTHER --~n~n"
+       "Same held-out starts, same ~w matches per ordered cell, both directions~n"
+       "measured. PROVENANCE IS NOT UNIFORM HERE AND IS LABELLED PER ROW.~n"
+       "  preregistered  the four pairs involving predictive_gun. These ARE N, the~n"
+       "                 frozen scripted-ladder null, with the discarded L and D~n"
+       "                 restored. Nothing new is measured; a number is recovered.~n"
+       "  NEW post hoc   the six pairs that do not involve predictive_gun. The as-run~n"
+       "                 N played each rung against the floor bot ONLY, so these six~n"
+       "                 pairs were never measured and are new work, added here~n"
+       "                 because triples of one champion and two rungs need them.~n~n"
+       "A vs B W/L/D is A's side, counts out of ~w. beats is under the relation~n"
+       "stated in section D.~n~n"
+       "A                B                  A vs B W/L/D      B vs A W/L/D   provenance     edge~n",
+       [M, M]),
+     [[rc_c_row(Rm, M, K1, K2) || K2 <- Kinds, K2 > K1] || K1 <- Kinds]].
+
+rc_c_row(Rm, M, K1, K2) ->
+    A = {script, K1},
+    B = {script, K2},
+    {W, L, D} = rc_rates(Rm, A, B),
+    {RW, RL, RD} = rc_rates(Rm, B, A),
+    io_lib:format("~-16s ~-16s ~4w/~4w/~4w   ~4w/~4w/~4w   ~-14s ~s~n",
+                  [atom_to_list(K1), atom_to_list(K2),
+                   rc_n(W, M), rc_n(L, M), rc_n(D, M),
+                   rc_n(RW, M), rc_n(RL, M), rc_n(RD, M),
+                   rc_prov_text(rc_pair_class(A, B)), rc_edge_text(A, B, W, RW)]).
+
+rc_prov_text(preregistered) -> "preregistered";
+rc_prov_text(new_post_hoc) -> "NEW post hoc".
+
+rc_edge_text(A, _B, W, _RW) when W > 0.5 -> rc_label(A) ++ " beats it";
+rc_edge_text(_A, B, _W, RW) when RW > 0.5 -> rc_label(B) ++ " beats it";
+rc_edge_text(_A, _B, _W, _RW) -> "NO EDGE".
+
+%%%----------------------------------------------------------------------------
+%%% D. The relation, and the census of edges it produces.
+%%%----------------------------------------------------------------------------
+rc_sec_d(Pairs, Rm, M) ->
+    Ok = length([1 || {pair, _A, _B, _C, _F, _R, true, _M} <- Pairs]),
+    Or = [P || P <- Pairs, rc_pair_oriented(P)],
+    No = [P || P <- Pairs, not rc_pair_oriented(P)],
+    [io_lib:format(
+       "~n~n-- D. THE RELATION, STATED ONCE, AND THE EDGES IT PRODUCES --~n~n"
+       "THE RELATION.~n~n"
+       "    A beats B  iff  W(A,B) > 0.5~n~n"
+       "where W(A,B) is A's win rate over the ~w matches of the ordered cell (A,B),~n"
+       "and a WIN requires B dead and A alive at match end. DRAWS COUNT AS NOT~n"
+       "BEATING. That is exp066's convention for its primary endpoint throughout: a~n"
+       "draw is not a win, so it cannot help A beat B any more than a loss can. A~n"
+       "turn cap with both tanks alive, and a mutual death, are both draws.~n~n"
+       "WHY THIS READING AND NOT A LOOSER ONE. Because W(A,B) > 0.5 implies~n"
+       "W(A,B) > L(A,B) while the reverse does not, this is the STRICTER of the two~n"
+       "readings available, so nothing found below is an artifact of a permissive~n"
+       "relation. At most one direction of a pair can satisfy it, since~n"
+       "W(A,B) + W(B,A) =< 1. A pair where neither direction satisfies it carries NO~n"
+       "EDGE, which is the honest reading of a pair parked in draws. NO SECOND~n"
+       "RELATION IS DEFINED ANYWHERE IN THIS RECORD.~n~n"
+       "THE CENSUS.~n"
+       "  pairs measured                      ~w~n"
+       "  ordered cells measured              ~w~n"
+       "  transpose identity exact            ~w of ~w~n"
+       "  pairs carrying an edge              ~w~n"
+       "  pairs carrying NO edge              ~w~n~n"
+       "EVERY PAIR WITH NO EDGE, LISTED. These are the pairs where the relation is~n"
+       "silent, and they are the reason a triple can be testable and still not~n"
+       "closable. maxD is the larger of the two draw rates.~n~n"
+       "A                B                  A vs B W/L/D      B vs A W/L/D      maxD~n",
+       [M, length(Pairs), 2 * length(Pairs), Ok, length(Pairs), length(Or), length(No)]),
+     [rc_d_row(Rm, M, P) || P <- No]].
+
+rc_pair_oriented({pair, _A, _B, _C, {W, _L, _D}, {RW, _RL, _RD}, _Ok, _M}) ->
+    W > 0.5 orelse RW > 0.5.
+
+rc_d_row(Rm, M, {pair, A, B, _C, _F, _R, _Ok, _M}) ->
+    {W, L, D} = rc_rates(Rm, A, B),
+    {RW, RL, RD} = rc_rates(Rm, B, A),
+    io_lib:format("~-16s ~-16s ~4w/~4w/~4w   ~4w/~4w/~4w   ~7.5f~n",
+                  [rc_label(A), rc_label(B),
+                   rc_n(W, M), rc_n(L, M), rc_n(D, M),
+                   rc_n(RW, M), rc_n(RL, M), rc_n(RD, M), max(D, RD)]).
+
+%%%----------------------------------------------------------------------------
+%%% E. The triple search.
+%%%----------------------------------------------------------------------------
+rc_sec_e(Objs, Wm, Rm, Tris, M) ->
+    Cyc = [T || {tri, _I, _Me, _O, true, _F, _Cl} = T <- Tris],
+    Pre = [T || {tri, _I, _Me, _O, true, _F, preregistered} = T <- Tris],
+    Ext = [T || {tri, _I, _Me, _O, true, _F, extended} = T <- Tris],
+    [io_lib:format(
+       "~n~n-- E. IS THERE A GENUINE INTRANSITIVE TRIPLE INSIDE THE PRE-REGISTERED~n"
+       "      ARMS? --~n~n"
+       "A triple is CYCLIC iff all three of its edges exist under section D's~n"
+       "relation and they form a 3-cycle. The two possible cyclic orientations of~n"
+       "three distinct vertices are mutually exclusive, which is the same argument~n"
+       "xp_cycles/3 rests on, so no factor is guessed anywhere.~n~n"
+       "EVERY triple of the ~w objects is enumerated, ~w of them, and classified by~n"
+       "the PROVENANCE of its three pairs:~n"
+       "  preregistered  all three pairs are measurements the pre-registered run~n"
+       "                 already made. This is the only class that can carry a~n"
+       "                 REGISTERED anchor.~n"
+       "  extended       all three pairs measured, but at least one is a rung-versus~n"
+       "                 -rung pair that the as-run N never played. NEW post hoc.~n"
+       "  unmeasured     at least one pair is champion versus champion, which is not~n"
+       "                 measured here. UNTESTABLE, and reported as untestable.~n~n"
+       "  class          triples   all 3 pairs measured   all 3 edges present   CYCLIC~n"
+       "~s"
+       "~nRESULT: ~w cyclic triples in total, ~w of them PREREGISTERED.~n",
+       [length(rc_ids(Objs)), length(Tris), rc_e_classes(Tris),
+        length(Cyc), length(Pre)]),
+     rc_e_named(Rm, rc_ids(Objs), M),
+     rc_e_pre(Wm, Pre, M),
+     rc_e_ext(Ext),
+     rc_e_arms(Objs, Pre ++ Ext)].
+
+rc_e_classes(Tris) ->
+    [rc_e_class_row(Tris, C) || C <- [preregistered, extended, unmeasured]].
+
+rc_e_class_row(Tris, C) ->
+    In = [T || {tri, _I, _Me, _O, _Cy, _F, Cl} = T <- Tris, Cl =:= C],
+    io_lib:format("  ~-14s ~7w ~22w ~21w ~8w~n",
+                  [atom_to_list(C), length(In),
+                   length([1 || {tri, _I, true, _O, _Cy, _F, _Cl} <- In]),
+                   length([1 || {tri, _I, _Me, true, _Cy, _F, _Cl} <- In]),
+                   length([1 || {tri, _I, _Me, _O, true, _F, _Cl} <- In])]).
+
+%%% THE CANDIDATE THE UNSIGNED NOTE NAMED. It is tested first, on its own, because
+%%% it is the triple the work package was framed around and because the answer is
+%%% not the one the framing expected.
+rc_e_named(Rm, Ids, M) ->
+    rc_e_named_1(Rm, lists:member({champ, d, 2004}, Ids), M).
+
+rc_e_named_1(_Rm, false, _M) ->
+    "\nTHE CANDIDATE THE NOTE NAMED IS NOT TESTABLE IN THIS CONFIGURATION: arm D\n"
+    "seed 2004 is not among the objects measured.\n";
+rc_e_named_1(Rm, true, M) ->
+    C = {champ, d, 2004},
+    G = {script, ?FLOOR},
+    Duck = {script, sitting_duck},
+    [io_lib:format(
+       "~nE1. THE CANDIDATE THE UNSIGNED NOTE NAMED, TESTED LEG BY LEG.~n~n"
+       "The note proposed: arm D seed 2004 beats predictive_gun at 0.9625 while going~n"
+       "0.0125 W and 0.98125 D against the sitting duck, so the third leg of a triple~n"
+       "is already inside the pre-registered arms. The three legs, measured:~n~n", []),
+     rc_e_leg(Rm, M, C, G),
+     rc_e_leg(Rm, M, G, Duck),
+     rc_e_leg(Rm, M, Duck, C),
+     rc_e_named_verdict(Rm, M, C, G, Duck)].
+
+rc_e_leg(Rm, M, A, B) ->
+    {W, L, D} = rc_rates(Rm, A, B),
+    io_lib:format("  ~-16s vs ~-16s W/L/D = ~4w/~4w/~4w of ~w,  W = ~7.5f  -> ~s~n",
+                  [rc_label(A), rc_label(B), rc_n(W, M), rc_n(L, M), rc_n(D, M), M, W,
+                   rc_leg_text(rc_label(A), rc_label(B), W, D)]).
+
+rc_leg_text(La, Lb, W, _D) when W > 0.5 -> La ++ " BEATS " ++ Lb;
+rc_leg_text(La, Lb, _W, D) when D > 0.5 ->
+    La ++ " does NOT beat " ++ Lb ++ ", the pair is parked in draws";
+rc_leg_text(La, Lb, _W, _D) -> La ++ " does NOT beat " ++ Lb.
+
+rc_e_named_verdict(Rm, M, C, G, Duck) ->
+    Legs = [{C, G}, {G, Duck}, {Duck, C}],
+    Miss = [{A, B} || {A, B} <- Legs, element(1, rc_rates(Rm, A, B)) =< 0.5],
+    rc_e_miss(Rm, M, Miss).
+
+rc_e_miss(_Rm, _M, []) ->
+    "\n  ALL THREE LEGS PRESENT: this triple is cyclic under the stated relation.\n";
+rc_e_miss(Rm, M, Miss) ->
+    {DW, _DL, DD} = rc_rates(Rm, {script, sitting_duck}, {champ, d, 2004}),
+    [io_lib:format(
+       "~n  THE TRIPLE IS NOT CLOSED. ~w of the three legs is missing:~n", [length(Miss)]),
+     [rc_e_miss_row(Rm, M, L) || L <- Miss],
+     io_lib:format(
+       "~n  WHY IT IS MISSING, AND IT IS NOT A THRESHOLD PROBLEM. The pair is not~n"
+       "  close to the bar: the sitting duck wins ~w of ~w against arm D seed 2004~n"
+       "  and DRAWS ~w of ~w. The duck neither beats the champion nor loses to it;~n"
+       "  the pair is parked. To turn that into an edge the relation would have to~n"
+       "  read a draw as a win for the side that did not win, which is the opposite~n"
+       "  of exp066's own convention. THAT IS NOT DONE HERE. Under the stated~n"
+       "  relation this candidate is NOT an intransitive triple, and the note's~n"
+       "  proposal that it is one does not survive the recovered numbers.~n~n"
+       "  THE DISTINCTION THE RECOVERED NUMBER DOES SETTLE is the OTHER leg: the~n"
+       "  as-run N could not say whether predictive_gun beats the sitting duck,~n"
+       "  because W = 0.0 for the duck is consistent with all draws. It is now~n"
+       "  measured, and that leg IS present. So the recovery worked; it is the leg~n"
+       "  the note was confident about that fails.~n",
+       [rc_n(DW, M), M, rc_n(DD, M), M])].
+
+rc_e_miss_row(Rm, M, {A, B}) ->
+    {W, L, D} = rc_rates(Rm, A, B),
+    io_lib:format("    MISSING: ~s -> ~s   W/L/D = ~w/~w/~w of ~w~n",
+                  [rc_label(A), rc_label(B), rc_n(W, M), rc_n(L, M), rc_n(D, M), M]).
+
+rc_e_pre(_Wm, [], _M) ->
+    "\nE2. PREREGISTERED CYCLIC TRIPLES: NONE.\n\n"
+    "No triple whose three pairs are all pre-registered measurements is cyclic under\n"
+    "the stated relation. There is no registered intransitivity anchor here. That is\n"
+    "the result; no relation was loosened to change it.\n";
+rc_e_pre(Wm, Pre, M) ->
+    [io_lib:format(
+       "~nE2. PREREGISTERED CYCLIC TRIPLES: ~w. Each is listed with its three legs in~n"
+       "cycle order, so every leg can be checked against sections A, B and C. All~n"
+       "three pairs of each are measurements the pre-registered run already made:~n"
+       "champion against rung is the arms' own rung profile, rung against the floor~n"
+       "bot is N.~n~n", [length(Pre)]),
+     [rc_e_cycle(Wm, M, T) || T <- Pre]].
+
+rc_e_cycle(Wm, M, {tri, Ids, _Me, _O, _Cy, Fwd, _Cl}) ->
+    Path = rc_path(Ids, Fwd),
+    [io_lib:format("  CYCLE ~s~n", [rc_path_text(Path)]),
+     [rc_e_edge(Wm, M, E) || E <- Path]].
+
+rc_path_text([{A, _B}, {B, _C}, {C, _A}]) ->
+    rc_label(A) ++ " -> " ++ rc_label(B) ++ " -> " ++ rc_label(C) ++ " -> " ++ rc_label(A).
+
+rc_e_edge(Wm, M, {A, B}) ->
+    W = rc_w(Wm, A, B),
+    io_lib:format("      ~-16s beats ~-16s W = ~7.5f (~w of ~w)~n",
+                  [rc_label(A), rc_label(B), W, rc_n(W, M), M]).
+
+rc_e_ext([]) ->
+    "\nE3. EXTENDED CYCLIC TRIPLES (at least one NEW rung-versus-rung pair): NONE.\n";
+rc_e_ext(Ext) ->
+    [io_lib:format(
+       "~nE3. EXTENDED CYCLIC TRIPLES: ~w. At least one pair of each is a~n"
+       "rung-versus-rung pair the as-run N never played, so these are NEW post-hoc~n"
+       "triples and are NOT part of the registered anchor. Listed as paths only.~n~n",
+       [length(Ext)]),
+     [io_lib:format("  ~s~n", [rc_path_text(rc_path(Ids, Fwd))])
+      || {tri, Ids, _Me, _O, _Cy, Fwd, _Cl} <- Ext]].
+
+%% Which champions sit in a cycle at all, per arm. A count of triples is not a
+%% count of champions, and the arms differ in what they trained against.
+rc_e_arms(Objs, Cyc) ->
+    In = lists:usort(lists:append([[Id || Id <- [A, B, C], element(1, Id) =:= champ]
+                                   || {tri, {A, B, C}, _Me, _O, _Cy, _F, _Cl} <- Cyc])),
+    [io_lib:format(
+       "~nE4. WHICH CHAMPIONS SIT IN A CYCLE AT ALL, PER ARM. A triple count is not a~n"
+       "champion count. Arms S and L trained on all five rungs; arm D trained on the~n"
+       "floor rung ALONE (rungs(d) -> [?FLOOR]), so arm D is where a champion can be~n"
+       "strong against the floor bot and weak against a rung it never saw.~n~n"
+       "  arm  champions  in a cycle  seeds~n", []),
+     [rc_e_arm_row(Objs, In, A) || A <- [s, l, d]]].
+
+rc_e_arm_row(Objs, In, Arm) ->
+    All = [S || {champ, A, S} <- rc_champ_ids(Objs), A =:= Arm],
+    Hit = [S || {champ, A, S} <- In, A =:= Arm],
+    io_lib:format("  ~3s ~10w ~11w  ~w~n",
+                  [atom_to_list(Arm), length(All), length(Hit), Hit]).
+
+%%%----------------------------------------------------------------------------
+%%% F. FIX D.
+%%%----------------------------------------------------------------------------
+rc_sec_f(Nulls) ->
+    {nulls, F} = Nulls,
+    [io_lib:format(
+       "~n~n-- F. FIX D: THE MATCH-LEVEL NULL WAS MIS-SCALED BY TWO --~n~n"
+       "WHAT WAS WRONG. xp_from_pairs/2 built a synthetic tournament by storing a~n"
+       "MARGIN V at cell {I,J} and -V at cell {J,I}. xp_mg/1 is a WIN-RATE~n"
+       "differencing operator, wr(M,I,J) - wr(M,J,I), so applied to that matrix it~n"
+       "returned V - (-V) = 2V. Every synthetic margin was DOUBLE the margin it~n"
+       "represented, so every band was effectively HALVED against the synthetic~n"
+       "nulls: the record's band-0.10 match-level row is really a band-0.05 row. The~n"
+       "OBSERVED matrix holds win rates (xp_at/3 puts W(I,J) in the upper half and~n"
+       "L(I,J) in the lower half) and is differenced correctly, so the observed~n"
+       "counts are NOT affected.~n~n"
+       "THE FIX IS AT THE SOURCE AND IT IS THE UNITS. xp_from_wins/2 stores the two~n"
+       "WIN RATES of a synthetic cell, W(I,J) and 1.0 - W(I,J), which is exactly what~n"
+       "xp_matrix/2 stores for the observed matrix. One differencing operator is then~n"
+       "correct for both and a band means the same thing on both. There is NO~n"
+       "compensating factor anywhere: xp_null_match/3 now draws a win rate,~n"
+       "xp_flips(M) / M, and xp_null_sign/2 draws xp_coin_w/0, which is 0.0 or 1.0.~n"
+       "Antisymmetry is still by construction, the two cells of a pair summing to 1.0.~n~n"
+       "HOW THE TWO COLUMNS BELOW ARE OBTAINED. The as-run construction is kept~n"
+       "verbatim as xp_from_pairs_as_run/2 and is called only here. Each column is~n"
+       "drawn from a FRESHLY seeded generator, seed ~w, ~w draws, ~w champions, ~w~n"
+       "matches per cell, and the two constructions consume rand identically (one~n"
+       "rand:uniform(2) per coin, ~w per cell), so a given null's two columns are the~n"
+       "SAME draws under two encodings.~n~n"
+       "THE DOUBLING, SHOWN RATHER THAN ARGUED. The span of |margin| over every pair~n"
+       "of every draw:~n"
+       "  sign-only   as-built ~w   corrected ~w~n"
+       "  match-level as-built ~w   corrected ~w~n~n",
+       [keyget(seed, F), keyget(draws, F), keyget(champions, F),
+        keyget(matches_per_cell, F), keyget(matches_per_cell, F),
+        keyget(sign_as_built, keyget(abs_margin_span, F)),
+        keyget(sign_corrected, keyget(abs_margin_span, F)),
+        keyget(match_as_built, keyget(abs_margin_span, F)),
+        keyget(match_corrected, keyget(abs_margin_span, F))]),
+     rc_f_table("F1. THE MATCH-LEVEL NULL, AS-BUILT BESIDE CORRECTED.",
+                keyget(match_as_built, F), keyget(match_corrected, F)),
+     rc_f_halving(F),
+     rc_f_boundary(F),
+     rc_f_table("F2. THE SIGN-ONLY NULL, AS-BUILT BESIDE CORRECTED. VERIFIED, NOT ASSUMED.",
+                keyget(sign_as_built, F), keyget(sign_corrected, F)),
+     rc_f_sign(F),
+     rc_f_observed(F),
+     rc_f_wrong_null(F)].
+
+rc_f_table(Title, As, Co) ->
+    [io_lib:format("~n~s~n~n"
+                   "band  column       ordered median  ordered range   cycles median"
+                   "  cycles range  decisive median of ~w~n",
+                   [Title, keyget(of_pairs, rc_band(As, 0.05))]),
+     [rc_f_rows(As, Co, B) || B <- xp_bands()]].
+
+rc_f_rows(As, Co, B) ->
+    [rc_f_row(B, "as-built ", rc_band(As, B)),
+     rc_f_row(B, "corrected", rc_band(Co, B))].
+
+rc_band(Rows, B) -> element(3, lists:keyfind(B, 2, Rows)).
+
+%% Proplist getter, same name and shape as the one the exp066 audit escripts use,
+%% so a reader moving between them does not have to relearn it. Crashes on a
+%% missing key on purpose: a report field that is absent is a defect, not a default.
+keyget(K, Kvs) -> element(2, lists:keyfind(K, 1, Kvs)).
+
+rc_f_row(B, Tag, Kvs) ->
+    io_lib:format("~.2f  ~s ~15.1f ~15w ~15.1f ~13w ~13.1f~n",
+                  [B, Tag, keyget(ordered_median, Kvs), keyget(ordered_range, Kvs),
+                   keyget(cycles_median, Kvs), keyget(cycles_range, Kvs),
+                   keyget(decisive_median, Kvs)]).
+
+%% The halving, as an identity between two rows of the table above rather than as a
+%% claim: the as-built row at a band is the corrected row at HALF that band.
+rc_f_halving(F) ->
+    As = keyget(match_as_built, F),
+    Co = keyget(match_corrected, F),
+    io_lib:format(
+      "~nTHE HALVING IS AN IDENTITY BETWEEN TWO ROWS OF THAT TABLE, not a claim: the~n"
+      "as-built row at band 0.10 is the corrected row at band 0.05, because the same~n"
+      "draws are read against a band that is twice as large in one encoding.~n"
+      "  as-built  at band 0.10 : ordered ~.1f ~w, cycles ~.1f ~w, decisive ~.1f~n"
+      "  corrected at band 0.05 : ordered ~.1f ~w, cycles ~.1f ~w, decisive ~.1f~n"
+      "  identical: ~w~n~n"
+      "AGREEMENT WITH THE INDEPENDENT SCRIPT, AND IT IS PARTIAL. F1b is about that.~n",
+      [keyget(ordered_median, rc_band(As, 0.10)), keyget(ordered_range, rc_band(As, 0.10)),
+       keyget(cycles_median, rc_band(As, 0.10)), keyget(cycles_range, rc_band(As, 0.10)),
+       keyget(decisive_median, rc_band(As, 0.10)),
+       keyget(ordered_median, rc_band(Co, 0.05)), keyget(ordered_range, rc_band(Co, 0.05)),
+       keyget(cycles_median, rc_band(Co, 0.05)), keyget(cycles_range, rc_band(Co, 0.05)),
+       keyget(decisive_median, rc_band(Co, 0.05)),
+       rc_band(As, 0.10) =:= rc_band(Co, 0.05)]).
+
+%%% F1b. The disagreement with the independent script, reported rather than
+%%% resolved by choosing whichever encoding matched.
+rc_f_boundary(F) ->
+    Co = keyget(match_corrected, F),
+    Ha = keyget(match_corrected_half_encoding, F),
+    Ex = keyget(match_corrected_exact_integer, F),
+    [io_lib:format(
+       "~nF1b. THE CORRECTED COLUMN DOES NOT REPRODUCE THE INDEPENDENT SCRIPT AT EVERY~n"
+       "BAND, AND THE REASON IS NOT THE FIX.~n~n"
+       "scripts/exp066_verify_null_scaling.escript builds its corrected column a THIRD~n"
+       "way: it HALVES the margin and stores plus and minus half, so xp_mg/1 returns~n"
+       "the margin once. That is algebraically the same margin as xp_from_wins/2's, and~n"
+       "at band 0.05 the two agree digit for digit. At bands 0.10 and 0.15 they do NOT.~n"
+       "The two encodings agree on all three bands: ~w.~n~n"
+       "WHY. Every synthetic margin is (2K - M)/M for an integer K, and all three~n"
+       "pre-registered bands are exact multiples of the margin quantum 2/160: 0.05 is~n"
+       "8/160, 0.10 is 16/160, 0.15 is 24/160. So every draw contains edges whose~n"
+       "margin equals the band EXACTLY, where 'margin > band' is mathematically FALSE.~n"
+       "None of 0.05, 0.10 and 0.15 is a binary float, so each encoding renders those~n"
+       "boundary edges slightly above or slightly below the band, and the two round in~n"
+       "OPPOSITE directions on the negative side. Two worked examples, both exact~n"
+       "ties in arithmetic:~n"
+       "  K = 72 of 160, true margin -0.1 exactly. Halved encoding gives~n"
+       "    -0.09999999999999998, win-rate encoding -0.10000000000000003. The reverse~n"
+       "    edge is therefore NOT decisive at band 0.10 under the first and IS under~n"
+       "    the second.~n"
+       "  K = 68 of 160, true margin -0.15 exactly. Halved gives~n"
+       "    -0.15000000000000002, win-rate -0.14999999999999997, and the reverse edge~n"
+       "    flips the other way at band 0.15.~n"
+       "  K = 84 of 160, true margin +0.05 exactly. BOTH encodings give~n"
+       "    0.050000000000000044, so both count an exact tie as decisive at band 0.05.~n"
+       "    Neither encoding is right there; they merely agree.~n~n"
+       "NEITHER FLOAT ENCODING IS CORRECT ON EVERY BOUNDARY EDGE, and which ties each~n"
+       "one counts varies by band. scripts/exp066_verify_recovered.escript check 5~n"
+       "enumerates them: at band 0.05 both encodings count both ties (K = 76 and 84)~n"
+       "as decisive and both are wrong; at 0.10 the win-rate form counts both ties~n"
+       "(72 and 88) and the halved form one (88), so both are wrong and the halved one~n"
+       "less so; at 0.15 the win-rate form counts NEITHER tie and is right while the~n"
+       "halved form counts one (68) and is wrong. This is a property of the~n"
+       "PRE-REGISTERED COUNTER, which tests a strict float inequality against a band~n"
+       "that is not a binary float, and NOT of this fix. The counter is NOT touched~n"
+       "here: xp_ordered/3 and xp_cycles/3 are exp057's, character for character, and~n"
+       "they stay that way.~n~n"
+       "THE EXACT-INTEGER COLUMN IS A NEW POST-HOC DIAGNOSTIC. Mg > B is exactly~n"
+       "2K - M > B * M, and B * M is 8, 16 and 24, integers. Counting with those~n"
+       "computes THE SAME TEST with no rounding error. The band is not moved. This~n"
+       "column is new, unregistered, and it is here to say which float encoding is~n"
+       "nearer the definition, not to replace either.~n~n"
+       "band  encoding                 ordered median  cycles median  decisive median  edges exactly ON the band~n",
+       [keyget(corrected_encodings_identical, F)]),
+     [rc_f_b_rows(Co, Ha, Ex, B) || B <- xp_bands()],
+     io_lib:format(
+       "~nREADING. The exact count is at or below both float columns at every band, and~n"
+       "that direction is guaranteed rather than observed: a non-boundary edge sits at~n"
+       "least one quantum (0.0125) from the band, far outside float error, so the exact~n"
+       "edge set is a SUBSET of each float edge set and both cycle counters are~n"
+       "monotone in the edge set. Which of the two float encodings sits nearer the~n"
+       "exact one varies by band; compare the rows above. NEITHER is systematically~n"
+       "better and this record does not claim one is. What matters for FIX D's~n"
+       "conclusion is that all three corrected columns are an order of magnitude below~n"
+       "the as-built column at the headline band, so the doubling defect dominates the~n"
+       "encoding question by a wide margin.~n~n"
+       "ONE MORE THING ABOUT THE WORK PACKAGE'S OWN ACCEPTANCE NUMBER. It asked that~n"
+       "the fixed version agree with exp066_verify_null_scaling.escript's corrected~n"
+       "column at 'band 0.10, ordered median 5.0 range {0,15} and cycles median 3.0~n"
+       "range {0,10}'. Those four numbers are NOT that script's. Run at its own seed~n"
+       "660 it prints ordered median 3.0 range {0,12} and cycles median 2.0 range~n"
+       "{0,8}. The quoted numbers are exp066_crossplay_null_audit.txt's MATCH~n"
+       "CORRECTED row at band 0.10, which is drawn at seed 661 and built with the~n"
+       "(1+V)/2 form, a construction BITWISE IDENTICAL to xp_from_wins/2. The medians~n"
+       "this record prints at band 0.10, ordered ~.1f and cycles ~.1f, equal those~n"
+       "quoted medians; the ranges differ because the seed differs. The~n"
+       "misattribution is recorded rather than resolved by adjusting anything, and~n"
+       "scripts/exp066_verify_recovered.escript checks all three encodings against one~n"
+       "another mechanically.~n",
+       [keyget(ordered_median, rc_band(Co, 0.10)), keyget(cycles_median, rc_band(Co, 0.10))])].
+
+rc_f_b_rows(Co, Ha, Ex, B) ->
+    [rc_f_b_row(B, "win-rate (this fix)  ", rc_band(Co, B), none),
+     rc_f_b_row(B, "halved (the escript) ", rc_band(Ha, B), none),
+     rc_f_b_row(B, "EXACT integer, NEW   ", rc_band(Ex, B),
+                keyget(edges_exactly_on_band_median, rc_band(Ex, B)))].
+
+rc_f_b_row(B, Tag, Kvs, none) ->
+    io_lib:format("~.2f  ~s ~13.1f ~14.1f ~16.1f~n",
+                  [B, Tag, keyget(ordered_median, Kvs), keyget(cycles_median, Kvs),
+                   keyget(decisive_median, Kvs)]);
+rc_f_b_row(B, Tag, Kvs, On) ->
+    io_lib:format("~.2f  ~s ~13.1f ~14.1f ~16.1f ~24.1f~n",
+                  [B, Tag, keyget(ordered_median, Kvs), keyget(cycles_median, Kvs),
+                   keyget(decisive_median, Kvs), On]).
+
+rc_f_sign(F) ->
+    io_lib:format(
+      "~nTHE SIGN-ONLY NULL IS UNAFFECTED, AND THAT IS MEASURED HERE RATHER THAN~n"
+      "ASSUMED. The note's argument is that a margin of plus or minus 2 clears every~n"
+      "band just as plus or minus 1 does, so no counted number can move. The two~n"
+      "columns above are computed on the same draws and compared:~n"
+      "  all three bands, all five numbers, identical: ~w~n"
+      "The margin spans differ as expected (~w as-built against ~w corrected), so the~n"
+      "encodings really are different; it is the COUNTS that cannot tell them apart,~n"
+      "because every band tested is below 1.0. A band at or above 1.0 would separate~n"
+      "them, and none is used.~n",
+      [keyget(sign_identical, F),
+       keyget(sign_as_built, keyget(abs_margin_span, F)),
+       keyget(sign_corrected, keyget(abs_margin_span, F))]).
+
+%%% What the correction does to the comparison the record actually made. The
+%%% observed counts are quoted from the persisted record and are NOT recomputed
+%%% here; recovered/1 does not load the cross-play matrix.
+rc_f_observed(F) ->
+    Co = keyget(match_corrected, F),
+    As = keyget(match_as_built, F),
+    [io_lib:format(
+       "~nF3. WHAT THE CORRECTION DOES TO THE COMPARISON. The observed counts are~n"
+       "quoted from exp066_crossplay.txt's own counts block (lines 46..67) and are~n"
+       "NOT recomputed here: recovered/1 does not load the cross-play matrix.~n"
+       "scripts/exp066_verify_crossplay.escript already re-derives them from the~n"
+       "persisted matrix independently.~n~n"
+       "band  observed cycles  as-built null median  corrected null median  observed is~n", []),
+     [rc_f_obs_row(As, Co, B, C) || {B, C} <- [{0.05, 49}, {0.10, 18}, {0.15, 12}]],
+     io_lib:format(
+       "~nREAD THAT CAREFULLY. At the HEADLINE band 0.10 the sign of the naive~n"
+       "comparison REVERSES: 18 observed cycles sit below the as-built median and~n"
+       "above the corrected one. At band 0.05 the correction narrows the gap without~n"
+       "crossing it, and at band 0.15 the observed count was already above both. The~n"
+       "audit beside this record (exp066_crossplay_null_audit.txt) reached the same~n"
+       "conclusion from the persisted matrix with a third seed, and stated there that~n"
+       "the sign of the comparison depends on which null is used.~n~n"
+       "THE PERSISTED BLOCK IS NOT BIT-IDENTICAL TO THE AS-BUILT COLUMN ABOVE, AND~n"
+       "SHOULD NOT BE. In crossplay/1 the match-level null is drawn AFTER the~n"
+       "sign-only null has consumed 190 x 200 coin flips from the same generator,~n"
+       "while every column above is drawn from a freshly seeded one. Same model, same~n"
+       "draw count, different draws: the persisted band-0.10 medians are 84.0 and~n"
+       "55.0, the as-built column above reads ~.1f and ~.1f. Neither is more correct~n"
+       "than the other; both are as-built, and both are superseded by the corrected~n"
+       "column.~n",
+       [keyget(ordered_median, rc_band(As, 0.10)),
+        keyget(cycles_median, rc_band(As, 0.10))])].
+
+rc_f_obs_row(As, Co, B, Obs) ->
+    A = keyget(cycles_median, rc_band(As, B)),
+    C = keyget(cycles_median, rc_band(Co, B)),
+    io_lib:format("~.2f ~16w ~21.1f ~22.1f  ~s~n",
+                  [B, Obs, A, C, rc_side_text(Obs, A, C)]).
+
+rc_side_text(Obs, A, C) when Obs < A, Obs > C -> "BELOW as-built, ABOVE corrected: SIGN REVERSES";
+rc_side_text(Obs, A, C) when Obs < A, Obs =< C -> "below both";
+rc_side_text(Obs, A, C) when Obs >= A, Obs > C -> "above both";
+rc_side_text(_Obs, _A, _C) -> "above as-built, below corrected".
+
+rc_f_wrong_null(F) ->
+    Co = keyget(match_corrected, F),
+    Dec = keyget(decisive_median, rc_band(Co, 0.10)),
+    [io_lib:format(
+       "~nF4. FIXING THE ARITHMETIC DOES NOT MAKE THIS THE RIGHT NULL. STATED PLAINLY.~n~n"
+       "The corrected match-level null is still NOT CONDITIONED ON OBSERVED EDGE~n"
+       "DECISIVENESS. It samples fair coin play at ~w matches per cell and therefore~n"
+       "produces its OWN decisiveness, which is nothing like the matrix it is being~n"
+       "compared with: at band 0.10 the corrected null leaves a median of ~.1f decisive~n"
+       "edges of ~w while the observed matrix has 152 (exp066_crossplay.txt, counts~n"
+       "block, lines 46..67). A count of cycles is a function of how many edges are~n"
+       "decisive at all, so comparing 152 decisive edges against a reference with~n"
+       "~.1f is not a test of intransitivity; it is mostly a test of decisiveness, and~n"
+       "the arithmetic error was hiding that behind a second one.~n",
+       [keyget(matches_per_cell, F), Dec, keyget(of_pairs, rc_band(Co, 0.10)), Dec]),
+     rc_f_orientation()].
+
+rc_f_orientation() ->
+    "\nTHE NULL A FUTURE RUNG SHOULD REGISTER IS THE ORIENTATION NULL: keep every\n"
+    "observed |margin| edge for edge and randomise only the SIGNS. That holds\n"
+    "decisive_edges identical to the observed value at every band by construction,\n"
+    "so the comparison is about orientation alone, which is what a cycle is.\n"
+    "exp066_crossplay_null_audit.txt already computes it (ORIENTATION rows) and\n"
+    "under it the observed counts sit far BELOW chance at every band. That null is\n"
+    "unregistered and self-calibrated like everything else in this probe, which is\n"
+    "exactly why it should be REGISTERED IN ADVANCE rather than adopted after the\n"
+    "counts are known. This record does not adopt it and claims nothing from it.\n"
+    "\nBoth nulls above remain UNREGISTERED and neither is a reference this front is\n"
+    "entitled to read a result off. FIX D removes an arithmetic defect. It does not\n"
+    "promote the fixed instrument.\n".
+
+%%%----------------------------------------------------------------------------
+%%% G.
+%%%----------------------------------------------------------------------------
+rc_sec_g() ->
+    "\n\n-- G. WHAT THIS RECORD DOES NOT DO --\n\n"
+    "It does not re-emit exp066_crossplay.txt. That record's null_match_level block\n"
+    "is as-built, the audit beside it quotes those numbers, and rewriting a\n"
+    "persisted exploratory record to match a later fix would destroy the evidence\n"
+    "of the defect. A FUTURE crossplay/1 run emits the corrected null, because the\n"
+    "fix is at the source; when that happens the two records will differ and this\n"
+    "section is the reason.\n\n"
+    "It does not amend the feed above its own appended note. The feed's N line\n"
+    "carries four win rates because that is what the run of 2026-07-29 computed. A\n"
+    "future run's line carries four {Kind, W, L, D} tuples.\n\n"
+    "It does not claim an intransitivity result for the front. Whether cross-play\n"
+    "cycling among CHAMPIONS is real is phase 1's question and needs champion versus\n"
+    "champion play, which is not measured here.\n\n"
+    "It does not loosen the relation. One relation is stated in section D and it is\n"
+    "the stricter of the two available readings. Where a triple fails to close, the\n"
+    "missing leg is named and the record stops there.\n\n"
+    "It does not re-run an arm, modify a genome, or move a pre-registered threshold.\n"
+    "B, R_line and D_min are untouched. It signs nothing.\n\n"
+    "ONE BLEMISH IN THE APPENDED NOTE, LEFT ALONE BECAUSE THE FEED IS APPEND-ONLY.\n"
+    "Addendum 3's line beginning 'THE CANDIDATE DOES NOT CLOSE' prints the missing\n"
+    "leg with ~w applied to two label STRINGS, so it reads as two lists of character\n"
+    "codes: [115,105,...] is \"sitting_duck\" and [100,50,48,48,52] is \"d2004\". The\n"
+    "content is not wrong and it is not lost: the leg table three lines above it and\n"
+    "the prose immediately below it both name that pair in words. The feed is\n"
+    "APPEND-ONLY so the line stands as written. rc_note_named_verdict/3 now formats\n"
+    "the missing legs through rc_e_miss_row/3, which uses ~s, so a future run prints\n"
+    "them readably; that means a future append would not be byte-identical to the one\n"
+    "of 2026-07-30, which is expected of a one-shot append.\n".
+
+%%%----------------------------------------------------------------------------
+%%% One machine-readable term at the foot, tuples and lists only.
+%%%----------------------------------------------------------------------------
+rc_term(Opts, Pairs, Tris, Nulls) ->
+    io_lib:format(
+      "~n~n== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) ==~n~w.~n",
+      [{recovered,
+        [{date, "2026-07-30"},
+         {status, "POST HOC. FIX C recovers a discarded measurement and searches "
+                  "for a cyclic triple. FIX D is a defect fix to a synthetic null. "
+                  "Nothing here is pre-registered and nothing is signed."},
+         {engine_pin, "a5e8bcfc5646827e9be49a9629f8a6a9678c814b"},
+         {produced_by, "exp066_single_population_floor_tests:recovered/1"},
+         {archive_dir, maps:get(archive_dir, Opts)},
+         {starts, maps:get(heldout, Opts)},
+         {matches_per_ordered_cell, 2 * maps:get(heldout, Opts)},
+         {relation, "A beats B iff W(A,B) > 0.5 over the 160 matches of the ordered "
+                    "cell; a win requires B dead and A alive; draws count as NOT "
+                    "beating"},
+         {pair_shape, {pair, id_a, id_b, provenance, {w_ab, l_ab, d_ab},
+                       {w_ba, l_ba, d_ba}, transpose_exact, matches}},
+         {pairs, Pairs},
+         {triple_shape, {tri, {id_a, id_b, id_c}, all_pairs_measured,
+                         all_edges_present, cyclic, forward_orientation, provenance}},
+         {triples_enumerated, length(Tris)},
+         {triples_by_class,
+          [{C, length([1 || {tri, _I, _M, _O, _Cy, _F, Cl} <- Tris, Cl =:= C]),
+            length([1 || {tri, _I, _M, _O, true, _F, Cl} <- Tris, Cl =:= C])}
+           || C <- [preregistered, extended, unmeasured]]},
+         {cyclic_triples, [T || {tri, _I, _M, _O, true, _F, _Cl} = T <- Tris]},
+         Nulls]}]).
+
+%%%----------------------------------------------------------------------------
+%%% The append-only note for BOTH copies of the feed.
+%%%----------------------------------------------------------------------------
+rc_feed_note(Opts, Pairs, Tris, Nulls) ->
+    {nulls, F} = Nulls,
+    Pre = [T || {tri, _I, _Me, _O, true, _F, preregistered} = T <- Tris],
+    Ext = [T || {tri, _I, _Me, _O, true, _F, extended} = T <- Tris],
+    Wm = rc_wmap(Pairs),
+    M = 2 * maps:get(heldout, Opts),
+    [io_lib:format(
+       "~n~n== ADDENDUM 3, appended 2026-07-30, POST HOC: THE DISCARDED RATES, AND~n"
+       "   THE MATCH-LEVEL NULL'S SCALE ==~n~n"
+       "WHAT THIS IS. Nothing above this line is changed or re-run. Two more~n"
+       "defects in the RUNNER, both fixed at the source, both exercised by replaying~n"
+       "archived champions at engine pin~n"
+       "a5e8bcfc5646827e9be49a9629f8a6a9678c814b. NO ARM WAS RE-RUN and no genome was~n"
+       "modified.~n~n"
+       "THE NUMBERS ARE NOT HERE. They are in~n"
+       "  ~s~n"
+       "which carries the full W/L/D table for every scripted opponent against every~n"
+       "one of the 40 champions in both directions, the scripted round robin, the~n"
+       "triple search, and the corrected null beside the as-built one.~n~n"
+       "FIX C, THE RATES scripted_null/1 THREW AWAY. It kept element 1 of rates/1,~n"
+       "the win rate, and discarded L and D on the same line. W = 0.0 is consistent~n"
+       "with 160 losses and with 160 draws, and those are different facts: the first~n"
+       "is an EDGE from the floor bot to that rung, the second is no edge at all. So~n"
+       "the N line at lines 16..19 above could not say whether the floor bot BEATS~n"
+       "the lower rungs. scripted_null/1 now returns {Kind, W, L, D}; a FUTURE run's~n"
+       "N line carries four 4-tuples where the line above carries four win rates.~n"
+       "The line above stands as what the run of 2026-07-29 computed.~n~n"
+       "RECOVERED, on the same ~w held-out starts, ~w matches per rung, counts~n"
+       "exact:~n", [maps:get(rc_out, Opts), maps:get(heldout, Opts), M]),
+     [rc_note_n_row(Pairs, M, Kind) || Kind <- robo_gauntlet:kinds(), Kind =/= ?FLOOR],
+     io_lib:format(
+       "~nSo the floor bot BEATS all four lower rungs, which the as-run N could not~n"
+       "say. Against the spinner it wins ~w of ~w and draws the other ~w; the draws~n"
+       "were invisible before.~n~n"
+       "THE RELATION, STATED. A beats B iff W(A,B) > 0.5 over the ~w matches of that~n"
+       "ordered cell, a win requiring B dead and A alive. DRAWS COUNT AS NOT BEATING,~n"
+       "which is exp066's convention for its primary endpoint throughout. This is the~n"
+       "STRICTER of the two readings available, since W > 0.5 implies W > L. ONE~n"
+       "relation, not moved.~n~n"
+       "WHAT THE SEARCH FOUND. Every triple of the 5 scripted bots and the 40~n"
+       "champions was enumerated, ~w in all, and classified by the provenance of its~n"
+       "three pairs. Champion-versus-champion pairs are NOT measured here (that play~n"
+       "exists for arm S only, in an unregistered probe), so triples needing one are~n"
+       "reported UNTESTABLE.~n"
+       "  PREREGISTERED cyclic triples, all three pairs already measured by the run: ~w~n"
+       "  EXTENDED cyclic triples, needing a NEW rung-versus-rung pair            : ~w~n~n",
+       [rc_note_spin(Pairs, M, w), M, rc_note_spin(Pairs, M, d), M, length(Tris),
+        length(Pre), length(Ext)]),
+     rc_note_result(Wm, M, Pre),
+     rc_note_named(Pairs, M),
+     io_lib:format(
+       "~nFIX D, THE MATCH-LEVEL NULL WAS MIS-SCALED BY TWO. xp_from_pairs/2 stored a~n"
+       "MARGIN V at {I,J} and -V at {J,I} while xp_mg/1 differences WIN RATES, so it~n"
+       "returned 2V and every band was effectively halved against the synthetic~n"
+       "nulls. Fixed at the source in xp_from_wins/2, which stores the two win rates~n"
+       "of a synthetic cell, the same units the observed matrix uses; no compensating~n"
+       "factor at any call site. The as-run construction is kept verbatim as~n"
+       "xp_from_pairs_as_run/2 so both columns come off the same draws.~n"
+       "  match-level, band 0.10, ~w draws, seed ~w: as-built cycles median ~.1f,~n"
+       "    corrected ~.1f. The as-built row at band 0.10 IS the corrected row at~n"
+       "    band 0.05: ~w.~n"
+       "  sign-only: all three bands, all five numbers, identical under both~n"
+       "    constructions: ~w. Verified, not assumed. Its margins are exactly~n"
+       "    +/-1.0 and +/-2.0, both representable, so no boundary edge exists there.~n"
+       "  At the headline band 0.10 the sign of the naive comparison REVERSES: 18~n"
+       "    observed cycles sit below the as-built median and above the corrected~n"
+       "    one.~n"
+       "  THE CORRECTED COLUMN DOES NOT REPRODUCE~n"
+       "    scripts/exp066_verify_null_scaling.escript AT EVERY BAND, and the reason~n"
+       "    is not the fix. All three bands are exact multiples of the margin quantum~n"
+       "    2/160, so every draw contains edges whose margin EQUALS the band, where a~n"
+       "    strict float inequality is decided by rounding; the two encodings round~n"
+       "    those in opposite directions on the negative side. They agree at band~n"
+       "    0.05 and differ at 0.10 and 0.15. Section F1b of the record gives the~n"
+       "    worked examples and adds an EXACT-INTEGER count, a NEW post-hoc~n"
+       "    diagnostic that computes the same test with no rounding: it is at or~n"
+       "    below both float columns at every band. The pre-registered counter is NOT~n"
+       "    touched. Related: the four numbers this work package quoted as that~n"
+       "    script's corrected column at band 0.10 are in fact~n"
+       "    exp066_crossplay_null_audit.txt's, at a different seed.~n~n"
+       "EVEN CORRECTED, THAT NULL IS STILL THE WRONG REFERENCE, and fixing the~n"
+       "arithmetic does not promote it. It is not conditioned on observed edge~n"
+       "decisiveness: at band 0.10 it leaves a median of ~.1f decisive edges of ~w~n"
+       "where the observed matrix has 152, so the comparison is mostly a test of~n"
+       "decisiveness rather than of intransitivity. THE NULL A FUTURE RUNG SHOULD~n"
+       "REGISTER IS THE ORIENTATION NULL, which keeps every observed |margin| and~n"
+       "randomises only the signs, holding decisive_edges identical to the observed~n"
+       "value at every band. exp066_crossplay_null_audit.txt already computes it. It~n"
+       "is unregistered, so it should be registered IN ADVANCE, not adopted now.~n~n"
+       "exp066_crossplay.txt IS NOT RE-EMITTED. Its null_match_level block stays~n"
+       "as-built and the audit beside it quotes those numbers.~n~n"
+       "PRODUCED BY. experiments/exp066_single_population_floor_tests.erl,~n"
+       "recovered/1, added 2026-07-30, driven by scripts/exp066_recovered.sh, checked~n"
+       "by scripts/exp066_verify_recovered.escript. The as-run copy archived beside~n"
+       "the champions contains none of this.~n"
+       "== END ADDENDUM 3 ==~n",
+       [keyget(draws, F), keyget(seed, F),
+        keyget(cycles_median, rc_band(keyget(match_as_built, F), 0.10)),
+        keyget(cycles_median, rc_band(keyget(match_corrected, F), 0.10)),
+        rc_band(keyget(match_as_built, F), 0.10)
+            =:= rc_band(keyget(match_corrected, F), 0.05),
+        keyget(sign_identical, F),
+        keyget(decisive_median, rc_band(keyget(match_corrected, F), 0.10)),
+        keyget(of_pairs, rc_band(keyget(match_corrected, F), 0.10))])].
+
+rc_note_n_row(Pairs, M, Kind) ->
+    Rm = rc_rmap(Pairs),
+    {W, L, D} = rc_rates(Rm, {script, Kind}, {script, ?FLOOR}),
+    io_lib:format("  ~-15s vs predictive_gun : W/L/D = ~4w/~4w/~4w of ~w  "
+                  "(as-run N carried W = ~.5f alone)~n",
+                  [atom_to_list(Kind), rc_n(W, M), rc_n(L, M), rc_n(D, M), M, W]).
+
+%% The spinner's two numbers from the FLOOR BOT's side, named in the note's prose.
+rc_note_spin(Pairs, M, Which) ->
+    Rm = rc_rmap(Pairs),
+    {W, _L, D} = rc_rates(Rm, {script, ?FLOOR}, {script, spinner}),
+    rc_note_spin_1(Which, M, W, D).
+
+rc_note_spin_1(w, M, W, _D) -> rc_n(W, M);
+rc_note_spin_1(d, M, _W, D) -> rc_n(D, M).
+
+%%% THE NOTE'S OWN CANDIDATE, in the feed, with its verdict COMPUTED from the
+%%% measured rates rather than written out in prose. Every leg is printed whether
+%%% it holds or not, and the missing ones are named.
+rc_note_named(Pairs, M) ->
+    Rm = rc_rmap(Pairs),
+    C = {champ, d, 2004},
+    G = {script, ?FLOOR},
+    Duck = {script, sitting_duck},
+    Legs = [{C, G}, {G, Duck}, {Duck, C}],
+    Miss = [L || {A, B} = L <- Legs, element(1, rc_rates(Rm, A, B)) =< 0.5],
+    [io_lib:format(
+       "~nTHE CANDIDATE THE UNSIGNED NOTE NAMED, TESTED LEG BY LEG. The note proposed~n"
+       "arm D seed 2004 beating predictive_gun while going 0.0125 W and 0.98125 D~n"
+       "against the sitting duck, so that the third leg of a triple was already~n"
+       "inside the pre-registered arms. Measured:~n~n", []),
+     [rc_e_leg(Rm, M, A, B) || {A, B} <- Legs],
+     rc_note_named_verdict(Rm, M, Miss)].
+
+rc_note_named_verdict(_Rm, _M, []) ->
+    "\n  ALL THREE LEGS HOLD: the note's candidate is cyclic under the stated\n"
+    "  relation.\n";
+%% The missing legs are printed through rc_e_miss_row/3, which formats the labels
+%% with ~s. The note appended on 2026-07-30 printed them with ~w on the label
+%% strings instead, so that one line of the feed reads as character codes; the feed
+%% is append-only, so it stands, and the leg table three lines above it and the
+%% prose below it both name the same pair in words. Fixed here for a future run.
+rc_note_named_verdict(Rm, M, Miss) ->
+    {DW, _DL, DD} = rc_rates(Rm, {script, sitting_duck}, {champ, d, 2004}),
+    [io_lib:format("~n  THE CANDIDATE DOES NOT CLOSE. ~w of the three legs is missing:~n",
+                   [length(Miss)]),
+     [rc_e_miss_row(Rm, M, L) || L <- Miss],
+     io_lib:format(
+       "~n  The sitting duck wins ~w of ~w against arm D seed 2004 and DRAWS ~w, so~n"
+       "  the duck neither beats the champion nor loses to it and the pair carries NO~n"
+       "  EDGE. Turning that into an edge would need a draw read as a win for the side~n"
+       "  that did not win, which is the opposite of exp066's convention. IT WAS NOT~n"
+       "  DONE. What the recovered number DID settle is the other leg, the gun against~n"
+       "  the duck, which W = 0.0 alone could not decide. So the recovery worked and~n"
+       "  the note's candidate is refuted by the number the note asked for.~n",
+       [rc_n(DW, M), M, rc_n(DD, M)])].
+
+rc_note_result(_Wm, _M, []) ->
+    "NO PREREGISTERED CYCLIC TRIPLE EXISTS. Under the stated relation there is no\n"
+    "registered intransitivity anchor in the arms. No relation was loosened to\n"
+    "change that; the negative is the result.\n";
+rc_note_result(Wm, M, Pre) ->
+    [io_lib:format(
+       "A PREREGISTERED CYCLIC TRIPLE EXISTS, ~w of them. The first, in full, with~n"
+       "every leg checkable against the per-seed rung profiles above:~n~n",
+       [length(Pre)]),
+     rc_e_cycle(Wm, M, hd(Pre)),
+     io_lib:format(
+       "~nThe rest are in the record. They are NOT a claim about the substrate: a~n"
+       "champion beating the floor bot while losing to a rung the floor bot beats is~n"
+       "an OBSERVABLE, which is what IF-10 was always declared to be, and arm D~n"
+       "trained on the floor rung ALONE, so it never saw the rung that beats it.~n"
+       "That is a statement about the CURRICULUM, not about the arena.~n", [])].
 
 %%%============================================================================
 %%% THE ARMS.
@@ -2056,6 +4140,16 @@ xp_defaults() ->
       xp_sub_n => 10,
       xp_sub_draws => 200,
       addendum_arms => [s, l, d],
+      %% flag_fixes/1 writes its own record and appends a short pointer note to
+      %% the same two feed copies the addendum appends to.
+      fx_out => Arch ++ "exp066_flag_fixes.txt",
+      %% recovered/1 writes its own record and appends to the same two feed copies.
+      %% Its null table is computed at the CROSS-PLAY probe's own configuration (20
+      %% champions, 160 matches per cell, 200 draws, seed XP_SEED) so the corrected
+      %% column can be set beside the as-built column the record already carries.
+      rc_out => Arch ++ "exp066_recovered_rates_and_null_fix.txt",
+      rc_null_n => 20,
+      rc_null_cell => 160,
       addendum_feeds =>
           ["../faber-ecosystem/insights/066-raw-competence-floor.txt",
            Arch ++ "exp066_floor_feed.txt"]}.

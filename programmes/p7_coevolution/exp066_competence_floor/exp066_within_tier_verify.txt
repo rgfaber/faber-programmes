@@ -1,0 +1,487 @@
+== EXP-066 WITHIN-TIER RECOUNT: INDEPENDENT VERIFICATION ==
+
+date        = 2026-07-30
+status      = EXPLORATORY, POST HOC, NOT PRE-REGISTERED, SIGNS NOTHING
+engine_pin  = a5e8bcfc5646827e9be49a9629f8a6a9678c814b
+produced_by = scripts/exp066_verify_within_tier.escript
+written_to  = programmes/p7_coevolution/exp066_competence_floor/exp066_within_tier_verify.txt
+matrix from = programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt
+claims from = programmes/p7_coevolution/exp066_competence_floor/exp066_within_tier_recount.txt
+
+INDEPENDENCE. This script was written without reading
+scripts/exp066_within_tier_recount.escript and shares no code with it. It
+takes exactly two things from the recount record as DATA: the tier seed
+lists, and the numbers to be checked. Every count below is recomputed from
+the persisted win-rate matrix. No genome loaded, no match replayed, no arm
+re-run, no matrix rebuilt.
+
+CONVENTIONS (from scripts/exp066_verify_crossplay.escript, the pre-existing
+independent verifier of the matrix record, NOT from the recount script):
+  margin(A,B)         = W(A,B) - W(B,A)
+  A beats B at band T = margin(A,B) > T          (strict)
+  edge decisive at T  = abs(margin(A,B)) > T      (strict)
+  ordered_exp057      = ordered (A,X,C), A < X, A =/= C, X =/= C,
+                        A beats X, X beats C, C beats A
+  unordered cycle     = triple whose three within-triple out-degrees are
+                        all 1 (a DIFFERENT algorithm from the two-orientation
+                        test the crossplay verifier uses)
+  cyclable triple     = all three of its edges decisive at the band
+
+champions parsed = 20, seeds 2001..2020
+bands            = [0.05,0.1,0.15], taken from the record, not chosen here
+tier seed lists taken as given:
+  kill        = [2001,2002,2003,2004,2005,2006,2008,2010,2012,2013,2017,2019,
+                 2020]
+  near parity = [2007,2009,2011,2014,2015,2018]
+  alone       = [2016]
+
+-- A. STRUCTURAL COUNTS --
+
+  13 champions in the kill tier, 6 in near parity, 1 alone.
+
+  kill seeds                                 mine [2001,2002,2003, claimed [2001,2002,2003, AGREES
+  kill champions                             mine 13               claimed 13               AGREES
+  kill pairs                                 mine 78               claimed 78               AGREES
+  kill unordered_triples                     mine 286              claimed 286              AGREES
+  kill ordered_candidates                    mine 858              claimed 858              AGREES
+  near_parity seeds                          mine [2007,2009,2011, claimed [2007,2009,2011, AGREES
+  near_parity champions                      mine 6                claimed 6                AGREES
+  near_parity pairs                          mine 15               claimed 15               AGREES
+  near_parity unordered_triples              mine 20               claimed 20               AGREES
+  near_parity ordered_candidates             mine 60               claimed 60               AGREES
+  full champions                             mine 20               claimed 20               AGREES
+  full pairs                                 mine 190              claimed 190              AGREES
+  full unordered_triples                     mine 1140             claimed 1140             AGREES
+  full ordered_candidates                    mine 3420             claimed 3420             AGREES
+
+-- B. FULL 20-CHAMPION MATRIX, against the crossplay record --
+
+This validates my parser and my conventions against numbers that were
+persisted before the recount existed. cyclable comes from the recount
+record's scale_matched block.
+
+  full 0.05 decisive_edges                   mine 169              claimed 169              AGREES
+  full 0.05 unordered_cycles                 mine 49               claimed 49               AGREES
+  full 0.05 ordered_exp057                   mine 73               claimed 73               AGREES
+  full 0.05 forward                          mine 24               claimed 24               AGREES
+  full 0.05 backward                         mine 25               claimed 25               AGREES
+  full 0.05 identity 2f+b=ordered            mine true             claimed true             AGREES
+  full 0.05 cyclable_triples                 mine 802              claimed 802              AGREES
+  full 0.10 decisive_edges                   mine 152              claimed 152              AGREES
+  full 0.10 unordered_cycles                 mine 18               claimed 18               AGREES
+  full 0.10 ordered_exp057                   mine 28               claimed 28               AGREES
+  full 0.10 forward                          mine 10               claimed 10               AGREES
+  full 0.10 backward                         mine 8                claimed 8                AGREES
+  full 0.10 identity 2f+b=ordered            mine true             claimed true             AGREES
+  full 0.10 cyclable_triples                 mine 604              claimed 604              AGREES
+  full 0.15 decisive_edges                   mine 141              claimed 141              AGREES
+  full 0.15 unordered_cycles                 mine 12               claimed 12               AGREES
+  full 0.15 ordered_exp057                   mine 18               claimed 18               AGREES
+  full 0.15 forward                          mine 6                claimed 6                AGREES
+  full 0.15 backward                         mine 6                claimed 6                AGREES
+  full 0.15 identity 2f+b=ordered            mine true             claimed true             AGREES
+  full 0.15 cyclable_triples                 mine 487              claimed 487              AGREES
+
+-- C. THE KILL TIER ALONE, against the recount record --
+
+  kill 0.05 decisive_edges                   mine 74               claimed 74               AGREES
+  kill 0.05 of_pairs                         mine 78               claimed 78               AGREES
+  kill 0.05 all_three_decisive_triples       mine 243              claimed 243              AGREES
+  kill 0.05 of_triples                       mine 286              claimed 286              AGREES
+  kill 0.05 unordered_cycles                 mine 8                claimed 8                AGREES
+  kill 0.05 ordered_exp057                   mine 10               claimed 10               AGREES
+  kill 0.05 forward                          mine 2                claimed 2                AGREES
+  kill 0.05 backward                         mine 6                claimed 6                AGREES
+  kill 0.05 identity 2f+b=ordered            mine true             claimed true             AGREES
+  kill 0.05 cycles=forward+backward          mine true             claimed true             AGREES
+  kill 0.10 decisive_edges                   mine 71               claimed 71               AGREES
+  kill 0.10 of_pairs                         mine 78               claimed 78               AGREES
+  kill 0.10 all_three_decisive_triples       mine 213              claimed 213              AGREES
+  kill 0.10 of_triples                       mine 286              claimed 286              AGREES
+  kill 0.10 unordered_cycles                 mine 4                claimed 4                AGREES
+  kill 0.10 ordered_exp057                   mine 4                claimed 4                AGREES
+  kill 0.10 forward                          mine 0                claimed 0                AGREES
+  kill 0.10 backward                         mine 4                claimed 4                AGREES
+  kill 0.10 identity 2f+b=ordered            mine true             claimed true             AGREES
+  kill 0.10 cycles=forward+backward          mine true             claimed true             AGREES
+  kill 0.15 decisive_edges                   mine 67               claimed 67               AGREES
+  kill 0.15 of_pairs                         mine 78               claimed 78               AGREES
+  kill 0.15 all_three_decisive_triples       mine 179              claimed 179              AGREES
+  kill 0.15 of_triples                       mine 286              claimed 286              AGREES
+  kill 0.15 unordered_cycles                 mine 4                claimed 4                AGREES
+  kill 0.15 ordered_exp057                   mine 4                claimed 4                AGREES
+  kill 0.15 forward                          mine 0                claimed 0                AGREES
+  kill 0.15 backward                         mine 4                claimed 4                AGREES
+  kill 0.15 identity 2f+b=ordered            mine true             claimed true             AGREES
+  kill 0.15 cycles=forward+backward          mine true             claimed true             AGREES
+
+-- D. THE NEAR_PARITY TIER ALONE, against the recount record --
+
+  near_parity 0.05 decisive_edges            mine 14               claimed 14               AGREES
+  near_parity 0.05 of_pairs                  mine 15               claimed 15               AGREES
+  near_parity 0.05 all_three_decisive_triple mine 16               claimed 16               AGREES
+  near_parity 0.05 of_triples                mine 20               claimed 20               AGREES
+  near_parity 0.05 unordered_cycles          mine 0                claimed 0                AGREES
+  near_parity 0.05 ordered_exp057            mine 0                claimed 0                AGREES
+  near_parity 0.05 forward                   mine 0                claimed 0                AGREES
+  near_parity 0.05 backward                  mine 0                claimed 0                AGREES
+  near_parity 0.05 identity 2f+b=ordered     mine true             claimed true             AGREES
+  near_parity 0.05 cycles=forward+backward   mine true             claimed true             AGREES
+  near_parity 0.10 decisive_edges            mine 12               claimed 12               AGREES
+  near_parity 0.10 of_pairs                  mine 15               claimed 15               AGREES
+  near_parity 0.10 all_three_decisive_triple mine 10               claimed 10               AGREES
+  near_parity 0.10 of_triples                mine 20               claimed 20               AGREES
+  near_parity 0.10 unordered_cycles          mine 0                claimed 0                AGREES
+  near_parity 0.10 ordered_exp057            mine 0                claimed 0                AGREES
+  near_parity 0.10 forward                   mine 0                claimed 0                AGREES
+  near_parity 0.10 backward                  mine 0                claimed 0                AGREES
+  near_parity 0.10 identity 2f+b=ordered     mine true             claimed true             AGREES
+  near_parity 0.10 cycles=forward+backward   mine true             claimed true             AGREES
+  near_parity 0.15 decisive_edges            mine 11               claimed 11               AGREES
+  near_parity 0.15 of_pairs                  mine 15               claimed 15               AGREES
+  near_parity 0.15 all_three_decisive_triple mine 8                claimed 8                AGREES
+  near_parity 0.15 of_triples                mine 20               claimed 20               AGREES
+  near_parity 0.15 unordered_cycles          mine 0                claimed 0                AGREES
+  near_parity 0.15 ordered_exp057            mine 0                claimed 0                AGREES
+  near_parity 0.15 forward                   mine 0                claimed 0                AGREES
+  near_parity 0.15 backward                  mine 0                claimed 0                AGREES
+  near_parity 0.15 identity 2f+b=ordered     mine true             claimed true             AGREES
+  near_parity 0.15 cycles=forward+backward   mine true             claimed true             AGREES
+
+-- E. THE ORIENTATION NULL'S CLOSED FORM, NO RNG NEEDED --
+
+Under the null the decisive set is fixed and each decisive edge's
+direction is a fair coin, so a cyclable triple is cyclic with
+probability 2/8 and contributes 2*P(fwd)+1*P(bwd) = 3/8 to the ordered
+count. Hence E[cycles] = C/4 and E[ordered] = 3C/8 with C the number of
+cyclable triples. Two triples share at most one edge, and conditioning
+on that edge's direction leaves each triple cyclic with probability 1/4
+either way, so the cycle indicators are pairwise uncorrelated and
+sd[cycles] = sqrt(3C/16) exactly.
+
+  kill 0.05 closed form E[cycles]=C/4        mine 60.75            claimed 60.75            AGREES
+  kill 0.05 closed form E[ordered]=3C/8      mine 91.125           claimed 91.125           AGREES
+    exact null sd[cycles] = sqrt(3C/16) = 6.7500 ; the recount's simulated
+    median 62.0 lies 1.2500 counts = 0.185 sd above the closed form; its ordered
+    median 93.0 lies 1.8750 counts above 3C/8
+  kill 0.10 closed form E[cycles]=C/4        mine 53.25            claimed 53.25            AGREES
+  kill 0.10 closed form E[ordered]=3C/8      mine 79.875           claimed 79.875           AGREES
+    exact null sd[cycles] = sqrt(3C/16) = 6.3196 ; the recount's simulated
+    median 54.0 lies 0.7500 counts = 0.119 sd above the closed form; its ordered
+    median 81.0 lies 1.1250 counts above 3C/8
+  kill 0.15 closed form E[cycles]=C/4        mine 44.75            claimed 44.75            AGREES
+  kill 0.15 closed form E[ordered]=3C/8      mine 67.125           claimed 67.125           AGREES
+    exact null sd[cycles] = sqrt(3C/16) = 5.7933 ; the recount's simulated
+    median 45.0 lies 0.2500 counts = 0.043 sd above the closed form; its ordered
+    median 68.0 lies 0.8750 counts above 3C/8
+  near_parity 0.05 closed form E[cycles]=C/4 mine 4.0              claimed 4.0              AGREES
+  near_parity 0.05 closed form E[ordered]=3C mine 6.0              claimed 6.0              AGREES
+    exact null sd[cycles] = sqrt(3C/16) = 1.7321 ; the recount's simulated
+    median 4.0 lies 0.0000 counts = 0.000 sd above the closed form; its ordered
+    median 6.0 lies 0.0000 counts above 3C/8
+  near_parity 0.10 closed form E[cycles]=C/4 mine 2.5              claimed 2.5              AGREES
+  near_parity 0.10 closed form E[ordered]=3C mine 3.75             claimed 3.75             AGREES
+    exact null sd[cycles] = sqrt(3C/16) = 1.3693 ; the recount's simulated
+    median 3.0 lies 0.5000 counts = 0.365 sd above the closed form; its ordered
+    median 4.0 lies 0.2500 counts above 3C/8
+  near_parity 0.15 closed form E[cycles]=C/4 mine 2.0              claimed 2.0              AGREES
+  near_parity 0.15 closed form E[ordered]=3C mine 3.0              claimed 3.0              AGREES
+    exact null sd[cycles] = sqrt(3C/16) = 1.2247 ; the recount's simulated
+    median 2.0 lies 0.0000 counts = 0.000 sd above the closed form; its ordered
+    median 3.0 lies 0.0000 counts above 3C/8
+
+-- F. MY OWN ORIENTATION NULL (NEW, POST HOC, secondary) --
+
+This is NOT the recount's null re-run; it is a fresh independent draw
+of the same model, to see whether the recount's median is where a
+median of that model belongs. One fair coin per pair keeps or swaps
+that pair's two win rates, which flips the sign of the edge's margin
+and leaves abs(margin) bit for bit, so the decisive set is invariant by
+construction. Cycles per draw counted as forward+backward and ordered as
+2*forward+backward; both identities are checked directly on the observed
+data in sections B, C and D.
+  rng = rand exsss, seed state {771,5397,10023}, draws 2000 (median also reported over the
+  first 200 draws of the same stream for a like-for-like count)
+
+  kill 0.05  my null cycles  median 61.0 range {34,77} (2000 draws)
+            my null cycles  median 61.0 range {45,75} (first 200 draws)
+            my null ordered median 91.5 range {45,136} (2000 draws)
+            closed form 60.7500 | recount's median 62.0 range {37,75}
+            my null cycles  mean 60.5840 vs closed form 60.7500
+            my null cycles  sd 6.7275 vs exact sqrt(3C/16) 6.7500
+            observed 8 vs my null minimum 34 over 2000 draws: below every draw
+  kill 0.10  my null cycles  median 54.0 range {30,70} (2000 draws)
+            my null cycles  median 54.0 range {38,67} (first 200 draws)
+            my null ordered median 80.0 range {41,122} (2000 draws)
+            closed form 53.2500 | recount's median 54.0 range {28,67}
+            my null cycles  mean 53.1530 vs closed form 53.2500
+            my null cycles  sd 6.2440 vs exact sqrt(3C/16) 6.3196
+            observed 4 vs my null minimum 30 over 2000 draws: below every draw
+  kill 0.15  my null cycles  median 45.0 range {19,60} (2000 draws)
+            my null cycles  median 46.0 range {31,59} (first 200 draws)
+            my null ordered median 67.0 range {28,101} (2000 draws)
+            closed form 44.7500 | recount's median 45.0 range {26,57}
+            my null cycles  mean 44.5630 vs closed form 44.7500
+            my null cycles  sd 5.7559 vs exact sqrt(3C/16) 5.7933
+            observed 4 vs my null minimum 19 over 2000 draws: below every draw
+
+-- G. BOUNDARY DECOMPOSITION OF THE FULL-MATRIX CYCLES --
+
+Every cyclic triple of the 20-champion matrix, classified by the tiers
+of its three members. Cycle identity is compared as a SET of seeds, so
+the record's rotation order does not matter.
+
+  full 0.05 cycles_total                     mine 49               claimed 49               AGREES
+  full 0.05 cycle seed-sets equal record's   mine true             claimed true             AGREES
+    cycles I have that the record lacks: []
+    cycles the record has that I lack  : []
+  full 0.05 distinct cycles in record        mine 49               claimed 49               AGREES
+  full 0.05 all_kill                         mine 8                claimed 8                AGREES
+  full 0.05 all_near                         mine 0                claimed 0                AGREES
+  full 0.05 spans                            mine 41               claimed 41               AGREES
+  full 0.05 signatures                       mine [{{1,2,0},15},{{ claimed [{{1,2,0},15},{{ AGREES
+  full 0.05 cycles containing the alone seed mine 0                claimed 0                AGREES
+  full 0.05 all_kill = kill-tier submatrix c mine 8                claimed 8                AGREES
+  full 0.05 all_near = near-tier submatrix c mine 0                claimed 0                AGREES
+  full 0.05 record's per-cycle tier labels   mine true             claimed true             AGREES
+  full 0.10 cycles_total                     mine 18               claimed 18               AGREES
+  full 0.10 cycle seed-sets equal record's   mine true             claimed true             AGREES
+    cycles I have that the record lacks: []
+    cycles the record has that I lack  : []
+  full 0.10 distinct cycles in record        mine 18               claimed 18               AGREES
+  full 0.10 all_kill                         mine 4                claimed 4                AGREES
+  full 0.10 all_near                         mine 0                claimed 0                AGREES
+  full 0.10 spans                            mine 14               claimed 14               AGREES
+  full 0.10 signatures                       mine [{{1,2,0},4},{{2 claimed [{{1,2,0},4},{{2 AGREES
+  full 0.10 cycles containing the alone seed mine 0                claimed 0                AGREES
+  full 0.10 all_kill = kill-tier submatrix c mine 4                claimed 4                AGREES
+  full 0.10 all_near = near-tier submatrix c mine 0                claimed 0                AGREES
+  full 0.10 record's per-cycle tier labels   mine true             claimed true             AGREES
+  full 0.15 cycles_total                     mine 12               claimed 12               AGREES
+  full 0.15 cycle seed-sets equal record's   mine true             claimed true             AGREES
+    cycles I have that the record lacks: []
+    cycles the record has that I lack  : []
+  full 0.15 distinct cycles in record        mine 12               claimed 12               AGREES
+  full 0.15 all_kill                         mine 4                claimed 4                AGREES
+  full 0.15 all_near                         mine 0                claimed 0                AGREES
+  full 0.15 spans                            mine 8                claimed 8                AGREES
+  full 0.15 signatures                       mine [{{1,2,0},2},{{2 claimed [{{1,2,0},2},{{2 AGREES
+  full 0.15 cycles containing the alone seed mine 0                claimed 0                AGREES
+  full 0.15 all_kill = kill-tier submatrix c mine 4                claimed 4                AGREES
+  full 0.15 all_near = near-tier submatrix c mine 0                claimed 0                AGREES
+  full 0.15 record's per-cycle tier labels   mine true             claimed true             AGREES
+
+-- H. SCALE-MATCHED SHARES, cycles / cyclable triples --
+
+  full 0.05 scale cycles                     mine 49               claimed 49               AGREES
+  full 0.05 scale cyclable                   mine 802              claimed 802              AGREES
+  full 0.05 scale triples                    mine 1140             claimed 1140             AGREES
+  full 0.05 share of cyclable                mine 0.06109725685785 claimed 0.06109725685785 AGREES
+  kill 0.05 scale cycles                     mine 8                claimed 8                AGREES
+  kill 0.05 scale cyclable                   mine 243              claimed 243              AGREES
+  kill 0.05 scale triples                    mine 286              claimed 286              AGREES
+  kill 0.05 share of cyclable                mine 0.03292181069958 claimed 0.03292181069958 AGREES
+  near_parity 0.05 scale cycles              mine 0                claimed 0                AGREES
+  near_parity 0.05 scale cyclable            mine 16               claimed 16               AGREES
+  near_parity 0.05 scale triples             mine 20               claimed 20               AGREES
+  near_parity 0.05 share of cyclable         mine 0.0              claimed 0.0              AGREES
+  full 0.10 scale cycles                     mine 18               claimed 18               AGREES
+  full 0.10 scale cyclable                   mine 604              claimed 604              AGREES
+  full 0.10 scale triples                    mine 1140             claimed 1140             AGREES
+  full 0.10 share of cyclable                mine 0.02980132450331 claimed 0.02980132450331 AGREES
+  kill 0.10 scale cycles                     mine 4                claimed 4                AGREES
+  kill 0.10 scale cyclable                   mine 213              claimed 213              AGREES
+  kill 0.10 scale triples                    mine 286              claimed 286              AGREES
+  kill 0.10 share of cyclable                mine 0.01877934272300 claimed 0.01877934272300 AGREES
+  near_parity 0.10 scale cycles              mine 0                claimed 0                AGREES
+  near_parity 0.10 scale cyclable            mine 10               claimed 10               AGREES
+  near_parity 0.10 scale triples             mine 20               claimed 20               AGREES
+  near_parity 0.10 share of cyclable         mine 0.0              claimed 0.0              AGREES
+  full 0.15 scale cycles                     mine 12               claimed 12               AGREES
+  full 0.15 scale cyclable                   mine 487              claimed 487              AGREES
+  full 0.15 scale triples                    mine 1140             claimed 1140             AGREES
+  full 0.15 share of cyclable                mine 0.02464065708418 claimed 0.02464065708418 AGREES
+  kill 0.15 scale cycles                     mine 4                claimed 4                AGREES
+  kill 0.15 scale cyclable                   mine 179              claimed 179              AGREES
+  kill 0.15 scale triples                    mine 286              claimed 286              AGREES
+  kill 0.15 share of cyclable                mine 0.02234636871508 claimed 0.02234636871508 AGREES
+  near_parity 0.15 scale cycles              mine 0                claimed 0                AGREES
+  near_parity 0.15 scale cyclable            mine 8                claimed 8                AGREES
+  near_parity 0.15 scale triples             mine 20               claimed 20               AGREES
+  near_parity 0.15 share of cyclable         mine 0.0              claimed 0.0              AGREES
+
+-- I. WITHIN-TIER SPEARMAN, held-out W against cross-play row mean --
+
+Held-out W per seed is the 4-decimal print in the recount record's tier
+table. Row mean excludes the diagonal. Average ranks for ties, then
+Pearson on the ranks.
+
+  full rho (full-matrix row mean, 4dp)       mine -0.1451          claimed -0.1451          AGREES
+  kill rho (submatrix row mean)              mine 0.40006613209931 claimed 0.40006613209931 AGREES
+  kill rho (full-matrix row mean)            mine 0.42524511943424 claimed 0.42524511943424 AGREES
+  near_parity rho (submatrix row mean)       mine 0.02898855178262 claimed 0.02898855178262 AGREES
+  near_parity rho (full-matrix row mean)     mine -0.3478626213914 claimed -0.3478626213914 AGREES
+
+-- J. BAND BOUNDARY DISCLOSURE AND SENSITIVITY (NEW, POST HOC) --
+
+The margin step is 0.0125 and every band is an exact multiple of it, so
+an edge can land exactly ON a band, where > and >= disagree. Counted,
+not assumed. The record's convention is strict >, which is what every
+AGREES row above uses; it is documented in the crossplay verifier's code
+and NOT in either record's prose. No band is moved anywhere in this file:
+the ge column below is the same bands read inclusively.
+
+  set/band  on-band pairs (exact float equality in brackets)
+            decisive  gt -> ge | cycles gt -> ge | ordered gt -> ge
+
+  full         0.05  on-band 3 [{2002,2014},{2011,2020},{2013,2015}] [exact 0]
+                   decisive 169 -> 169 | cycles 49 -> 49 | ordered 73 -> 73
+  full         0.10  on-band 2 [{2005,2008},{2011,2018}] [exact 0]
+                   decisive 152 -> 152 | cycles 18 -> 18 | ordered 28 -> 28
+  full         0.15  on-band 2 [{2001,2004},{2008,2019}] [exact 0]
+                   decisive 141 -> 141 | cycles 12 -> 12 | ordered 18 -> 18
+  kill         0.05  on-band 0 [] [exact 0]
+                   decisive 74 -> 74 | cycles 8 -> 8 | ordered 10 -> 10
+  kill         0.10  on-band 1 [{2005,2008}] [exact 0]
+                   decisive 71 -> 71 | cycles 4 -> 4 | ordered 4 -> 4
+  kill         0.15  on-band 2 [{2001,2004},{2008,2019}] [exact 0]
+                   decisive 67 -> 67 | cycles 4 -> 4 | ordered 4 -> 4
+  near_parity  0.05  on-band 0 [] [exact 0]
+                   decisive 14 -> 14 | cycles 0 -> 0 | ordered 0 -> 0
+  near_parity  0.10  on-band 1 [{2011,2018}] [exact 0]
+                   decisive 12 -> 12 | cycles 0 -> 0 | ordered 0 -> 0
+  near_parity  0.15  on-band 0 [] [exact 0]
+                   decisive 11 -> 11 | cycles 0 -> 0 | ordered 0 -> 0
+
+-- K. THE SAME RECOUNT IN EXACT ARITHMETIC (NEW, POST HOC) --
+
+Section J found pairs whose margin is mathematically ON a band. In IEEE
+doubles those margins come out a few times 1.0e-17 ABOVE the band, so
+strict > calls them decisive. On the exact grid strict > does not. Same
+definition, same bands, no threshold moved: win rates are integers out
+of 160 matches, bands are 8, 16 and 24 out of 160, and the comparison is
+still strict >. Only the binary rounding error is gone.
+  worst distance of any cell from its integer numerator over 160 = 0.0
+
+  full         0.05
+    float [decisive 169, cyclable 802, cycles 49, ordered 73, forward 24, backward 25]
+    exact [decisive 168, cyclable 789, cycles 49, ordered 73, forward 24, backward 25]
+    keys that change ......... [decisive,cyclable]
+    on-band pairs, abs(margin) = the band EXACTLY on the 160 grid:
+      {2002,2014}  abs int margin 8/160 vs band 8/160, float abs margin
+        0.05000000000000004441, float strict > band = true, exact strict > band = false
+      {2011,2020}  abs int margin 8/160 vs band 8/160, float abs margin
+        0.04999999999999998890, float strict > band = false, exact strict > band = false
+      {2013,2015}  abs int margin 8/160 vs band 8/160, float abs margin
+        0.04999999999999993339, float strict > band = false, exact strict > band = false
+    closed form E[cycles] = C/4 ... float 200.5000  exact 197.2500
+    share cycles/cyclable ........ float 0.061097  exact 0.062104
+  full         0.10
+    float [decisive 152, cyclable 604, cycles 18, ordered 28, forward 10, backward 8]
+    exact [decisive 150, cyclable 582, cycles 18, ordered 28, forward 10, backward 8]
+    keys that change ......... [decisive,cyclable]
+    on-band pairs, abs(margin) = the band EXACTLY on the 160 grid:
+      {2005,2008}  abs int margin 16/160 vs band 16/160, float abs margin
+        0.10000000000000003331, float strict > band = true, exact strict > band = false
+      {2011,2018}  abs int margin 16/160 vs band 16/160, float abs margin
+        0.10000000000000003331, float strict > band = true, exact strict > band = false
+    closed form E[cycles] = C/4 ... float 151.0000  exact 145.5000
+    share cycles/cyclable ........ float 0.029801  exact 0.030928
+  full         0.15
+    float [decisive 141, cyclable 487, cycles 12, ordered 18, forward 6, backward 6]
+    exact [decisive 141, cyclable 487, cycles 12, ordered 18, forward 6, backward 6]
+    keys that change ......... []
+    on-band pairs, abs(margin) = the band EXACTLY on the 160 grid:
+      {2001,2004}  abs int margin 24/160 vs band 24/160, float abs margin
+        0.14999999999999996669, float strict > band = false, exact strict > band = false
+      {2008,2019}  abs int margin 24/160 vs band 24/160, float abs margin
+        0.14999999999999996669, float strict > band = false, exact strict > band = false
+    closed form E[cycles] = C/4 ... float 121.7500  exact 121.7500
+    share cycles/cyclable ........ float 0.024641  exact 0.024641
+  kill         0.05
+    float [decisive 74, cyclable 243, cycles 8, ordered 10, forward 2, backward 6]
+    exact [decisive 74, cyclable 243, cycles 8, ordered 10, forward 2, backward 6]
+    keys that change ......... []
+    on-band pairs, abs(margin) = the band EXACTLY on the 160 grid:
+      none
+    closed form E[cycles] = C/4 ... float 60.7500  exact 60.7500
+    share cycles/cyclable ........ float 0.032922  exact 0.032922
+  kill         0.10
+    float [decisive 71, cyclable 213, cycles 4, ordered 4, forward 0, backward 4]
+    exact [decisive 70, cyclable 204, cycles 4, ordered 4, forward 0, backward 4]
+    keys that change ......... [decisive,cyclable]
+    on-band pairs, abs(margin) = the band EXACTLY on the 160 grid:
+      {2005,2008}  abs int margin 16/160 vs band 16/160, float abs margin
+        0.10000000000000003331, float strict > band = true, exact strict > band = false
+    closed form E[cycles] = C/4 ... float 53.2500  exact 51.0000
+    share cycles/cyclable ........ float 0.018779  exact 0.019608
+  kill         0.15
+    float [decisive 67, cyclable 179, cycles 4, ordered 4, forward 0, backward 4]
+    exact [decisive 67, cyclable 179, cycles 4, ordered 4, forward 0, backward 4]
+    keys that change ......... []
+    on-band pairs, abs(margin) = the band EXACTLY on the 160 grid:
+      {2001,2004}  abs int margin 24/160 vs band 24/160, float abs margin
+        0.14999999999999996669, float strict > band = false, exact strict > band = false
+      {2008,2019}  abs int margin 24/160 vs band 24/160, float abs margin
+        0.14999999999999996669, float strict > band = false, exact strict > band = false
+    closed form E[cycles] = C/4 ... float 44.7500  exact 44.7500
+    share cycles/cyclable ........ float 0.022346  exact 0.022346
+  near_parity  0.05
+    float [decisive 14, cyclable 16, cycles 0, ordered 0, forward 0, backward 0]
+    exact [decisive 14, cyclable 16, cycles 0, ordered 0, forward 0, backward 0]
+    keys that change ......... []
+    on-band pairs, abs(margin) = the band EXACTLY on the 160 grid:
+      none
+    closed form E[cycles] = C/4 ... float 4.0000  exact 4.0000
+    share cycles/cyclable ........ float 0.000000  exact 0.000000
+  near_parity  0.10
+    float [decisive 12, cyclable 10, cycles 0, ordered 0, forward 0, backward 0]
+    exact [decisive 11, cyclable 8, cycles 0, ordered 0, forward 0, backward 0]
+    keys that change ......... [decisive,cyclable]
+    on-band pairs, abs(margin) = the band EXACTLY on the 160 grid:
+      {2011,2018}  abs int margin 16/160 vs band 16/160, float abs margin
+        0.10000000000000003331, float strict > band = true, exact strict > band = false
+    closed form E[cycles] = C/4 ... float 2.5000  exact 2.0000
+    share cycles/cyclable ........ float 0.000000  exact 0.000000
+  near_parity  0.15
+    float [decisive 11, cyclable 8, cycles 0, ordered 0, forward 0, backward 0]
+    exact [decisive 11, cyclable 8, cycles 0, ordered 0, forward 0, backward 0]
+    keys that change ......... []
+    on-band pairs, abs(margin) = the band EXACTLY on the 160 grid:
+      none
+    closed form E[cycles] = C/4 ... float 2.0000  exact 2.0000
+    share cycles/cyclable ........ float 0.000000  exact 0.000000
+
+-- VERDICT --
+
+numbers compared = 181
+AGREES           = 181
+DISAGREES        = 0
+disagreeing tags = []
+
+Every number the recount record states for the kill mode tier, and every
+number it states around them, is reproduced by code that shares nothing with
+the script that produced them. As a recount of the persisted matrix under the
+counter's own conventions it is sound. What it does NOT do is turn an
+exploratory unregistered probe into a signed result, and this verification
+does not either.
+
+SEPARATELY, and NOT a disagreement with the recount: 8 counts change
+when the same rule and the same bands are applied in exact arithmetic
+instead of IEEE doubles (section K). Format {set,band,key,float,exact}:
+  {full,0.05,decisive,169,168}
+  {full,0.05,cyclable,802,789}
+  {full,0.1,decisive,152,150}
+  {full,0.1,cyclable,604,582}
+  {kill,0.1,decisive,71,70}
+  {kill,0.1,cyclable,213,204}
+  {near_parity,0.1,decisive,12,11}
+  {near_parity,0.1,cyclable,10,8}
+
+No cycle count, ordered count, forward or backward count, cycle seed
+set, boundary signature or rho is among them, so no reading of the
+recount changes. The cause is in the counter both scripts inherit, not
+in the recount.
+
+== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) ==
+{within_tier_verification,[{date,[50,48,50,54,45,48,55,45,51,48]},{status,[69,88,80,76,79,82,65,84,79,82,89,32,86,69,82,73,70,73,67,65,84,73,79,78,44,32,80,79,83,84,32,72,79,67,44,32,78,79,84,32,80,82,69,45,82,69,71,73,83,84,69,82,69,68,44,32,83,73,71,78,83,32,78,79,84,72,73,78,71]},{engine_pin,[97,53,101,56,98,99,102,99,53,54,52,54,56,50,55,101,57,98,101,52,57,97,57,54,50,57,102,56,97,54,97,57,54,55,56,99,56,49,52,98]},{produced_by,[115,99,114,105,112,116,115,47,101,120,112,48,54,54,95,118,101,114,105,102,121,95,119,105,116,104,105,110,95,116,105,101,114,46,101,115,99,114,105,112,116]},{shares_code_with_recount_script,false},{no_genome_loaded,true},{no_match_replayed,true},{no_arm_re_run,true},{rng,[{alg,exsss},{state_from,{771,5397,10023}},{draws,2000}]},{bands,[0.05,0.1,0.15]},{recounted,[{full,[{at_band,0.05,[{ordered,73},{decisive,169},{forward,24},{backward,25},{cyclable,802},{champions,20},{pairs,190},{triples,1140},{ordered_candidates,3420},{ties,3},{exact_ties,0},{cycles,49},{identity,true},{cycles_eq_fb,true}]},{at_band,0.1,[{ordered,28},{decisive,152},{forward,10},{backward,8},{cyclable,604},{champions,20},{pairs,190},{triples,1140},{ordered_candidates,3420},{ties,2},{exact_ties,0},{cycles,18},{identity,true},{cycles_eq_fb,true}]},{at_band,0.15,[{ordered,18},{decisive,141},{forward,6},{backward,6},{cyclable,487},{champions,20},{pairs,190},{triples,1140},{ordered_candidates,3420},{ties,2},{exact_ties,0},{cycles,12},{identity,true},{cycles_eq_fb,true}]}]},{kill,[{at_band,0.05,[{ordered,10},{decisive,74},{forward,2},{backward,6},{cyclable,243},{champions,13},{pairs,78},{triples,286},{ordered_candidates,858},{ties,0},{exact_ties,0},{cycles,8},{identity,true},{cycles_eq_fb,true}]},{at_band,0.1,[{ordered,4},{decisive,71},{forward,0},{backward,4},{cyclable,213},{champions,13},{pairs,78},{triples,286},{ordered_candidates,858},{ties,1},{exact_ties,0},{cycles,4},{identity,true},{cycles_eq_fb,true}]},{at_band,0.15,[{ordered,4},{decisive,67},{forward,0},{backward,4},{cyclable,179},{champions,13},{pairs,78},{triples,286},{ordered_candidates,858},{ties,2},{exact_ties,0},{cycles,4},{identity,true},{cycles_eq_fb,true}]}]},{near_parity,[{at_band,0.05,[{ordered,0},{decisive,14},{forward,0},{backward,0},{cyclable,16},{champions,6},{pairs,15},{triples,20},{ordered_candidates,60},{ties,0},{exact_ties,0},{cycles,0},{identity,true},{cycles_eq_fb,true}]},{at_band,0.1,[{ordered,0},{decisive,12},{forward,0},{backward,0},{cyclable,10},{champions,6},{pairs,15},{triples,20},{ordered_candidates,60},{ties,1},{exact_ties,0},{cycles,0},{identity,true},{cycles_eq_fb,true}]},{at_band,0.15,[{ordered,0},{decisive,11},{forward,0},{backward,0},{cyclable,8},{champions,6},{pairs,15},{triples,20},{ordered_candidates,60},{ties,0},{exact_ties,0},{cycles,0},{identity,true},{cycles_eq_fb,true}]}]}]},{comparisons,[{181,agrees,181},{disagrees,[]}]},{all_agree,true},{float_vs_exact_arithmetic,[{note,[115,97,109,101,32,115,116,114,105,99,116,32,62,32,114,117,108,101,44,32,115,97,109,101,32,98,97,110,100,115,44,32,97,114,105,116,104,109,101,116,105,99,32,111,110,32,116,104,101,32,49,54,48,32,103,114,105,100]},{differing,[{full,0.05,decisive,169,168},{full,0.05,cyclable,802,789},{full,0.1,decisive,152,150},{full,0.1,cyclable,604,582},{kill,0.1,decisive,71,70},{kill,0.1,cyclable,213,204},{near_parity,0.1,decisive,12,11},{near_parity,0.1,cyclable,10,8}]}]}]}.

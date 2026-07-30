@@ -1,0 +1,450 @@
+== EXP-066 cross-play: WITHIN-TIER RECOUNT ==
+
+date        = 2026-07-30
+status      = EXPLORATORY, POST HOC, NOT PRE-REGISTERED, SIGNS NOTHING
+engine_pin  = a5e8bcfc5646827e9be49a9629f8a6a9678c814b
+produced_by = scripts/exp066_within_tier_recount.escript
+written_to  = /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_within_tier_recount.txt
+reads       = /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt
+              /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_floor_feed.txt
+              /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_two_attractors_probe.txt
+champions   = 20, arm S, seeds 2001..2020
+bands       = [0.05,0.1,0.15], FIXED, not swept and not tuned
+null draws  = 200
+rng         = rand exsss, seed 662 (the runner used 660, the null audit 661)
+no genome loaded, no match replayed, no arm re-run, no matrix rebuilt:
+this is a RECOUNT over the persisted win-rate matrix, plus two persisted
+columns used only to assign tiers.
+
+WHY. insights/066-note-crossplay-intransitivity-UNSIGNED.md reports 18
+cyclic triangles at band 0.10 over all 20 arm S champions and states, in
+its own honest-scope section, that the matrix MIXES TWO COMPETENCE TIERS,
+that a two-tier matrix can MANUFACTURE cycles at the tier boundary, and
+that the within-tier recount is NOT DONE and is the first computation
+owed. This is that recount. It signs nothing and it is not registered.
+
+-- B. SELF-CHECK: THE FULL 20-CHAMPION MATRIX AGAINST THE RECORD --
+
+champions parsed = 20, seeds 2001..2020
+compared against the counts stated in /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt
+
+band  {cycles,ordered,forward,backward,decisive}
+0.05  recounted = {49,73,24,25,169}
+      stated    = {49,73,24,25,169}   AGREE
+0.10  recounted = {18,28,10,8,152}
+      stated    = {18,28,10,8,152}   AGREE
+0.15  recounted = {12,18,6,6,141}
+      stated    = {12,18,6,6,141}   AGREE
+
+full-matrix Spearman rho (held-out W against floor bot, cross-play row
+mean over 19 opponents, average ranks for ties): recomputed -0.1451,
+stated -0.1451 in exp066_two_attractors_probe.txt section I   AGREE
+
+The rho line is reported, not gated. Only the count table gates.
+
+-- C. TIER ASSIGNMENT, MADE WITHOUT THE CROSS-PLAY MATRIX --
+
+heldout_W = the 4-decimal print of the champion's held-out win rate
+against the floor bot (predictive_gun) over the 80 pre-registered starts,
+read from /home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_floor_feed.txt. wins_of_160 is that print times 160, rounded, shown so a
+reader can see the underlying fraction.
+
+tier rule (the insight's own): kill mode W >= 0.9375, near parity
+0.4188 =< W =< 0.6062, otherwise alone in the gap.
+
+p10_dist = tenth percentile of the pilot's perceived range to its latest
+contact, whole units, over the first 10 held-out starts, both seats, from
+/home/rl/work/github.com/rgfaber/faber-programmes/programmes/p7_coevolution/exp066_competence_floor/exp066_two_attractors_probe.txt section F. INDEPENDENT of cross-play and of the win rate.
+strafer = mean damage margin against circle_strafer over the 12 matches
+of that rung on the 6 TRAINING starts, same file section G. A TRAINING-SIDE
+quantity, not held out, reported as a secondary check only.
+
+seed  heldout_W  wins_of_160  tier         p10_dist  strafer  rule_tier    p10_tier
+2001     0.9750          156  kill            143.7     95.5  kill         kill        
+2002     0.9375          150  kill            145.7     92.5  kill         kill        
+2003     1.0000          160  kill            234.0     88.1  kill         kill        
+2004     0.9938          159  kill            152.9     93.3  kill         kill        
+2005     0.9938          159  kill            150.6     93.2  kill         kill        
+2006     0.9938          159  kill            149.7     92.2  kill         kill        
+2007     0.5813           93  near_parity      10.3     50.9  near_parity  near_parity 
+2008     0.9750          156  kill            148.0     96.1  kill         kill        
+2009     0.5750           92  near_parity       8.3     53.1  near_parity  near_parity 
+2010     0.9875          158  kill            178.4     91.8  kill         kill        
+2011     0.5375           86  near_parity       7.1     52.3  near_parity  near_parity 
+2012     1.0000          160  kill            153.2     93.5  kill         kill        
+2013     0.9750          156  kill            258.2     85.8  kill         kill        
+2014     0.5813           93  near_parity       6.2     46.5  near_parity  near_parity 
+2015     0.4188           67  near_parity      11.9     49.9  near_parity  near_parity 
+2016     0.8000          128  alone           115.8     72.2  alone        alone       
+2017     1.0000          160  kill            170.9     92.6  kill         kill        
+2018     0.6062           97  near_parity      13.3     58.9  near_parity  near_parity 
+2019     0.9812          157  kill            149.4     91.2  kill         kill        
+2020     0.9875          158  kill            159.6     81.7  kill         kill        
+
+tier sizes: kill 13, near_parity 6, alone 1
+kill mode   = [2001,2002,2003,2004,2005,2006,2008,2010,2012,2013,2017,2019,2020]
+near parity = [2007,2009,2011,2014,2015,2018]
+alone       = [2016]
+
+AGREEMENT, SEED BY SEED.
+  win-rate band rule vs the probe's operational rule (W>0.93 / W<0.62):
+    identical on all 20 seeds = true
+  win-rate band rule vs p10 nearest-median:
+    identical on all 20 seeds = true
+  seeds where they differ: []
+
+THRESHOLD-FREE FORM OF THE SAME CHECK. If the three groups' p10
+ranges are disjoint and ordered, then EVERY threshold pair in the two
+gaps reproduces the win-rate partition exactly, and no threshold has
+to be chosen at all.
+  p10_dist (held out, independent)
+    near parity {6.2,13.3}, alone {115.8,115.8}, kill mode {143.7,258.2}
+    disjoint and ordered = true, gaps 102.5 and 27.9
+  strafer margin (TRAINING side, secondary)
+    near parity {46.5,58.9}, alone {72.2,72.2}, kill mode {81.7,96.1}
+    disjoint and ordered = true, gaps 13.3 and 9.5
+
+WHICH ASSIGNMENTS THE RECOUNT RUNS UNDER:
+  win-rate tiers (primary)
+
+
+===========================================================================
+RECOUNT UNDER: win-rate tiers (primary)
+===========================================================================
+
+-- D. THE KILL MODE TIER ALONE --
+
+This is the tier the question is about: champions that all clear
+the floor bot.
+
+  *** THE NEXT SENTENCE, AS ORIGINALLY WRITTEN, IS REFUTED. It read:
+  "A cycle counted here is a cycle among peers of the same competence,
+  so it cannot be an artifact of mixing tiers." That does not follow.
+  An adversarial read (2026-07-30) found that EVERY all-kill cycle at
+  EVERY band contains seed 2003 or seed 2013, and those two are the
+  kill tier's LONG-STANDOFF behavioural outliers: mean standoff range
+  294.0 and 308.3 units against 182.7 to 214.6 for the other eleven,
+  p10 234.0 and 258.2 against 143.7 to 178.4 (see the tier table in
+  section C above, and exp066_policy_probe.txt section C). Removing
+  those two leaves 11 champions and ZERO cycles at all three bands.
+  Recomputed, gated and persisted at exp066_residue_and_inv0.txt
+  section B, with the internal check "contains neither = residue count"
+  AGREEing at every band.
+  So partitioning on COMPETENCE was not sufficient. The residue is the
+  same regime-boundary mechanism one level down, on the BEHAVIOURAL
+  axis, which is exactly what 066-note-crossplay-intransitivity-UNSIGNED.md
+  predicted in its item 4 and what this section claimed to have excluded. ***
+
+champions = 13, seeds [2001,2002,2003,2004,2005,2006,2008,2010,2012,2013,2017,2019,2020]
+candidates: pairs 78, unordered triples 286, ordered candidate tuples 858
+
+OBSERVED, and the ORIENTATION NULL over 200 draws (observed |margin| kept
+edge for edge, only the signs randomised, RNG seed 662). CLOSED FORM is
+(all-three-decisive triples)/4 for cycles and x3/8 for ordered tuples.
+
+band 0.05
+  OBSERVED    : cycles 8 | ordered 10 | forward 2 | backward 6 | 2f+b=ordered true
+                decisive edges 74 of 78 | all-three-decisive triples 243 of 286
+  ORIENTATION : cycles med 62.0 {37,75} | ordered med 93.0 {58,118} | decisive med 74.0
+  CLOSED FORM : cycles 60.75 | ordered 91.13
+band 0.10
+  OBSERVED    : cycles 4 | ordered 4 | forward 0 | backward 4 | 2f+b=ordered true
+                decisive edges 71 of 78 | all-three-decisive triples 213 of 286
+  ORIENTATION : cycles med 54.0 {28,67} | ordered med 81.0 {45,104} | decisive med 71.0
+  CLOSED FORM : cycles 53.25 | ordered 79.88
+band 0.15
+  OBSERVED    : cycles 4 | ordered 4 | forward 0 | backward 4 | 2f+b=ordered true
+                decisive edges 67 of 78 | all-three-decisive triples 179 of 286
+  ORIENTATION : cycles med 45.0 {26,57} | ordered med 68.0 {40,92} | decisive med 67.0
+  CLOSED FORM : cycles 44.75 | ordered 67.13
+
+-- E. THE NEAR-PARITY TIER ALONE --
+
+Six champions, so 20 unordered triples. TOO SMALL TO CARRY WEIGHT:
+a count out of 20 candidate triples cannot support a claim in
+either direction. Reported for completeness only.
+
+champions = 6, seeds [2007,2009,2011,2014,2015,2018]
+candidates: pairs 15, unordered triples 20, ordered candidate tuples 60
+
+OBSERVED, and the ORIENTATION NULL over 200 draws (observed |margin| kept
+edge for edge, only the signs randomised, RNG seed 662). CLOSED FORM is
+(all-three-decisive triples)/4 for cycles and x3/8 for ordered tuples.
+
+band 0.05
+  OBSERVED    : cycles 0 | ordered 0 | forward 0 | backward 0 | 2f+b=ordered true
+                decisive edges 14 of 15 | all-three-decisive triples 16 of 20
+  ORIENTATION : cycles med 4.0 {0,7} | ordered med 6.0 {0,14} | decisive med 14.0
+  CLOSED FORM : cycles 4.00 | ordered 6.00
+band 0.10
+  OBSERVED    : cycles 0 | ordered 0 | forward 0 | backward 0 | 2f+b=ordered true
+                decisive edges 12 of 15 | all-three-decisive triples 10 of 20
+  ORIENTATION : cycles med 3.0 {0,6} | ordered med 4.0 {0,9} | decisive med 12.0
+  CLOSED FORM : cycles 2.50 | ordered 3.75
+band 0.15
+  OBSERVED    : cycles 0 | ordered 0 | forward 0 | backward 0 | 2f+b=ordered true
+                decisive edges 11 of 15 | all-three-decisive triples 8 of 20
+  ORIENTATION : cycles med 2.0 {0,5} | ordered med 3.0 {0,9} | decisive med 11.0
+  CLOSED FORM : cycles 2.00 | ordered 3.00
+
+-- G. BOUNDARY DECOMPOSITION OF THE FULL-MATRIX CYCLES --
+
+Every true unordered cyclic triangle of the 20-champion matrix, with the
+tier of each member. all_kill = all three in the kill mode tier, all_near
+= all three in near parity, spans = anything else, which includes any
+triple containing the one seed that belongs to neither tier.
+
+band 0.05 : 49 cycles total | all_kill 8 | all_near 0 | spans 41
+  signatures {n_kill,n_near,n_alone} : [{{1,2,0},15},{{2,1,0},26},{{3,0,0},8}]
+  2001 -> 2002 -> 2009 -> 2001   [kill,kill,near_parity]   spans
+  2001 -> 2004 -> 2009 -> 2001   [kill,kill,near_parity]   spans
+  2001 -> 2004 -> 2014 -> 2001   [kill,kill,near_parity]   spans
+  2002 -> 2009 -> 2010 -> 2002   [kill,near_parity,kill]   spans
+  2002 -> 2009 -> 2011 -> 2002   [kill,near_parity,near_parity]   spans
+  2002 -> 2009 -> 2019 -> 2002   [kill,near_parity,kill]   spans
+  2003 -> 2004 -> 2009 -> 2003   [kill,kill,near_parity]   spans
+  2003 -> 2004 -> 2014 -> 2003   [kill,kill,near_parity]   spans
+  2003 -> 2006 -> 2009 -> 2003   [kill,kill,near_parity]   spans
+  2003 -> 2010 -> 2012 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2010 -> 2013 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2017 -> 2018 -> 2003   [kill,kill,near_parity]   spans
+  2004 -> 2009 -> 2010 -> 2004   [kill,near_parity,kill]   spans
+  2004 -> 2009 -> 2011 -> 2004   [kill,near_parity,near_parity]   spans
+  2004 -> 2009 -> 2019 -> 2004   [kill,near_parity,kill]   spans
+  2004 -> 2014 -> 2020 -> 2004   [kill,near_parity,kill]   spans
+  2006 -> 2009 -> 2010 -> 2006   [kill,near_parity,kill]   spans
+  2006 -> 2009 -> 2011 -> 2006   [kill,near_parity,near_parity]   spans
+  2007 -> 2017 -> 2018 -> 2007   [near_parity,kill,near_parity]   spans
+  2009 -> 2010 -> 2013 -> 2009   [near_parity,kill,kill]   spans
+  2009 -> 2010 -> 2017 -> 2009   [near_parity,kill,kill]   spans
+  2009 -> 2011 -> 2013 -> 2009   [near_parity,near_parity,kill]   spans
+  2009 -> 2011 -> 2017 -> 2009   [near_parity,near_parity,kill]   spans
+  2011 -> 2017 -> 2018 -> 2011   [near_parity,kill,near_parity]   spans
+  2001 -> 2013 -> 2003 -> 2001   [kill,kill,kill]   all_kill
+  2001 -> 2013 -> 2006 -> 2001   [kill,kill,kill]   all_kill
+  2001 -> 2013 -> 2009 -> 2001   [kill,kill,near_parity]   spans
+  2002 -> 2009 -> 2003 -> 2002   [kill,near_parity,kill]   spans
+  2002 -> 2009 -> 2005 -> 2002   [kill,near_parity,kill]   spans
+  2002 -> 2009 -> 2007 -> 2002   [kill,near_parity,near_parity]   spans
+  2003 -> 2017 -> 2009 -> 2003   [kill,kill,near_parity]   spans
+  2003 -> 2020 -> 2009 -> 2003   [kill,kill,near_parity]   spans
+  2003 -> 2017 -> 2012 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2020 -> 2012 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2017 -> 2013 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2020 -> 2013 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2017 -> 2014 -> 2003   [kill,kill,near_parity]   spans
+  2003 -> 2020 -> 2018 -> 2003   [kill,kill,near_parity]   spans
+  2004 -> 2009 -> 2007 -> 2004   [kill,near_parity,near_parity]   spans
+  2004 -> 2014 -> 2007 -> 2004   [kill,near_parity,near_parity]   spans
+  2004 -> 2014 -> 2010 -> 2004   [kill,near_parity,kill]   spans
+  2004 -> 2014 -> 2011 -> 2004   [kill,near_parity,near_parity]   spans
+  2004 -> 2014 -> 2013 -> 2004   [kill,near_parity,kill]   spans
+  2006 -> 2009 -> 2007 -> 2006   [kill,near_parity,near_parity]   spans
+  2007 -> 2017 -> 2009 -> 2007   [near_parity,kill,near_parity]   spans
+  2007 -> 2017 -> 2014 -> 2007   [near_parity,kill,near_parity]   spans
+  2010 -> 2017 -> 2014 -> 2010   [kill,kill,near_parity]   spans
+  2011 -> 2017 -> 2014 -> 2011   [near_parity,kill,near_parity]   spans
+  2014 -> 2020 -> 2017 -> 2014   [near_parity,kill,kill]   spans
+
+band 0.10 : 18 cycles total | all_kill 4 | all_near 0 | spans 14
+  signatures {n_kill,n_near,n_alone} : [{{1,2,0},4},{{2,1,0},10},{{3,0,0},4}]
+  2001 -> 2004 -> 2009 -> 2001   [kill,kill,near_parity]   spans
+  2001 -> 2004 -> 2014 -> 2001   [kill,kill,near_parity]   spans
+  2003 -> 2004 -> 2009 -> 2003   [kill,kill,near_parity]   spans
+  2003 -> 2004 -> 2014 -> 2003   [kill,kill,near_parity]   spans
+  2004 -> 2009 -> 2010 -> 2004   [kill,near_parity,kill]   spans
+  2004 -> 2009 -> 2011 -> 2004   [kill,near_parity,near_parity]   spans
+  2004 -> 2014 -> 2020 -> 2004   [kill,near_parity,kill]   spans
+  2009 -> 2010 -> 2013 -> 2009   [near_parity,kill,kill]   spans
+  2009 -> 2010 -> 2017 -> 2009   [near_parity,kill,kill]   spans
+  2009 -> 2011 -> 2017 -> 2009   [near_parity,near_parity,kill]   spans
+  2001 -> 2013 -> 2003 -> 2001   [kill,kill,kill]   all_kill
+  2001 -> 2013 -> 2006 -> 2001   [kill,kill,kill]   all_kill
+  2001 -> 2013 -> 2009 -> 2001   [kill,kill,near_parity]   spans
+  2003 -> 2020 -> 2012 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2020 -> 2013 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2020 -> 2018 -> 2003   [kill,kill,near_parity]   spans
+  2004 -> 2014 -> 2007 -> 2004   [kill,near_parity,near_parity]   spans
+  2004 -> 2014 -> 2011 -> 2004   [kill,near_parity,near_parity]   spans
+
+band 0.15 : 12 cycles total | all_kill 4 | all_near 0 | spans 8
+  signatures {n_kill,n_near,n_alone} : [{{1,2,0},2},{{2,1,0},6},{{3,0,0},4}]
+  2003 -> 2004 -> 2009 -> 2003   [kill,kill,near_parity]   spans
+  2004 -> 2009 -> 2010 -> 2004   [kill,near_parity,kill]   spans
+  2004 -> 2009 -> 2011 -> 2004   [kill,near_parity,near_parity]   spans
+  2009 -> 2010 -> 2013 -> 2009   [near_parity,kill,kill]   spans
+  2009 -> 2010 -> 2017 -> 2009   [near_parity,kill,kill]   spans
+  2009 -> 2011 -> 2017 -> 2009   [near_parity,near_parity,kill]   spans
+  2001 -> 2013 -> 2003 -> 2001   [kill,kill,kill]   all_kill
+  2001 -> 2013 -> 2006 -> 2001   [kill,kill,kill]   all_kill
+  2001 -> 2013 -> 2009 -> 2001   [kill,kill,near_parity]   spans
+  2003 -> 2020 -> 2012 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2020 -> 2013 -> 2003   [kill,kill,kill]   all_kill
+  2003 -> 2020 -> 2018 -> 2003   [kill,kill,near_parity]   spans
+
+CROSS-CHECK. The all_kill count above and the cycle count in section D
+are counted by different code over different index sets and must agree,
+because restricting to a tier preserves the seed ordering the counter's
+A < X convention reads.
+  band 0.05  all_kill 8 vs section D 8 AGREE | all_near 0 vs section E 0 AGREE
+  band 0.10  all_kill 4 vs section D 4 AGREE | all_near 0 vs section E 0 AGREE
+  band 0.15  all_kill 4 vs section D 4 AGREE | all_near 0 vs section E 0 AGREE
+
+-- SCALE-MATCHED COMPARISON --
+
+cyclable = triples with all three edges decisive at the band, the only
+triples that can be cyclic at all. share = cycles / cyclable. A random
+orientation of decisive edges gives 0.25 (2 of 8 assignments are cyclic).
+
+band  set          cycles  cyclable  triples  share   random
+0.05  full             49       802    1140   0.0611   0.2500
+0.05  kill              8       243     286   0.0329   0.2500
+0.05  near_parity       0        16      20   0.0000   0.2500
+0.10  full             18       604    1140   0.0298   0.2500
+0.10  kill              4       213     286   0.0188   0.2500
+0.10  near_parity       0        10      20   0.0000   0.2500
+0.15  full             12       487    1140   0.0246   0.2500
+0.15  kill              4       179     286   0.0223   0.2500
+0.15  near_parity       0         8      20   0.0000   0.2500
+
+-- H. WITHIN-TIER SPEARMAN, HELD-OUT W AGAINST CROSS-PLAY ROW MEAN --
+
+Average ranks for ties, then Pearson on the ranks, which is the
+convention exp066_two_attractors_probe.txt section I used for its
+full-matrix value of -0.1451 over all 20 champions.
+
+               n   rho (submatrix row mean)   rho (full-matrix row mean)
+kill mode     13                     0.4001                       0.4252
+near parity    6                     0.0290                      -0.3479
+
+
+-- READING --
+
+band 0.05. Of the 49 full-matrix cycles, 8 have all three members in the
+  kill mode tier, 0 in near parity, and 41 span the boundary. Cycles
+  containing the seed in neither tier: 0.
+  Kill mode tier alone: 8 cycles of 286 triples (243 cyclable), against a
+  tier-matched orientation null of median 62.0, range {37,75} over 200 draws,
+  closed form 60.75. The observed count is BELOW the lowest draw (37).
+  Near-parity tier alone: 0 cycles of 20 triples (16 cyclable), null
+  median 4.0 range {0,7}. The observed count is INSIDE the null range {0,7}.
+band 0.10. Of the 18 full-matrix cycles, 4 have all three members in the
+  kill mode tier, 0 in near parity, and 14 span the boundary. Cycles
+  containing the seed in neither tier: 0.
+  Kill mode tier alone: 4 cycles of 286 triples (213 cyclable), against a
+  tier-matched orientation null of median 54.0, range {28,67} over 200 draws,
+  closed form 53.25. The observed count is BELOW the lowest draw (28).
+  Near-parity tier alone: 0 cycles of 20 triples (10 cyclable), null
+  median 3.0 range {0,6}. The observed count is INSIDE the null range {0,6}.
+band 0.15. Of the 12 full-matrix cycles, 4 have all three members in the
+  kill mode tier, 0 in near parity, and 8 span the boundary. Cycles
+  containing the seed in neither tier: 0.
+  Kill mode tier alone: 4 cycles of 286 triples (179 cyclable), against a
+  tier-matched orientation null of median 45.0, range {26,57} over 200 draws,
+  closed form 44.75. The observed count is BELOW the lowest draw (26).
+  Near-parity tier alone: 0 cycles of 20 triples (8 cyclable), null
+  median 2.0 range {0,5}. The observed count is INSIDE the null range {0,5}.
+
+The within-tier count does NOT collapse to zero, and the majority of the
+full-matrix cycles DO span the tier boundary. Both halves of that are in
+the table above and neither cancels the other: the boundary produced most
+of the reported cycles, and a smaller number of cycles exists among
+champions of one competence tier.
+
+  *** SUPERSEDED, 2026-07-30, by four findings from two adversarial reads.
+  The paragraph above is arithmetically correct and independently
+  reproduced (181 of 181 numbers, exp066_within_tier_verify.txt), and its
+  READING does not survive. Corrections, in order of weight:
+
+  1. THE RESIDUE IS NOT AMONG PEERS. All 8 / 4 / 4 all-kill cycles contain
+     seed 2003 or 2013, the long-standoff regimes. Drop those two and the
+     count is 0 at every band, against 7.9 / 3.6 / 2.4 expected at the
+     full-matrix rate. See the boxed note in section D and
+     exp066_residue_and_inv0.txt section B.
+  2. THE BOUNDARY SHARE HAS NO BASELINE. 41 of 49, 14 of 18 and 8 of 12
+     spanning is 84 / 78 / 67 percent, but UNIFORM allocation over cyclable
+     triples already gives 67.7 / 63.1 / 61.6 percent (543 of 802, 381 of
+     604, 300 of 487). So "the boundary produced most of the cycles" is a
+     near-null effect at band 0.15 and modest at 0.05. It was reported as a
+     raw share against no reference, which is the same error the parent note
+     records against itself in its own null section.
+  3. HALF THE RESIDUE IS KNIFE-EDGE. At band 0.15 the cycles {2001,2003,2013}
+     and {2001,2006,2013} both have minimum absolute margin 0.15625, which
+     is 0.00625 above the band, half of one flipped match out of 30,400.
+     No margin-slack statistic was reported for any counted cycle; it should
+     have been.
+  4. THE RESIDUE IS NOT 4 INDEPENDENT STRUCTURES. At bands 0.10 and 0.15 all
+     four all-kill cycles hang on two pivot edges: (2001,2013) carries two
+     and (2003,2020) carries two. Flipping either edge removes half of them.
+
+  AND THE SENTENCE THAT FOLLOWED THIS BLOCK IS WITHDRAWN. It read: "What the
+  within-tier residue is NOT is evidence of cycling", supported only by the
+  observed count falling below the lowest of 200 orientation-null draws at
+  3 of 3 bands. That null keeps each observed absolute margin and randomises
+  signs, so it preserves NO strength structure and ANY matrix carrying a
+  dominance ordering falls far below it. It bears on the GLOBAL ordering, not
+  on whether particular triples are cyclic, so it cannot carry that sentence
+  in either direction. The record already says as much where it introduces
+  E_orient as "REPORTED as a reference, not used as a test"; the conclusion
+  then used it as a test anyway.
+
+  WHAT SURVIVES, stated at the weight the evidence supports: within one
+  competence tier the cyclic residue is small, it is confined to trios
+  containing a long-standoff champion, and it vanishes when the behavioural
+  outliers are removed. The residue tracks REGIME boundaries, not competence
+  boundaries. This remains EXPLORATORY, UNREGISTERED and signs nothing. ***
+
+  *** ONE COUNT IN THIS RECORD IS WRONG, AT BAND 0.10 ONLY, AND THE INTEGER
+  COUNTER IS AUTHORITATIVE. This record counts with a FLOAT band test. The
+  later exp066_residue_and_inv0.txt counts the same kill tier with an EXACT
+  INTEGER test (2K - M > B*M, where B*M is 8, 16 and 24 out of 160) and
+  disagrees at band 0.10 only:
+
+      quantity                  this record   integer counter
+      decisive edges of 78           71             70
+      all-three-decisive triples    213            204
+
+  Bands 0.05 and 0.15 agree exactly (74 / 243 and 67 / 179), and the CYCLE
+  counts agree at all three bands (8 / 4 / 4), so nothing above changes.
+  The cause is not in doubt and is a known hazard of the band test rather
+  than a disagreement about the data: every margin is a multiple of 1/160
+  and the band 0.10 is exactly 16/160, so one edge has a margin EXACTLY
+  equal to the band. Neither 0.0125 nor 0.1 is representable in IEEE
+  binary64, so a strict > against a float band can admit that edge; the
+  integer form cannot. A strict > on an exact-equality case can only err in
+  the direction of INCLUDING it, so the float count is the high one, which
+  is what is observed. Bands 0.05 and 0.15 are unaffected because no edge
+  sits exactly on either.
+
+  CONSEQUENCE FOR THE NEXT RUNG: count integers. The phase 1
+  pre-registration already specifies the exact-integer test for this reason.
+  This record is left as produced, with the correction stated, rather than
+  regenerated, because the disagreement is itself the evidence for the
+  rule. ***
+
+The near-parity tier is 6 champions and 20 triples. Its count is 0 at
+every band, and 0 is inside its own null's range at every band, so it
+establishes nothing in either direction and is reported only for
+completeness.
+
+
+-- WHAT THIS DOES AND DOES NOT ESTABLISH --
+
+This probe is exploratory and unregistered, exactly like the cross-play
+probe it recounts. Its counter, its bands and its null were all fixed by
+the note it answers, but the note itself was written after the arms ran,
+so nothing here is pre-registered and nothing here signs anything.
+
+The three bands are 0.05, 0.10 and 0.15. They were not swept, moved or
+chosen here. No threshold, definition, classifier or null in this file was
+adjusted after seeing a count.
+
+The tier assignment is the insight's own, over a measurement (held-out
+win rate against the floor bot) that is independent of the cross-play
+matrix, and it is cross-checked against a behavioural measurement that is
+also independent of it. It is NOT derived from the matrix being
+partitioned, which would be circular.
+
+
+== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) ==
+{within_tier_recount,[{date,[50,48,50,54,45,48,55,45,51,48]},{status,[69,88,80,76,79,82,65,84,79,82,89,44,32,80,79,83,84,32,72,79,67,44,32,78,79,84,32,80,82,69,45,82,69,71,73,83,84,69,82,69,68,44,32,83,73,71,78,83,32,78,79,84,72,73,78,71]},{engine_pin,[97,53,101,56,98,99,102,99,53,54,52,54,56,50,55,101,57,98,101,52,57,97,57,54,50,57,102,56,97,54,97,57,54,55,56,99,56,49,52,98]},{produced_by,[115,99,114,105,112,116,115,47,101,120,112,48,54,54,95,119,105,116,104,105,110,95,116,105,101,114,95,114,101,99,111,117,110,116,46,101,115,99,114,105,112,116]},{written_to,[47,104,111,109,101,47,114,108,47,119,111,114,107,47,103,105,116,104,117,98,46,99,111,109,47,114,103,102,97,98,101,114,47,102,97,98,101,114,45,112,114,111,103,114,97,109,109,101,115,47,112,114,111,103,114,97,109,109,101,115,47,112,55,95,99,111,101,118,111,108,117,116,105,111,110,47,101,120,112,48,54,54,95,99,111,109,112,101,116,101,110,99,101,95,102,108,111,111,114,47,101,120,112,48,54,54,95,119,105,116,104,105,110,95,116,105,101,114,95,114,101,99,111,117,110,116,46,116,120,116]},{reads,[[47,104,111,109,101,47,114,108,47,119,111,114,107,47,103,105,116,104,117,98,46,99,111,109,47,114,103,102,97,98,101,114,47,102,97,98,101,114,45,112,114,111,103,114,97,109,109,101,115,47,112,114,111,103,114,97,109,109,101,115,47,112,55,95,99,111,101,118,111,108,117,116,105,111,110,47,101,120,112,48,54,54,95,99,111,109,112,101,116,101,110,99,101,95,102,108,111,111,114,47,101,120,112,48,54,54,95,99,114,111,115,115,112,108,97,121,46,116,120,116],[47,104,111,109,101,47,114,108,47,119,111,114,107,47,103,105,116,104,117,98,46,99,111,109,47,114,103,102,97,98,101,114,47,102,97,98,101,114,45,112,114,111,103,114,97,109,109,101,115,47,112,114,111,103,114,97,109,109,101,115,47,112,55,95,99,111,101,118,111,108,117,116,105,111,110,47,101,120,112,48,54,54,95,99,111,109,112,101,116,101,110,99,101,95,102,108,111,111,114,47,101,120,112,48,54,54,95,102,108,111,111,114,95,102,101,101,100,46,116,120,116],[47,104,111,109,101,47,114,108,47,119,111,114,107,47,103,105,116,104,117,98,46,99,111,109,47,114,103,102,97,98,101,114,47,102,97,98,101,114,45,112,114,111,103,114,97,109,109,101,115,47,112,114,111,103,114,97,109,109,101,115,47,112,55,95,99,111,101,118,111,108,117,116,105,111,110,47,101,120,112,48,54,54,95,99,111,109,112,101,116,101,110,99,101,95,102,108,111,111,114,47,101,120,112,48,54,54,95,116,119,111,95,97,116,116,114,97,99,116,111,114,115,95,112,114,111,98,101,46,116,120,116]]},{no_genome_loaded,true},{no_match_replayed,true},{no_arm_re_run,true},{champions,20},{seeds,[2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020]},{bands,[0.05,0.1,0.15]},{null_draws,200},{rng,[{alg,exsss},{seed,662},{state_from,{662,4635,8609}}]},{selfcheck_full_matrix,[{at_band,0.05,[{recounted_cycles_ordered_forward_backward_decisive,{49,73,24,25,169}},{stated,{49,73,24,25,169}},{agree,true}]},{at_band,0.1,[{recounted_cycles_ordered_forward_backward_decisive,{18,28,10,8,152}},{stated,{18,28,10,8,152}},{agree,true}]},{at_band,0.15,[{recounted_cycles_ordered_forward_backward_decisive,{12,18,6,6,141}},{stated,{12,18,6,6,141}},{agree,true}]}]},{selfcheck_rho,[{recomputed,-0.14512674796007488},{stated,-0.1451},{agree,true}]},{tier_rule,[107,105,108,108,32,87,32,62,61,32,48,46,57,51,55,53,44,32,110,101,97,114,95,112,97,114,105,116,121,32,48,46,52,49,56,56,32,61,60,32,87,32,61,60,32,48,46,54,48,54,50,32,111,110,32,116,104,101,32,52,45,100,101,99,105,109,97,108,32,112,114,105,110,116,115,44,32,111,116,104,101,114,119,105,115,101,32,97,108,111,110,101]},{tier_table,[{seed,2001,[{heldout_w_print,0.975},{wins_of_160,156},{tier,kill},{p10_dist,143.7},{train_strafer_margin,95.5},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2002,[{heldout_w_print,0.9375},{wins_of_160,150},{tier,kill},{p10_dist,145.7},{train_strafer_margin,92.5},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2003,[{heldout_w_print,1.0},{wins_of_160,160},{tier,kill},{p10_dist,234.0},{train_strafer_margin,88.1},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2004,[{heldout_w_print,0.9938},{wins_of_160,159},{tier,kill},{p10_dist,152.9},{train_strafer_margin,93.3},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2005,[{heldout_w_print,0.9938},{wins_of_160,159},{tier,kill},{p10_dist,150.6},{train_strafer_margin,93.2},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2006,[{heldout_w_print,0.9938},{wins_of_160,159},{tier,kill},{p10_dist,149.7},{train_strafer_margin,92.2},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2007,[{heldout_w_print,0.5813},{wins_of_160,93},{tier,near_parity},{p10_dist,10.3},{train_strafer_margin,50.9},{tier_by_probe_rule,near_parity},{tier_by_p10_nearest_median,near_parity}]},{seed,2008,[{heldout_w_print,0.975},{wins_of_160,156},{tier,kill},{p10_dist,148.0},{train_strafer_margin,96.1},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2009,[{heldout_w_print,0.575},{wins_of_160,92},{tier,near_parity},{p10_dist,8.3},{train_strafer_margin,53.1},{tier_by_probe_rule,near_parity},{tier_by_p10_nearest_median,near_parity}]},{seed,2010,[{heldout_w_print,0.9875},{wins_of_160,158},{tier,kill},{p10_dist,178.4},{train_strafer_margin,91.8},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2011,[{heldout_w_print,0.5375},{wins_of_160,86},{tier,near_parity},{p10_dist,7.1},{train_strafer_margin,52.3},{tier_by_probe_rule,near_parity},{tier_by_p10_nearest_median,near_parity}]},{seed,2012,[{heldout_w_print,1.0},{wins_of_160,160},{tier,kill},{p10_dist,153.2},{train_strafer_margin,93.5},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2013,[{heldout_w_print,0.975},{wins_of_160,156},{tier,kill},{p10_dist,258.2},{train_strafer_margin,85.8},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2014,[{heldout_w_print,0.5813},{wins_of_160,93},{tier,near_parity},{p10_dist,6.2},{train_strafer_margin,46.5},{tier_by_probe_rule,near_parity},{tier_by_p10_nearest_median,near_parity}]},{seed,2015,[{heldout_w_print,0.4188},{wins_of_160,67},{tier,near_parity},{p10_dist,11.9},{train_strafer_margin,49.9},{tier_by_probe_rule,near_parity},{tier_by_p10_nearest_median,near_parity}]},{seed,2016,[{heldout_w_print,0.8},{wins_of_160,128},{tier,alone},{p10_dist,115.8},{train_strafer_margin,72.2},{tier_by_probe_rule,alone},{tier_by_p10_nearest_median,alone}]},{seed,2017,[{heldout_w_print,1.0},{wins_of_160,160},{tier,kill},{p10_dist,170.9},{train_strafer_margin,92.6},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2018,[{heldout_w_print,0.6062},{wins_of_160,97},{tier,near_parity},{p10_dist,13.3},{train_strafer_margin,58.9},{tier_by_probe_rule,near_parity},{tier_by_p10_nearest_median,near_parity}]},{seed,2019,[{heldout_w_print,0.9812},{wins_of_160,157},{tier,kill},{p10_dist,149.4},{train_strafer_margin,91.2},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]},{seed,2020,[{heldout_w_print,0.9875},{wins_of_160,158},{tier,kill},{p10_dist,159.6},{train_strafer_margin,81.7},{tier_by_probe_rule,kill},{tier_by_p10_nearest_median,kill}]}]},{tier_sizes,[{kill,13},{near_parity,6},{alone,1}]},{classifiers_agree_seed_for_seed,[{win_rate_band_vs_probe_rule,true},{win_rate_band_vs_p10_nearest_median,true}]},{runs,[{under,[119,105,110,45,114,97,116,101,32,116,105,101,114,115,32,40,112,114,105,109,97,114,121,41],[{tier,kill,[{seeds,[2001,2002,2003,2004,2005,2006,2008,2010,2012,2013,2017,2019,2020]},{champions,13},{pairs,78},{unordered_triples,286},{ordered_candidates,858},{at_band_rows,[{at_band,0.05,[{unordered_cycles,8},{ordered_exp057,10},{forward,2},{backward,6},{identity_2f_plus_b_equals_ordered,true},{decisive_edges,74},{of_pairs,78},{all_three_decisive_triples,243},{of_triples,286},{orientation_null,[{cycles_median,62.0},{cycles_range,{37,75}},{ordered_median,93.0},{ordered_range,{58,118}},{decisive_median,74.0},{decisive_range,{74,74}}]},{closed_form,[{expected_cycles,60.75},{expected_ordered,91.125}]}]},{at_band,0.1,[{unordered_cycles,4},{ordered_exp057,4},{forward,0},{backward,4},{identity_2f_plus_b_equals_ordered,true},{decisive_edges,71},{of_pairs,78},{all_three_decisive_triples,213},{of_triples,286},{orientation_null,[{cycles_median,54.0},{cycles_range,{28,67}},{ordered_median,81.0},{ordered_range,{45,104}},{decisive_median,71.0},{decisive_range,{71,71}}]},{closed_form,[{expected_cycles,53.25},{expected_ordered,79.875}]}]},{at_band,0.15,[{unordered_cycles,4},{ordered_exp057,4},{forward,0},{backward,4},{identity_2f_plus_b_equals_ordered,true},{decisive_edges,67},{of_pairs,78},{all_three_decisive_triples,179},{of_triples,286},{orientation_null,[{cycles_median,45.0},{cycles_range,{26,57}},{ordered_median,68.0},{ordered_range,{40,92}},{decisive_median,67.0},{decisive_range,{67,67}}]},{closed_form,[{expected_cycles,44.75},{expected_ordered,67.125}]}]}]}]},{tier,near_parity,[{seeds,[2007,2009,2011,2014,2015,2018]},{champions,6},{pairs,15},{unordered_triples,20},{ordered_candidates,60},{at_band_rows,[{at_band,0.05,[{unordered_cycles,0},{ordered_exp057,0},{forward,0},{backward,0},{identity_2f_plus_b_equals_ordered,true},{decisive_edges,14},{of_pairs,15},{all_three_decisive_triples,16},{of_triples,20},{orientation_null,[{cycles_median,4.0},{cycles_range,{0,7}},{ordered_median,6.0},{ordered_range,{0,14}},{decisive_median,14.0},{decisive_range,{14,14}}]},{closed_form,[{expected_cycles,4.0},{expected_ordered,6.0}]}]},{at_band,0.1,[{unordered_cycles,0},{ordered_exp057,0},{forward,0},{backward,0},{identity_2f_plus_b_equals_ordered,true},{decisive_edges,12},{of_pairs,15},{all_three_decisive_triples,10},{of_triples,20},{orientation_null,[{cycles_median,3.0},{cycles_range,{0,6}},{ordered_median,4.0},{ordered_range,{0,9}},{decisive_median,12.0},{decisive_range,{12,12}}]},{closed_form,[{expected_cycles,2.5},{expected_ordered,3.75}]}]},{at_band,0.15,[{unordered_cycles,0},{ordered_exp057,0},{forward,0},{backward,0},{identity_2f_plus_b_equals_ordered,true},{decisive_edges,11},{of_pairs,15},{all_three_decisive_triples,8},{of_triples,20},{orientation_null,[{cycles_median,2.0},{cycles_range,{0,5}},{ordered_median,3.0},{ordered_range,{0,9}},{decisive_median,11.0},{decisive_range,{11,11}}]},{closed_form,[{expected_cycles,2.0},{expected_ordered,3.0}]}]}]}]},{boundary_decomposition,[{at_band,0.05,[{cycles_total,49},{all_kill,8},{all_near,0},{spans,41},{signatures,[{{1,2,0},15},{{2,1,0},26},{{3,0,0},8}]},{cycles,[{cycle,[2001,2002,2009],[kill,kill,near_parity],spans},{cycle,[2001,2004,2009],[kill,kill,near_parity],spans},{cycle,[2001,2004,2014],[kill,kill,near_parity],spans},{cycle,[2002,2009,2010],[kill,near_parity,kill],spans},{cycle,[2002,2009,2011],[kill,near_parity,near_parity],spans},{cycle,[2002,2009,2019],[kill,near_parity,kill],spans},{cycle,[2003,2004,2009],[kill,kill,near_parity],spans},{cycle,[2003,2004,2014],[kill,kill,near_parity],spans},{cycle,[2003,2006,2009],[kill,kill,near_parity],spans},{cycle,[2003,2010,2012],[kill,kill,kill],all_kill},{cycle,[2003,2010,2013],[kill,kill,kill],all_kill},{cycle,[2003,2017,2018],[kill,kill,near_parity],spans},{cycle,[2004,2009,2010],[kill,near_parity,kill],spans},{cycle,[2004,2009,2011],[kill,near_parity,near_parity],spans},{cycle,[2004,2009,2019],[kill,near_parity,kill],spans},{cycle,[2004,2014,2020],[kill,near_parity,kill],spans},{cycle,[2006,2009,2010],[kill,near_parity,kill],spans},{cycle,[2006,2009,2011],[kill,near_parity,near_parity],spans},{cycle,[2007,2017,2018],[near_parity,kill,near_parity],spans},{cycle,[2009,2010,2013],[near_parity,kill,kill],spans},{cycle,[2009,2010,2017],[near_parity,kill,kill],spans},{cycle,[2009,2011,2013],[near_parity,near_parity,kill],spans},{cycle,[2009,2011,2017],[near_parity,near_parity,kill],spans},{cycle,[2011,2017,2018],[near_parity,kill,near_parity],spans},{cycle,[2001,2013,2003],[kill,kill,kill],all_kill},{cycle,[2001,2013,2006],[kill,kill,kill],all_kill},{cycle,[2001,2013,2009],[kill,kill,near_parity],spans},{cycle,[2002,2009,2003],[kill,near_parity,kill],spans},{cycle,[2002,2009,2005],[kill,near_parity,kill],spans},{cycle,[2002,2009,2007],[kill,near_parity,near_parity],spans},{cycle,[2003,2017,2009],[kill,kill,near_parity],spans},{cycle,[2003,2020,2009],[kill,kill,near_parity],spans},{cycle,[2003,2017,2012],[kill,kill,kill],all_kill},{cycle,[2003,2020,2012],[kill,kill,kill],all_kill},{cycle,[2003,2017,2013],[kill,kill,kill],all_kill},{cycle,[2003,2020,2013],[kill,kill,kill],all_kill},{cycle,[2003,2017,2014],[kill,kill,near_parity],spans},{cycle,[2003,2020,2018],[kill,kill,near_parity],spans},{cycle,[2004,2009,2007],[kill,near_parity,near_parity],spans},{cycle,[2004,2014,2007],[kill,near_parity,near_parity],spans},{cycle,[2004,2014,2010],[kill,near_parity,kill],spans},{cycle,[2004,2014,2011],[kill,near_parity,near_parity],spans},{cycle,[2004,2014,2013],[kill,near_parity,kill],spans},{cycle,[2006,2009,2007],[kill,near_parity,near_parity],spans},{cycle,[2007,2017,2009],[near_parity,kill,near_parity],spans},{cycle,[2007,2017,2014],[near_parity,kill,near_parity],spans},{cycle,[2010,2017,2014],[kill,kill,near_parity],spans},{cycle,[2011,2017,2014],[near_parity,kill,near_parity],spans},{cycle,[2014,2020,2017],[near_parity,kill,kill],spans}]}]},{at_band,0.1,[{cycles_total,18},{all_kill,4},{all_near,0},{spans,14},{signatures,[{{1,2,0},4},{{2,1,0},10},{{3,0,0},4}]},{cycles,[{cycle,[2001,2004,2009],[kill,kill,near_parity],spans},{cycle,[2001,2004,2014],[kill,kill,near_parity],spans},{cycle,[2003,2004,2009],[kill,kill,near_parity],spans},{cycle,[2003,2004,2014],[kill,kill,near_parity],spans},{cycle,[2004,2009,2010],[kill,near_parity,kill],spans},{cycle,[2004,2009,2011],[kill,near_parity,near_parity],spans},{cycle,[2004,2014,2020],[kill,near_parity,kill],spans},{cycle,[2009,2010,2013],[near_parity,kill,kill],spans},{cycle,[2009,2010,2017],[near_parity,kill,kill],spans},{cycle,[2009,2011,2017],[near_parity,near_parity,kill],spans},{cycle,[2001,2013,2003],[kill,kill,kill],all_kill},{cycle,[2001,2013,2006],[kill,kill,kill],all_kill},{cycle,[2001,2013,2009],[kill,kill,near_parity],spans},{cycle,[2003,2020,2012],[kill,kill,kill],all_kill},{cycle,[2003,2020,2013],[kill,kill,kill],all_kill},{cycle,[2003,2020,2018],[kill,kill,near_parity],spans},{cycle,[2004,2014,2007],[kill,near_parity,near_parity],spans},{cycle,[2004,2014,2011],[kill,near_parity,near_parity],spans}]}]},{at_band,0.15,[{cycles_total,12},{all_kill,4},{all_near,0},{spans,8},{signatures,[{{1,2,0},2},{{2,1,0},6},{{3,0,0},4}]},{cycles,[{cycle,[2003,2004,2009],[kill,kill,near_parity],spans},{cycle,[2004,2009,2010],[kill,near_parity,kill],spans},{cycle,[2004,2009,2011],[kill,near_parity,near_parity],spans},{cycle,[2009,2010,2013],[near_parity,kill,kill],spans},{cycle,[2009,2010,2017],[near_parity,kill,kill],spans},{cycle,[2009,2011,2017],[near_parity,near_parity,kill],spans},{cycle,[2001,2013,2003],[kill,kill,kill],all_kill},{cycle,[2001,2013,2006],[kill,kill,kill],all_kill},{cycle,[2001,2013,2009],[kill,kill,near_parity],spans},{cycle,[2003,2020,2012],[kill,kill,kill],all_kill},{cycle,[2003,2020,2013],[kill,kill,kill],all_kill},{cycle,[2003,2020,2018],[kill,kill,near_parity],spans}]}]}]},{scale_matched,[{at_band,0.05,[{full,[{cycles,49},{cyclable_triples,802},{triples,1140},{share_of_cyclable,0.06109725685785536}]},{kill,[{cycles,8},{cyclable_triples,243},{triples,286},{share_of_cyclable,0.03292181069958848}]},{near_parity,[{cycles,0},{cyclable_triples,16},{triples,20},{share_of_cyclable,0.0}]}]},{at_band,0.1,[{full,[{cycles,18},{cyclable_triples,604},{triples,1140},{share_of_cyclable,0.029801324503311258}]},{kill,[{cycles,4},{cyclable_triples,213},{triples,286},{share_of_cyclable,0.018779342723004695}]},{near_parity,[{cycles,0},{cyclable_triples,10},{triples,20},{share_of_cyclable,0.0}]}]},{at_band,0.15,[{full,[{cycles,12},{cyclable_triples,487},{triples,1140},{share_of_cyclable,0.024640657084188913}]},{kill,[{cycles,4},{cyclable_triples,179},{triples,286},{share_of_cyclable,0.0223463687150838}]},{near_parity,[{cycles,0},{cyclable_triples,8},{triples,20},{share_of_cyclable,0.0}]}]}]},{spearman,[{full_matrix_stated,-0.1451},{kill_submatrix_rowmean,0.4000661320993194},{kill_fullmatrix_rowmean,0.4252451194342416},{near_submatrix_rowmean,0.028988551782622423},{near_fullmatrix_rowmean,-0.34786262139146906}]}]}]}]}.

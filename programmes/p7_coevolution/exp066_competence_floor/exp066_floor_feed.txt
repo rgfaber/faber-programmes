@@ -571,3 +571,237 @@ THE HONEST ACCOUNTING:
 
 The cross-play probe is NOT in this feed and does not belong in it: it is exploratory, it was not pre-registered, and it signs nothing. It has its own record at programmes/p7_coevolution/exp066_competence_floor/exp066_crossplay.txt, which is where its numbers must be read from. The first pass of that probe persisted nothing at all, which is the defect this addendum's sibling fixes.
 == END ADDENDUM ==
+
+
+== ADDENDUM 2, appended 2026-07-30, POST HOC: THE TWO FLAG FIXES ==
+
+WHAT THIS IS. Everything above the first addendum was written by run/1 on
+2026-07-29 and nothing above this line is changed or re-run. This note
+records two changes to the RUNNER's flag machinery, both recomputed from the
+archived champion genomes at engine pin
+a5e8bcfc5646827e9be49a9629f8a6a9678c814b. NO ARM WAS RE-RUN and no genome was
+modified: archived champions were replayed through matches, which is the same
+thing the first addendum did.
+
+THE NUMBERS ARE NOT HERE. They are in
+  programmes/p7_coevolution/exp066_competence_floor/exp066_flag_fixes.txt
+per seed, per arm, as-run predicate beside widened, plus the three-way split
+table. That file is the record for both fixes; this note is a pointer with
+the headline counts.
+
+FIX A, IF-10 LADDER-INVERSION, a defect fix to a pre-registered predicate.
+The as-run predicate read [sitting_duck, spinner] and tested L > W, so it
+never looked at the rammer or the circle_strafer and could not see a rung
+parked in draws. inverted/1 now reads all four lower rungs and counts a rung
+as not beaten when L > W or when D > 0.5, which is the definition of a
+majority on 160 matches and not a fitted value. flags/3 now also emits the
+count over the whole arm, under BOTH predicates, because IF-10 reads one
+median champion.
+
+  arm  champions  as-run FIRES  widened FIRES  median champ as-run / widened
+    s         20             0              0  seed 2008: quiet / quiet
+    l         10             0              0  seed 2005: quiet / quiet
+    d         10             5              8  seed 2007: quiet / FIRED
+  arm s seeds firing, as-run  : []
+  arm s seeds firing, widened : []
+  arm l seeds firing, as-run  : []
+  arm l seeds firing, widened : []
+  arm d seeds firing, as-run  : [2001,2004,2006,2008,2009]
+  arm d seeds firing, widened : [2001,2003,2004,2006,2007,2008,2009,2010]
+
+EVERY IF-10 LINE ABOVE THIS ADDENDUM STANDS AS WRITTEN. Those lines report
+what the run of 2026-07-29 computed. A future run computes the widened
+predicate and its IF-10 lines will differ from the ones above; that is the
+point of the fix and it is recorded here so the difference is not a surprise.
+
+FIX B, AND IT IS NOT A REPAIR OF IF-8. IF-8 MEMORISATION reads trainW >= B
+and held-out < B. trainW is 1.0000 for 40 of 40 champions above, and that is
+forced by the design: the train split is 12 matches and ladder/3 clears a
+rung only when all 12 of its margins are positive, so any champion that
+cleared the gun rung had 12 wins there. The left conjunct is vacuously true
+and IF-8 collapses to the negation of half the CLEARED test. IF-8 WAS
+UNTESTABLE WITH THIS INSTRUMENT AND THAT FACT STANDS PERMANENTLY. It is not
+repaired, rescored or reinterpreted.
+
+What was built instead is PH-GEN, a NEW POST-HOC diagnostic with a name that
+is deliberately not an IF code. It reports, per champion, the win rate and
+the FLOORED margin (margin/1, whole units) on all three splits: train 12
+matches, calibration 60, held out 160, plus the gaps. The 30 calibration
+starts scored arm C during the run and no champion, so nothing was ever
+selected on them; for arm S they have since been read once, post hoc, by
+exp066_two_attractors_probe.txt section K, so this is a re-read there and a
+first look for arms L and D. PH-GEN is unregistered, signs nothing, and does
+not license any reading of IF-8's quiet state.
+
+WHAT PH-GEN FOUND, AND HALF OF IT IS A NEGATIVE.
+  (a) THE WIN-RATE LEG SATURATES, exactly as IF-8's trainW does and for the
+      same reason: train W is 1.0000 for 40 of 40 champions, so
+      train-minus-held-out W is 1.0000 minus held-out W identically and
+      separates nothing that held-out W does not already separate. That leg
+      inherits the defect it was built beside. It is reported, not dropped.
+  (b) THE FLOORED-MARGIN LEG DOES NOT SATURATE on any split, and where the
+      question is testable it separates the two modes on the splits that do
+      NOT define them. Three quantities, in order: the floored margin on
+      train, the floored margin on calibration, the win rate on calibration.
+      Whether the near-parity and kill-mode tiers' ranges overlap, per arm:
+
+      arm  floored@train  floored@calib        W@calib
+        s       DISJOINT       DISJOINT       DISJOINT
+        l       DISJOINT       DISJOINT       DISJOINT
+        d   NOT TESTABLE   NOT TESTABLE   NOT TESTABLE
+
+      Tiers are the two-attractors probe's published rule on held-out W
+      (below 0.62 near-parity, above 0.93 kill mode), reused unchanged. Arm D
+      has NO near-parity champion, so the question is not testable there and
+      is reported as not testable rather than answered.
+  (c) CROSS-CHECK, AND WHAT IS ACTUALLY NEW. Arm S's train and held-out
+      floored gun margins already existed in exp066_two_attractors_probe.txt
+      section G, and its calibration win rates in section K, both computed by
+      a different script from the same archive. They agree digit for digit.
+      NEW here: the floored margin on the CALIBRATION starts, for every arm,
+      and every column for arms L and D, which had no floored margin on any
+      split and no calibration measurement at all.
+      The calibration starts scored arm C during the run and no champion, so
+      nothing was ever selected on them; for arm S they have since been read
+      once, by that probe, so this is a re-read rather than a first look.
+  (d) PROVENANCE. ladder/3 re-run on the 6 train starts reproduces the
+      archived fitness EXACTLY, as a float, for 40 of 40 champions.
+      scripts/exp066_verify_flag_fixes.escript checks the recomputed rung
+      profiles against the as-run profiles printed above this addendum.
+
+PRODUCED BY. experiments/exp066_single_population_floor_tests.erl,
+flag_fixes/1, added 2026-07-30, driven by scripts/exp066_flag_fixes.sh. The
+same amendment widens inverted/1 and adds the two per-arm IF-10 counts to
+flags/3. The as-run copy archived beside the champions contains none of this.
+== END ADDENDUM 2 ==
+
+
+== ADDENDUM 3, appended 2026-07-30, POST HOC: THE DISCARDED RATES, AND
+   THE MATCH-LEVEL NULL'S SCALE ==
+
+WHAT THIS IS. Nothing above this line is changed or re-run. Two more
+defects in the RUNNER, both fixed at the source, both exercised by replaying
+archived champions at engine pin
+a5e8bcfc5646827e9be49a9629f8a6a9678c814b. NO ARM WAS RE-RUN and no genome was
+modified.
+
+THE NUMBERS ARE NOT HERE. They are in
+  programmes/p7_coevolution/exp066_competence_floor/exp066_recovered_rates_and_null_fix.txt
+which carries the full W/L/D table for every scripted opponent against every
+one of the 40 champions in both directions, the scripted round robin, the
+triple search, and the corrected null beside the as-built one.
+
+FIX C, THE RATES scripted_null/1 THREW AWAY. It kept element 1 of rates/1,
+the win rate, and discarded L and D on the same line. W = 0.0 is consistent
+with 160 losses and with 160 draws, and those are different facts: the first
+is an EDGE from the floor bot to that rung, the second is no edge at all. So
+the N line at lines 16..19 above could not say whether the floor bot BEATS
+the lower rungs. scripted_null/1 now returns {Kind, W, L, D}; a FUTURE run's
+N line carries four 4-tuples where the line above carries four win rates.
+The line above stands as what the run of 2026-07-29 computed.
+
+RECOVERED, on the same 80 held-out starts, 160 matches per rung, counts
+exact:
+  sitting_duck    vs predictive_gun : W/L/D =    0/ 160/   0 of 160  (as-run N carried W = 0.00000 alone)
+  spinner         vs predictive_gun : W/L/D =    0/ 121/  39 of 160  (as-run N carried W = 0.00000 alone)
+  rammer          vs predictive_gun : W/L/D =    2/ 158/   0 of 160  (as-run N carried W = 0.01250 alone)
+  circle_strafer  vs predictive_gun : W/L/D =    0/ 160/   0 of 160  (as-run N carried W = 0.00000 alone)
+
+So the floor bot BEATS all four lower rungs, which the as-run N could not
+say. Against the spinner it wins 121 of 160 and draws the other 39; the draws
+were invisible before.
+
+THE RELATION, STATED. A beats B iff W(A,B) > 0.5 over the 160 matches of that
+ordered cell, a win requiring B dead and A alive. DRAWS COUNT AS NOT BEATING,
+which is exp066's convention for its primary endpoint throughout. This is the
+STRICTER of the two readings available, since W > 0.5 implies W > L. ONE
+relation, not moved.
+
+WHAT THE SEARCH FOUND. Every triple of the 5 scripted bots and the 40
+champions was enumerated, 14190 in all, and classified by the provenance of its
+three pairs. Champion-versus-champion pairs are NOT measured here (that play
+exists for arm S only, in an unregistered probe), so triples needing one are
+reported UNTESTABLE.
+  PREREGISTERED cyclic triples, all three pairs already measured by the run: 5
+  EXTENDED cyclic triples, needing a NEW rung-versus-rung pair            : 8
+
+A PREREGISTERED CYCLIC TRIPLE EXISTS, 5 of them. The first, in full, with
+every leg checkable against the per-seed rung profiles above:
+
+  CYCLE predictive_gun -> sitting_duck -> d2008 -> predictive_gun
+      predictive_gun   beats sitting_duck     W = 1.00000 (160 of 160)
+      sitting_duck     beats d2008            W = 0.66875 (107 of 160)
+      d2008            beats predictive_gun   W = 0.96875 (155 of 160)
+
+The rest are in the record. They are NOT a claim about the substrate: a
+champion beating the floor bot while losing to a rung the floor bot beats is
+an OBSERVABLE, which is what IF-10 was always declared to be, and arm D
+trained on the floor rung ALONE, so it never saw the rung that beats it.
+That is a statement about the CURRICULUM, not about the arena.
+
+THE CANDIDATE THE UNSIGNED NOTE NAMED, TESTED LEG BY LEG. The note proposed
+arm D seed 2004 beating predictive_gun while going 0.0125 W and 0.98125 D
+against the sitting duck, so that the third leg of a triple was already
+inside the pre-registered arms. Measured:
+
+  d2004            vs predictive_gun   W/L/D =  154/   6/   0 of 160,  W = 0.96250  -> d2004 BEATS predictive_gun
+  predictive_gun   vs sitting_duck     W/L/D =  160/   0/   0 of 160,  W = 1.00000  -> predictive_gun BEATS sitting_duck
+  sitting_duck     vs d2004            W/L/D =    1/   2/ 157 of 160,  W = 0.00625  -> sitting_duck does NOT beat d2004, the pair is parked in draws
+
+  THE CANDIDATE DOES NOT CLOSE. Missing legs: [{[115,105,116,116,105,110,103,95,100,117,99,107],[100,50,48,48,52]}]. The sitting duck wins 1
+  of 160 against arm D seed 2004 and DRAWS 157, so the duck neither beats the
+  champion nor loses to it and the pair carries NO EDGE. Turning that into an
+  edge would need a draw read as a win for the side that did not win, which is
+  the opposite of exp066's convention. IT WAS NOT DONE. What the recovered
+  number DID settle is the other leg, the gun against the duck, which W = 0.0
+  alone could not decide. So the recovery worked and the note's candidate is
+  refuted by the number the note asked for.
+
+FIX D, THE MATCH-LEVEL NULL WAS MIS-SCALED BY TWO. xp_from_pairs/2 stored a
+MARGIN V at {I,J} and -V at {J,I} while xp_mg/1 differences WIN RATES, so it
+returned 2V and every band was effectively halved against the synthetic
+nulls. Fixed at the source in xp_from_wins/2, which stores the two win rates
+of a synthetic cell, the same units the observed matrix uses; no compensating
+factor at any call site. The as-run construction is kept verbatim as
+xp_from_pairs_as_run/2 so both columns come off the same draws.
+  match-level, band 0.10, 200 draws, seed 660: as-built cycles median 54.0,
+    corrected 3.0. The as-built row at band 0.10 IS the corrected row at
+    band 0.05: true.
+  sign-only: all three bands, all five numbers, identical under both
+    constructions: true. Verified, not assumed. Its margins are exactly
+    +/-1.0 and +/-2.0, both representable, so no boundary edge exists there.
+  At the headline band 0.10 the sign of the naive comparison REVERSES: 18
+    observed cycles sit below the as-built median and above the corrected
+    one.
+  THE CORRECTED COLUMN DOES NOT REPRODUCE
+    scripts/exp066_verify_null_scaling.escript AT EVERY BAND, and the reason
+    is not the fix. All three bands are exact multiples of the margin quantum
+    2/160, so every draw contains edges whose margin EQUALS the band, where a
+    strict float inequality is decided by rounding; the two encodings round
+    those in opposite directions on the negative side. They agree at band
+    0.05 and differ at 0.10 and 0.15. Section F1b of the record gives the
+    worked examples and adds an EXACT-INTEGER count, a NEW post-hoc
+    diagnostic that computes the same test with no rounding: it is at or
+    below both float columns at every band. The pre-registered counter is NOT
+    touched. Related: the four numbers this work package quoted as that
+    script's corrected column at band 0.10 are in fact
+    exp066_crossplay_null_audit.txt's, at a different seed.
+
+EVEN CORRECTED, THAT NULL IS STILL THE WRONG REFERENCE, and fixing the
+arithmetic does not promote it. It is not conditioned on observed edge
+decisiveness: at band 0.10 it leaves a median of 45.0 decisive edges of 190
+where the observed matrix has 152, so the comparison is mostly a test of
+decisiveness rather than of intransitivity. THE NULL A FUTURE RUNG SHOULD
+REGISTER IS THE ORIENTATION NULL, which keeps every observed |margin| and
+randomises only the signs, holding decisive_edges identical to the observed
+value at every band. exp066_crossplay_null_audit.txt already computes it. It
+is unregistered, so it should be registered IN ADVANCE, not adopted now.
+
+exp066_crossplay.txt IS NOT RE-EMITTED. Its null_match_level block stays
+as-built and the audit beside it quotes those numbers.
+
+PRODUCED BY. experiments/exp066_single_population_floor_tests.erl,
+recovered/1, added 2026-07-30, driven by scripts/exp066_recovered.sh, checked
+by scripts/exp066_verify_recovered.escript. The as-run copy archived beside
+the champions contains none of this.
+== END ADDENDUM 3 ==

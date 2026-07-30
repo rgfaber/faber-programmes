@@ -1,0 +1,740 @@
+== EXP-066: THE RATES scripted_null/1 THREW AWAY, RECOVERED; AND THE
+   MATCH-LEVEL NULL'S SCALE, FIXED AT THE SOURCE ==
+
+Date: 2026-07-30. Engine pin a5e8bcfc5646827e9be49a9629f8a6a9678c814b.
+Produced by: experiments/exp066_single_population_floor_tests.erl,
+  recovered/1, driven by scripts/exp066_recovered.sh. Archive read: programmes/p7_coevolution/exp066_competence_floor/
+  (exp066_champions_s.eterm 20, _l.eterm 10, _d.eterm 10; 40 champions).
+
+NO ARM WAS RE-RUN AND NO GENOME WAS MODIFIED. Every rate below comes from
+replaying archived champions and scripted bots through matches at the engine
+pin. The call path is duels/3 -> duel/3 -> play_seat/5 -> play/2 -> robo_sim.
+Nothing under arm/2, seed_run/4, one_run/4, fitness_fun/5 or the col_*
+collector is reachable from it, so no optimiser runs anywhere in this record.
+
+TWO FIXES, ONE RECORD.
+
+  FIX C  scripted_null/1 kept element 1 of rates/1 and discarded the LOSS and
+         DRAW rates. A win rate of 0.0 is consistent with 160 losses and with
+         160 draws, and those are different facts about the ladder, so the
+         as-run record could not say whether the floor bot BEATS a lower rung
+         or merely never loses to it. Recovered here, in full, for every
+         scripted opponent against every champion and against every other
+         scripted opponent, and then used to ask whether a genuine
+         intransitive triple exists inside the pre-registered arms.
+
+  FIX D  the synthetic nulls were mis-scaled by a factor of two. Fixed in
+         xp_from_wins/2; the as-run construction is kept verbatim as
+         xp_from_pairs_as_run/2 so both columns come off the SAME draws.
+
+WHAT IS MEASURED, EXACTLY. 45 objects: 5 scripted bots and 40 archived
+champions. 210 pairs, 420 ORDERED CELLS, 160 matches per ordered cell (80
+PRE-REGISTERED held-out starts, both seats), 67200 matches in total. Both
+directions of every pair are measured by two separate calls into the match
+loop and the transpose identity between them is CHECKED per pair.
+
+WHAT IS NOT MEASURED. Champion against champion. That play exists for arm S
+only and lives in an UNREGISTERED probe (exp066_crossplay.txt), so it cannot
+enter an anchor that is meant to rest on pre-registered measurement. Triples
+needing such a pair are reported as UNTESTABLE, not filled in.
+
+REPRODUCIBILITY AND THE SEEDS. Every match here is a deterministic integer
+simulation on a deterministic start set, so no rate in this record comes off
+rand. Two quantities do. (1) The frozen constant B quoted in section A comes
+from constants/1's start-level bootstrap, seeded from BOOT_SEED = 66 with
+10,000 resamples, both fixed in the runner's source. (2) Every number in
+section F is drawn from rand seeded at XP_SEED = 660, freshly per column, 200
+draws, which is the same seed and draw count
+scripts/exp066_verify_null_scaling.escript uses.
+
+THIS FILE IS REGENERABLE, THE FEED NOTE IS NOT. recovered/1 overwrites this
+record, so it can be re-run at will (scripts/exp066_recovered.sh record). Two
+independent executions produced byte-identical copies of it. The note it
+appends to the two feed copies is APPEND-ONLY and was written once, on
+2026-07-30; re-running the appending mode would add a second copy of it.
+
+
+-- A. FIX C: THE NUMBER scripted_null/1 DISCARDED --
+
+THE AS-RUN CODE.
+    scripted_null(Starts) ->
+        [{K, win_rate(heldout({script, K}, ?FLOOR, Starts))}
+         || K <- robo_gauntlet:kinds(), K =/= ?FLOOR].
+
+win_rate/1 is element(1, rates(Os)) and rates/1 returns {W, L, D}. So the
+loss rate and the draw rate were computed and then thrown away on the same
+line. The feed's N line (exp066_floor_feed.txt lines 16..19) carries four win
+rates and nothing else.
+
+WHY THAT IS NOT COSMETIC. W = 0.0 is consistent with 160 losses and with 160
+draws. The first says the floor bot BEATS that rung, which is an EDGE. The
+second says the pair is parked and there is NO edge. One leg of every
+candidate intransitive triple that runs through the floor bot is exactly that
+distinction, so the as-run record could not close such a triple even when the
+other two legs were sitting in it.
+
+THE FIXED CODE returns {K, W, L, D}, taken straight from rates/1. What
+constants/1 now reports, verbatim, on the pre-registered held-out starts
+(160 matches per rung, subject = the RUNG, opponent = predictive_gun):
+
+  [{sitting_duck,0.0,1.0,0.0},
+   {spinner,0.0,0.75625,0.24375},
+   {rammer,0.0125,0.9875,0.0},
+   {circle_strafer,0.0,1.0,0.0}]
+
+AND THE SAME PAIRS READ AS A TABLE, with the reverse direction measured
+separately. Counts are exact match counts out of 160; every rate here is
+k/160.
+
+  rung             rung vs gun W/L/D   gun vs rung W/L/D   the as-run N said   RECOVERED: the floor bot
+  sitting_duck       0/ 160/   0       160/   0/   0        W = 0.00000 only    BEATS it, 160 of 160
+  spinner            0/ 121/  39       121/   0/  39        W = 0.00000 only    BEATS it, 121 of 160
+  rammer             2/ 158/   0       158/   2/   0        W = 0.01250 only    BEATS it, 158 of 160
+  circle_strafer     0/ 160/   0       160/   0/   0        W = 0.00000 only    BEATS it, 160 of 160
+
+B = 0.5748, the pre-registered bar, is quoted here only because section E
+refers to it. It is untouched.
+
+
+-- B. THE FULL W/L/D TABLE: EVERY SCRIPTED OPPONENT AGAINST EVERY ONE OF
+      THE 40 CHAMPIONS, BOTH DIRECTIONS --
+
+Pre-registered held-out starts, both seats, 160 matches per ordered cell.
+Counts are exact and integer; the two rate columns are the same numbers as
+k/160. champ W/L/D is the CHAMPION's side, rung W/L/D is the RUNG's side, and
+each is a separate call into the match loop rather than a transpose of the
+other. tr is the transpose identity {RW,RL,RD} =:= {L,W,D}: ok means the two
+independent measurements agree exactly, which they must, since duel/3 plays
+both seats and the engine is deterministic.
+
+The champ W/L/D column of the predictive_gun row is the arms' own primary
+endpoint and the whole row set is profile/2, so every number in this table
+except the rung side of it is a recomputation of something the feed already
+prints per seed (lines 135..234 for arm S, 301..350 for L, 417..466 for D).
+
+arm seed rung             champ W/L/D of 160     rung W/L/D of 160    champ W    rung W  tr
+  s 2001 sitting_duck      150/   3/   7         3/ 150/   7    0.93750  0.01875  ok
+  s 2001 spinner           158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  s 2001 rammer            159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2001 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2001 predictive_gun    156/   4/   0         4/ 156/   0    0.97500  0.02500  ok
+  s 2002 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2002 spinner           152/   8/   0         8/ 152/   0    0.95000  0.05000  ok
+  s 2002 rammer            159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2002 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2002 predictive_gun    150/   9/   1         9/ 150/   1    0.93750  0.05625  ok
+  s 2003 sitting_duck      159/   0/   1         0/ 159/   1    0.99375  0.00000  ok
+  s 2003 spinner           153/   3/   4         3/ 153/   4    0.95625  0.01875  ok
+  s 2003 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2003 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2003 predictive_gun    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2004 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2004 spinner           159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2004 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2004 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2004 predictive_gun    159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2005 sitting_duck      159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2005 spinner           144/   9/   7         9/ 144/   7    0.90000  0.05625  ok
+  s 2005 rammer            159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2005 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2005 predictive_gun    159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2006 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2006 spinner           155/   5/   0         5/ 155/   0    0.96875  0.03125  ok
+  s 2006 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2006 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2006 predictive_gun    159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2007 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2007 spinner           160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2007 rammer            158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  s 2007 circle_strafer    123/  37/   0        37/ 123/   0    0.76875  0.23125  ok
+  s 2007 predictive_gun     93/  67/   0        67/  93/   0    0.58125  0.41875  ok
+  s 2008 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2008 spinner           158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  s 2008 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2008 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2008 predictive_gun    156/   4/   0         4/ 156/   0    0.97500  0.02500  ok
+  s 2009 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2009 spinner           160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2009 rammer            159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2009 circle_strafer    128/  31/   1        31/ 128/   1    0.80000  0.19375  ok
+  s 2009 predictive_gun     92/  66/   2        66/  92/   2    0.57500  0.41250  ok
+  s 2010 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2010 spinner           150/  10/   0        10/ 150/   0    0.93750  0.06250  ok
+  s 2010 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2010 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2010 predictive_gun    158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  s 2011 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2011 spinner           159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2011 rammer            157/   3/   0         3/ 157/   0    0.98125  0.01875  ok
+  s 2011 circle_strafer    127/  33/   0        33/ 127/   0    0.79375  0.20625  ok
+  s 2011 predictive_gun     86/  74/   0        74/  86/   0    0.53750  0.46250  ok
+  s 2012 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2012 spinner           159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2012 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2012 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2012 predictive_gun    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2013 sitting_duck      152/   0/   8         0/ 152/   8    0.95000  0.00000  ok
+  s 2013 spinner           157/   3/   0         3/ 157/   0    0.98125  0.01875  ok
+  s 2013 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2013 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2013 predictive_gun    156/   0/   4         0/ 156/   4    0.97500  0.00000  ok
+  s 2014 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2014 spinner           160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2014 rammer            149/  11/   0        11/ 149/   0    0.93125  0.06875  ok
+  s 2014 circle_strafer    119/  41/   0        41/ 119/   0    0.74375  0.25625  ok
+  s 2014 predictive_gun     93/  67/   0        67/  93/   0    0.58125  0.41875  ok
+  s 2015 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2015 spinner           160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2015 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2015 circle_strafer    140/  20/   0        20/ 140/   0    0.87500  0.12500  ok
+  s 2015 predictive_gun     67/  93/   0        93/  67/   0    0.41875  0.58125  ok
+  s 2016 sitting_duck      159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2016 spinner           156/   3/   1         3/ 156/   1    0.97500  0.01875  ok
+  s 2016 rammer            157/   3/   0         3/ 157/   0    0.98125  0.01875  ok
+  s 2016 circle_strafer    140/  20/   0        20/ 140/   0    0.87500  0.12500  ok
+  s 2016 predictive_gun    128/  32/   0        32/ 128/   0    0.80000  0.20000  ok
+  s 2017 sitting_duck      156/   0/   4         0/ 156/   4    0.97500  0.00000  ok
+  s 2017 spinner           159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2017 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2017 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2017 predictive_gun    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2018 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2018 spinner           160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2018 rammer            158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  s 2018 circle_strafer    140/  20/   0        20/ 140/   0    0.87500  0.12500  ok
+  s 2018 predictive_gun     97/  62/   1        62/  97/   1    0.60625  0.38750  ok
+  s 2019 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2019 spinner           154/   4/   2         4/ 154/   2    0.96250  0.02500  ok
+  s 2019 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2019 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2019 predictive_gun    157/   3/   0         3/ 157/   0    0.98125  0.01875  ok
+  s 2020 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2020 spinner           158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  s 2020 rammer            159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  s 2020 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  s 2020 predictive_gun    158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  l 2001 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2001 spinner           160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2001 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2001 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2001 predictive_gun    156/   4/   0         4/ 156/   0    0.97500  0.02500  ok
+  l 2002 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2002 spinner           149/  11/   0        11/ 149/   0    0.93125  0.06875  ok
+  l 2002 rammer            158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  l 2002 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2002 predictive_gun    153/   7/   0         7/ 153/   0    0.95625  0.04375  ok
+  l 2003 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2003 spinner           151/   9/   0         9/ 151/   0    0.94375  0.05625  ok
+  l 2003 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2003 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2003 predictive_gun    150/  10/   0        10/ 150/   0    0.93750  0.06250  ok
+  l 2004 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2004 spinner           158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  l 2004 rammer            158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  l 2004 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2004 predictive_gun    150/   9/   1         9/ 150/   1    0.93750  0.05625  ok
+  l 2005 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2005 spinner           154/   6/   0         6/ 154/   0    0.96250  0.03750  ok
+  l 2005 rammer            159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  l 2005 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2005 predictive_gun    150/  10/   0        10/ 150/   0    0.93750  0.06250  ok
+  l 2006 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2006 spinner           156/   4/   0         4/ 156/   0    0.97500  0.02500  ok
+  l 2006 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2006 circle_strafer    157/   3/   0         3/ 157/   0    0.98125  0.01875  ok
+  l 2006 predictive_gun    151/   8/   1         8/ 151/   1    0.94375  0.05000  ok
+  l 2007 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2007 spinner           160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2007 rammer            157/   3/   0         3/ 157/   0    0.98125  0.01875  ok
+  l 2007 circle_strafer    124/  36/   0        36/ 124/   0    0.77500  0.22500  ok
+  l 2007 predictive_gun     81/  79/   0        79/  81/   0    0.50625  0.49375  ok
+  l 2008 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2008 spinner           160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2008 rammer            158/   1/   1         1/ 158/   1    0.98750  0.00625  ok
+  l 2008 circle_strafer    137/  22/   1        22/ 137/   1    0.85625  0.13750  ok
+  l 2008 predictive_gun     95/  65/   0        65/  95/   0    0.59375  0.40625  ok
+  l 2009 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2009 spinner           159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  l 2009 rammer            160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2009 circle_strafer    160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2009 predictive_gun    156/   4/   0         4/ 156/   0    0.97500  0.02500  ok
+  l 2010 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  l 2010 spinner           159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  l 2010 rammer            159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  l 2010 circle_strafer    159/   1/   0         1/ 159/   0    0.99375  0.00625  ok
+  l 2010 predictive_gun    154/   6/   0         6/ 154/   0    0.96250  0.03750  ok
+  d 2001 sitting_duck       29/  67/  64        67/  29/  64    0.18125  0.41875  ok
+  d 2001 spinner            23/ 125/  12       125/  23/  12    0.14375  0.78125  ok
+  d 2001 rammer            146/  14/   0        14/ 146/   0    0.91250  0.08750  ok
+  d 2001 circle_strafer    157/   3/   0         3/ 157/   0    0.98125  0.01875  ok
+  d 2001 predictive_gun    156/   4/   0         4/ 156/   0    0.97500  0.02500  ok
+  d 2002 sitting_duck      136/   7/  17         7/ 136/  17    0.85000  0.04375  ok
+  d 2002 spinner            87/  65/   8        65/  87/   8    0.54375  0.40625  ok
+  d 2002 rammer            137/  23/   0        23/ 137/   0    0.85625  0.14375  ok
+  d 2002 circle_strafer    135/  25/   0        25/ 135/   0    0.84375  0.15625  ok
+  d 2002 predictive_gun    149/  11/   0        11/ 149/   0    0.93125  0.06875  ok
+  d 2003 sitting_duck      133/  23/   4        23/ 133/   4    0.83125  0.14375  ok
+  d 2003 spinner           116/  44/   0        44/ 116/   0    0.72500  0.27500  ok
+  d 2003 rammer             46/ 113/   1       113/  46/   1    0.28750  0.70625  ok
+  d 2003 circle_strafer    152/   8/   0         8/ 152/   0    0.95000  0.05000  ok
+  d 2003 predictive_gun    153/   7/   0         7/ 153/   0    0.95625  0.04375  ok
+  d 2004 sitting_duck        2/   1/ 157         1/   2/ 157    0.01250  0.00625  ok
+  d 2004 spinner            15/  26/ 119        26/  15/ 119    0.09375  0.16250  ok
+  d 2004 rammer            108/  34/  18        34/ 108/  18    0.67500  0.21250  ok
+  d 2004 circle_strafer    155/   5/   0         5/ 155/   0    0.96875  0.03125  ok
+  d 2004 predictive_gun    154/   6/   0         6/ 154/   0    0.96250  0.03750  ok
+  d 2005 sitting_duck      160/   0/   0         0/ 160/   0    1.00000  0.00000  ok
+  d 2005 spinner           119/  11/  30        11/ 119/  30    0.74375  0.06875  ok
+  d 2005 rammer            110/  50/   0        50/ 110/   0    0.68750  0.31250  ok
+  d 2005 circle_strafer    147/  12/   1        12/ 147/   1    0.91875  0.07500  ok
+  d 2005 predictive_gun    148/  10/   2        10/ 148/   2    0.92500  0.06250  ok
+  d 2006 sitting_duck        4/  18/ 138        18/   4/ 138    0.02500  0.11250  ok
+  d 2006 spinner            17/  40/ 103        40/  17/ 103    0.10625  0.25000  ok
+  d 2006 rammer             98/  62/   0        62/  98/   0    0.61250  0.38750  ok
+  d 2006 circle_strafer    146/   4/  10         4/ 146/  10    0.91250  0.02500  ok
+  d 2006 predictive_gun    149/  11/   0        11/ 149/   0    0.93125  0.06875  ok
+  d 2007 sitting_duck      142/  18/   0        18/ 142/   0    0.88750  0.11250  ok
+  d 2007 spinner           153/   7/   0         7/ 153/   0    0.95625  0.04375  ok
+  d 2007 rammer             59/ 101/   0       101/  59/   0    0.36875  0.63125  ok
+  d 2007 circle_strafer    146/  14/   0        14/ 146/   0    0.91250  0.08750  ok
+  d 2007 predictive_gun    149/  11/   0        11/ 149/   0    0.93125  0.06875  ok
+  d 2008 sitting_duck       15/ 107/  38       107/  15/  38    0.09375  0.66875  ok
+  d 2008 spinner            55/ 101/   4       101/  55/   4    0.34375  0.63125  ok
+  d 2008 rammer            146/  14/   0        14/ 146/   0    0.91250  0.08750  ok
+  d 2008 circle_strafer    146/  14/   0        14/ 146/   0    0.91250  0.08750  ok
+  d 2008 predictive_gun    155/   5/   0         5/ 155/   0    0.96875  0.03125  ok
+  d 2009 sitting_duck        7/  49/ 104        49/   7/ 104    0.04375  0.30625  ok
+  d 2009 spinner            46/  74/  40        74/  46/  40    0.28750  0.46250  ok
+  d 2009 rammer            100/  60/   0        60/ 100/   0    0.62500  0.37500  ok
+  d 2009 circle_strafer    147/  12/   1        12/ 147/   1    0.91875  0.07500  ok
+  d 2009 predictive_gun    138/  21/   1        21/ 138/   1    0.86250  0.13125  ok
+  d 2010 sitting_duck       52/   0/ 108         0/  52/ 108    0.32500  0.00000  ok
+  d 2010 spinner            55/  14/  91        14/  55/  91    0.34375  0.08750  ok
+  d 2010 rammer            158/   2/   0         2/ 158/   0    0.98750  0.01250  ok
+  d 2010 circle_strafer    154/   6/   0         6/ 154/   0    0.96250  0.03750  ok
+  d 2010 predictive_gun    155/   4/   1         4/ 155/   1    0.96875  0.02500  ok
+
+
+-- C. THE SCRIPTED ROUND ROBIN, ALL FIVE RUNGS AGAINST ONE ANOTHER --
+
+Same held-out starts, same 160 matches per ordered cell, both directions
+measured. PROVENANCE IS NOT UNIFORM HERE AND IS LABELLED PER ROW.
+  preregistered  the four pairs involving predictive_gun. These ARE N, the
+                 frozen scripted-ladder null, with the discarded L and D
+                 restored. Nothing new is measured; a number is recovered.
+  NEW post hoc   the six pairs that do not involve predictive_gun. The as-run
+                 N played each rung against the floor bot ONLY, so these six
+                 pairs were never measured and are new work, added here
+                 because triples of one champion and two rungs need them.
+
+A vs B W/L/D is A's side, counts out of 160. beats is under the relation
+stated in section D.
+
+A                B                  A vs B W/L/D      B vs A W/L/D   provenance     edge
+sitting_duck     spinner             0/   0/ 160      0/   0/ 160   NEW post hoc   NO EDGE
+rammer           sitting_duck      160/   0/   0      0/ 160/   0   NEW post hoc   rammer beats it
+rammer           spinner           124/   0/  36      0/ 124/  36   NEW post hoc   rammer beats it
+circle_strafer   sitting_duck      160/   0/   0      0/ 160/   0   NEW post hoc   circle_strafer beats it
+circle_strafer   spinner           104/   3/  53      3/ 104/  53   NEW post hoc   circle_strafer beats it
+circle_strafer   rammer            159/   1/   0      1/ 159/   0   NEW post hoc   circle_strafer beats it
+circle_strafer   predictive_gun      0/ 160/   0    160/   0/   0   preregistered  predictive_gun beats it
+predictive_gun   sitting_duck      160/   0/   0      0/ 160/   0   preregistered  predictive_gun beats it
+predictive_gun   spinner           121/   0/  39      0/ 121/  39   preregistered  predictive_gun beats it
+predictive_gun   rammer            158/   2/   0      2/ 158/   0   preregistered  predictive_gun beats it
+
+
+-- D. THE RELATION, STATED ONCE, AND THE EDGES IT PRODUCES --
+
+THE RELATION.
+
+    A beats B  iff  W(A,B) > 0.5
+
+where W(A,B) is A's win rate over the 160 matches of the ordered cell (A,B),
+and a WIN requires B dead and A alive at match end. DRAWS COUNT AS NOT
+BEATING. That is exp066's convention for its primary endpoint throughout: a
+draw is not a win, so it cannot help A beat B any more than a loss can. A
+turn cap with both tanks alive, and a mutual death, are both draws.
+
+WHY THIS READING AND NOT A LOOSER ONE. Because W(A,B) > 0.5 implies
+W(A,B) > L(A,B) while the reverse does not, this is the STRICTER of the two
+readings available, so nothing found below is an artifact of a permissive
+relation. At most one direction of a pair can satisfy it, since
+W(A,B) + W(B,A) =< 1. A pair where neither direction satisfies it carries NO
+EDGE, which is the honest reading of a pair parked in draws. NO SECOND
+RELATION IS DEFINED ANYWHERE IN THIS RECORD.
+
+THE CENSUS.
+  pairs measured                      210
+  ordered cells measured              420
+  transpose identity exact            210 of 210
+  pairs carrying an edge              200
+  pairs carrying NO edge              10
+
+EVERY PAIR WITH NO EDGE, LISTED. These are the pairs where the relation is
+silent, and they are the reason a triple can be testable and still not
+closable. maxD is the larger of the two draw rates.
+
+A                B                  A vs B W/L/D      B vs A W/L/D      maxD
+sitting_duck     spinner             0/   0/ 160      0/   0/ 160   1.00000
+sitting_duck     d2001              67/  29/  64     29/  67/  64   0.40000
+sitting_duck     d2004               1/   2/ 157      2/   1/ 157   0.98125
+sitting_duck     d2006              18/   4/ 138      4/  18/ 138   0.86250
+sitting_duck     d2009              49/   7/ 104      7/  49/ 104   0.65000
+sitting_duck     d2010               0/  52/ 108     52/   0/ 108   0.67500
+spinner          d2004              26/  15/ 119     15/  26/ 119   0.74375
+spinner          d2006              40/  17/ 103     17/  40/ 103   0.64375
+spinner          d2009              74/  46/  40     46/  74/  40   0.25000
+spinner          d2010              14/  55/  91     55/  14/  91   0.56875
+
+
+-- E. IS THERE A GENUINE INTRANSITIVE TRIPLE INSIDE THE PRE-REGISTERED
+      ARMS? --
+
+A triple is CYCLIC iff all three of its edges exist under section D's
+relation and they form a 3-cycle. The two possible cyclic orientations of
+three distinct vertices are mutually exclusive, which is the same argument
+xp_cycles/3 rests on, so no factor is guessed anywhere.
+
+EVERY triple of the 45 objects is enumerated, 14190 of them, and classified by
+the PROVENANCE of its three pairs:
+  preregistered  all three pairs are measurements the pre-registered run
+                 already made. This is the only class that can carry a
+                 REGISTERED anchor.
+  extended       all three pairs measured, but at least one is a rung-versus
+                 -rung pair that the as-run N never played. NEW post hoc.
+  unmeasured     at least one pair is champion versus champion, which is not
+                 measured here. UNTESTABLE, and reported as untestable.
+
+  class          triples   all 3 pairs measured   all 3 edges present   CYCLIC
+  preregistered      160                    160                   151        5
+  extended           250                    250                   189        8
+  unmeasured       13780                      0                     0        0
+
+RESULT: 13 cyclic triples in total, 5 of them PREREGISTERED.
+
+E1. THE CANDIDATE THE UNSIGNED NOTE NAMED, TESTED LEG BY LEG.
+
+The note proposed: arm D seed 2004 beats predictive_gun at 0.9625 while going
+0.0125 W and 0.98125 D against the sitting duck, so the third leg of a triple
+is already inside the pre-registered arms. The three legs, measured:
+
+  d2004            vs predictive_gun   W/L/D =  154/   6/   0 of 160,  W = 0.96250  -> d2004 BEATS predictive_gun
+  predictive_gun   vs sitting_duck     W/L/D =  160/   0/   0 of 160,  W = 1.00000  -> predictive_gun BEATS sitting_duck
+  sitting_duck     vs d2004            W/L/D =    1/   2/ 157 of 160,  W = 0.00625  -> sitting_duck does NOT beat d2004, the pair is parked in draws
+
+  THE TRIPLE IS NOT CLOSED. 1 of the three legs is missing:
+    MISSING: sitting_duck -> d2004   W/L/D = 1/2/157 of 160
+
+  WHY IT IS MISSING, AND IT IS NOT A THRESHOLD PROBLEM. The pair is not
+  close to the bar: the sitting duck wins 1 of 160 against arm D seed 2004
+  and DRAWS 157 of 160. The duck neither beats the champion nor loses to it;
+  the pair is parked. To turn that into an edge the relation would have to
+  read a draw as a win for the side that did not win, which is the opposite
+  of exp066's own convention. THAT IS NOT DONE HERE. Under the stated
+  relation this candidate is NOT an intransitive triple, and the note's
+  proposal that it is one does not survive the recovered numbers.
+
+  THE DISTINCTION THE RECOVERED NUMBER DOES SETTLE is the OTHER leg: the
+  as-run N could not say whether predictive_gun beats the sitting duck,
+  because W = 0.0 for the duck is consistent with all draws. It is now
+  measured, and that leg IS present. So the recovery worked; it is the leg
+  the note was confident about that fails.
+
+E2. PREREGISTERED CYCLIC TRIPLES: 5. Each is listed with its three legs in
+cycle order, so every leg can be checked against sections A, B and C. All
+three pairs of each are measurements the pre-registered run already made:
+champion against rung is the arms' own rung profile, rung against the floor
+bot is N.
+
+  CYCLE predictive_gun -> sitting_duck -> d2008 -> predictive_gun
+      predictive_gun   beats sitting_duck     W = 1.00000 (160 of 160)
+      sitting_duck     beats d2008            W = 0.66875 (107 of 160)
+      d2008            beats predictive_gun   W = 0.96875 (155 of 160)
+  CYCLE predictive_gun -> spinner -> d2001 -> predictive_gun
+      predictive_gun   beats spinner          W = 0.75625 (121 of 160)
+      spinner          beats d2001            W = 0.78125 (125 of 160)
+      d2001            beats predictive_gun   W = 0.97500 (156 of 160)
+  CYCLE predictive_gun -> spinner -> d2008 -> predictive_gun
+      predictive_gun   beats spinner          W = 0.75625 (121 of 160)
+      spinner          beats d2008            W = 0.63125 (101 of 160)
+      d2008            beats predictive_gun   W = 0.96875 (155 of 160)
+  CYCLE predictive_gun -> rammer -> d2003 -> predictive_gun
+      predictive_gun   beats rammer           W = 0.98750 (158 of 160)
+      rammer           beats d2003            W = 0.70625 (113 of 160)
+      d2003            beats predictive_gun   W = 0.95625 (153 of 160)
+  CYCLE predictive_gun -> rammer -> d2007 -> predictive_gun
+      predictive_gun   beats rammer           W = 0.98750 (158 of 160)
+      rammer           beats d2007            W = 0.63125 (101 of 160)
+      d2007            beats predictive_gun   W = 0.93125 (149 of 160)
+
+E3. EXTENDED CYCLIC TRIPLES: 8. At least one pair of each is a
+rung-versus-rung pair the as-run N never played, so these are NEW post-hoc
+triples and are NOT part of the registered anchor. Listed as paths only.
+
+  rammer -> sitting_duck -> d2008 -> rammer
+  rammer -> spinner -> d2001 -> rammer
+  rammer -> spinner -> d2008 -> rammer
+  circle_strafer -> sitting_duck -> d2008 -> circle_strafer
+  circle_strafer -> spinner -> d2001 -> circle_strafer
+  circle_strafer -> spinner -> d2008 -> circle_strafer
+  circle_strafer -> rammer -> d2003 -> circle_strafer
+  circle_strafer -> rammer -> d2007 -> circle_strafer
+
+E4. WHICH CHAMPIONS SIT IN A CYCLE AT ALL, PER ARM. A triple count is not a
+champion count. Arms S and L trained on all five rungs; arm D trained on the
+floor rung ALONE (rungs(d) -> [?FLOOR]), so arm D is where a champion can be
+strong against the floor bot and weak against a rung it never saw.
+
+  arm  champions  in a cycle  seeds
+    s         20           0  []
+    l         10           0  []
+    d         10           4  [2001,2003,2007,2008]
+
+
+-- F. FIX D: THE MATCH-LEVEL NULL WAS MIS-SCALED BY TWO --
+
+WHAT WAS WRONG. xp_from_pairs/2 built a synthetic tournament by storing a
+MARGIN V at cell {I,J} and -V at cell {J,I}. xp_mg/1 is a WIN-RATE
+differencing operator, wr(M,I,J) - wr(M,J,I), so applied to that matrix it
+returned V - (-V) = 2V. Every synthetic margin was DOUBLE the margin it
+represented, so every band was effectively HALVED against the synthetic
+nulls: the record's band-0.10 match-level row is really a band-0.05 row. The
+OBSERVED matrix holds win rates (xp_at/3 puts W(I,J) in the upper half and
+L(I,J) in the lower half) and is differenced correctly, so the observed
+counts are NOT affected.
+
+THE FIX IS AT THE SOURCE AND IT IS THE UNITS. xp_from_wins/2 stores the two
+WIN RATES of a synthetic cell, W(I,J) and 1.0 - W(I,J), which is exactly what
+xp_matrix/2 stores for the observed matrix. One differencing operator is then
+correct for both and a band means the same thing on both. There is NO
+compensating factor anywhere: xp_null_match/3 now draws a win rate,
+xp_flips(M) / M, and xp_null_sign/2 draws xp_coin_w/0, which is 0.0 or 1.0.
+Antisymmetry is still by construction, the two cells of a pair summing to 1.0.
+
+HOW THE TWO COLUMNS BELOW ARE OBTAINED. The as-run construction is kept
+verbatim as xp_from_pairs_as_run/2 and is called only here. Each column is
+drawn from a FRESHLY seeded generator, seed 660, 200 draws, 20 champions, 160
+matches per cell, and the two constructions consume rand identically (one
+rand:uniform(2) per coin, 160 per cell), so a given null's two columns are the
+SAME draws under two encodings.
+
+THE DOUBLING, SHOWN RATHER THAN ARGUED. The span of |margin| over every pair
+of every draw:
+  sign-only   as-built {2.0,2.0}   corrected {1.0,1.0}
+  match-level as-built {0.0,0.6499999999999999}   corrected {0.0,0.32499999999999996}
+
+
+F1. THE MATCH-LEVEL NULL, AS-BUILT BESIDE CORRECTED.
+
+band  column       ordered median  ordered range   cycles median  cycles range  decisive median of 190
+0.05  as-built            174.5        {99,248}           119.0      {65,174}         143.0
+0.05  corrected            80.0        {38,133}            54.0       {27,91}         110.0
+0.10  as-built             80.0        {38,133}            54.0       {27,91}         110.0
+0.10  corrected             5.0          {0,21}             3.0        {0,13}          45.0
+0.15  as-built             12.0          {2,29}             8.0        {2,18}          58.0
+0.15  corrected             0.0           {0,2}             0.0         {0,1}           9.0
+
+THE HALVING IS AN IDENTITY BETWEEN TWO ROWS OF THAT TABLE, not a claim: the
+as-built row at band 0.10 is the corrected row at band 0.05, because the same
+draws are read against a band that is twice as large in one encoding.
+  as-built  at band 0.10 : ordered 80.0 {38,133}, cycles 54.0 {27,91}, decisive 110.0
+  corrected at band 0.05 : ordered 80.0 {38,133}, cycles 54.0 {27,91}, decisive 110.0
+  identical: true
+
+AGREEMENT WITH THE INDEPENDENT SCRIPT, AND IT IS PARTIAL. F1b is about that.
+
+F1b. THE CORRECTED COLUMN DOES NOT REPRODUCE THE INDEPENDENT SCRIPT AT EVERY
+BAND, AND THE REASON IS NOT THE FIX.
+
+scripts/exp066_verify_null_scaling.escript builds its corrected column a THIRD
+way: it HALVES the margin and stores plus and minus half, so xp_mg/1 returns
+the margin once. That is algebraically the same margin as xp_from_wins/2's, and
+at band 0.05 the two agree digit for digit. At bands 0.10 and 0.15 they do NOT.
+The two encodings agree on all three bands: false.
+
+WHY. Every synthetic margin is (2K - M)/M for an integer K, and all three
+pre-registered bands are exact multiples of the margin quantum 2/160: 0.05 is
+8/160, 0.10 is 16/160, 0.15 is 24/160. So every draw contains edges whose
+margin equals the band EXACTLY, where 'margin > band' is mathematically FALSE.
+None of 0.05, 0.10 and 0.15 is a binary float, so each encoding renders those
+boundary edges slightly above or slightly below the band, and the two round in
+OPPOSITE directions on the negative side. Two worked examples, both exact
+ties in arithmetic:
+  K = 72 of 160, true margin -0.1 exactly. Halved encoding gives
+    -0.09999999999999998, win-rate encoding -0.10000000000000003. The reverse
+    edge is therefore NOT decisive at band 0.10 under the first and IS under
+    the second.
+  K = 68 of 160, true margin -0.15 exactly. Halved gives
+    -0.15000000000000002, win-rate -0.14999999999999997, and the reverse edge
+    flips the other way at band 0.15.
+  K = 84 of 160, true margin +0.05 exactly. BOTH encodings give
+    0.050000000000000044, so both count an exact tie as decisive at band 0.05.
+    Neither encoding is right there; they merely agree.
+
+NEITHER FLOAT ENCODING IS CORRECT ON EVERY BOUNDARY EDGE, and which ties each
+one counts varies by band. scripts/exp066_verify_recovered.escript check 5
+enumerates them: at band 0.05 both encodings count both ties (K = 76 and 84)
+as decisive and both are wrong; at 0.10 the win-rate form counts both ties
+(72 and 88) and the halved form one (88), so both are wrong and the halved one
+less so; at 0.15 the win-rate form counts NEITHER tie and is right while the
+halved form counts one (68) and is wrong. This is a property of the
+PRE-REGISTERED COUNTER, which tests a strict float inequality against a band
+that is not a binary float, and NOT of this fix. The counter is NOT touched
+here: xp_ordered/3 and xp_cycles/3 are exp057's, character for character, and
+they stay that way.
+
+THE EXACT-INTEGER COLUMN IS A NEW POST-HOC DIAGNOSTIC. Mg > B is exactly
+2K - M > B * M, and B * M is 8, 16 and 24, integers. Counting with those
+computes THE SAME TEST with no rounding error. The band is not moved. This
+column is new, unregistered, and it is here to say which float encoding is
+nearer the definition, not to replace either.
+
+band  encoding                 ordered median  cycles median  decisive median  edges exactly ON the band
+0.05  win-rate (this fix)            80.0           54.0            110.0
+0.05  halved (the escript)           80.0           54.0            110.0
+0.05  EXACT integer, NEW             46.0           31.0             91.0                     19.0
+0.10  win-rate (this fix)             5.0            3.0             45.0
+0.10  halved (the escript)            3.0            2.0             39.0
+0.10  EXACT integer, NEW              2.0            1.0             34.0                     11.0
+0.15  win-rate (this fix)             0.0            0.0              9.0
+0.15  halved (the escript)            0.0            0.0             11.0
+0.15  EXACT integer, NEW              0.0            0.0              9.0                      4.0
+
+READING. The exact count is at or below both float columns at every band, and
+that direction is guaranteed rather than observed: a non-boundary edge sits at
+least one quantum (0.0125) from the band, far outside float error, so the exact
+edge set is a SUBSET of each float edge set and both cycle counters are
+monotone in the edge set. Which of the two float encodings sits nearer the
+exact one varies by band; compare the rows above. NEITHER is systematically
+better and this record does not claim one is. What matters for FIX D's
+conclusion is that all three corrected columns are an order of magnitude below
+the as-built column at the headline band, so the doubling defect dominates the
+encoding question by a wide margin.
+
+ONE MORE THING ABOUT THE WORK PACKAGE'S OWN ACCEPTANCE NUMBER. It asked that
+the fixed version agree with exp066_verify_null_scaling.escript's corrected
+column at 'band 0.10, ordered median 5.0 range {0,15} and cycles median 3.0
+range {0,10}'. Those four numbers are NOT that script's. Run at its own seed
+660 it prints ordered median 3.0 range {0,12} and cycles median 2.0 range
+{0,8}. The quoted numbers are exp066_crossplay_null_audit.txt's MATCH
+CORRECTED row at band 0.10, which is drawn at seed 661 and built with the
+(1+V)/2 form, a construction BITWISE IDENTICAL to xp_from_wins/2. The medians
+this record prints at band 0.10, ordered 5.0 and cycles 3.0, equal those
+quoted medians; the ranges differ because the seed differs. The
+misattribution is recorded rather than resolved by adjusting anything, and
+scripts/exp066_verify_recovered.escript checks all three encodings against one
+another mechanically.
+
+F2. THE SIGN-ONLY NULL, AS-BUILT BESIDE CORRECTED. VERIFIED, NOT ASSUMED.
+
+band  column       ordered median  ordered range   cycles median  cycles range  decisive median of 190
+0.05  as-built            425.0       {341,498}           285.5     {237,318}         190.0
+0.05  corrected           425.0       {341,498}           285.5     {237,318}         190.0
+0.10  as-built            425.0       {341,498}           285.5     {237,318}         190.0
+0.10  corrected           425.0       {341,498}           285.5     {237,318}         190.0
+0.15  as-built            425.0       {341,498}           285.5     {237,318}         190.0
+0.15  corrected           425.0       {341,498}           285.5     {237,318}         190.0
+
+THE SIGN-ONLY NULL IS UNAFFECTED, AND THAT IS MEASURED HERE RATHER THAN
+ASSUMED. The note's argument is that a margin of plus or minus 2 clears every
+band just as plus or minus 1 does, so no counted number can move. The two
+columns above are computed on the same draws and compared:
+  all three bands, all five numbers, identical: true
+The margin spans differ as expected ({2.0,2.0} as-built against {1.0,1.0} corrected), so the
+encodings really are different; it is the COUNTS that cannot tell them apart,
+because every band tested is below 1.0. A band at or above 1.0 would separate
+them, and none is used.
+
+F3. WHAT THE CORRECTION DOES TO THE COMPARISON. The observed counts are
+quoted from exp066_crossplay.txt's own counts block (lines 46..67) and are
+NOT recomputed here: recovered/1 does not load the cross-play matrix.
+scripts/exp066_verify_crossplay.escript already re-derives them from the
+persisted matrix independently.
+
+band  observed cycles  as-built null median  corrected null median  observed is
+0.05               49                 119.0                   54.0  below both
+0.10               18                  54.0                    3.0  BELOW as-built, ABOVE corrected: SIGN REVERSES
+0.15               12                   8.0                    0.0  above both
+
+READ THAT CAREFULLY. At the HEADLINE band 0.10 the sign of the naive
+comparison REVERSES: 18 observed cycles sit below the as-built median and
+above the corrected one. At band 0.05 the correction narrows the gap without
+crossing it, and at band 0.15 the observed count was already above both. The
+audit beside this record (exp066_crossplay_null_audit.txt) reached the same
+conclusion from the persisted matrix with a third seed, and stated there that
+the sign of the comparison depends on which null is used.
+
+THE PERSISTED BLOCK IS NOT BIT-IDENTICAL TO THE AS-BUILT COLUMN ABOVE, AND
+SHOULD NOT BE. In crossplay/1 the match-level null is drawn AFTER the
+sign-only null has consumed 190 x 200 coin flips from the same generator,
+while every column above is drawn from a freshly seeded one. Same model, same
+draw count, different draws: the persisted band-0.10 medians are 84.0 and
+55.0, the as-built column above reads 80.0 and 54.0. Neither is more correct
+than the other; both are as-built, and both are superseded by the corrected
+column.
+
+F4. FIXING THE ARITHMETIC DOES NOT MAKE THIS THE RIGHT NULL. STATED PLAINLY.
+
+The corrected match-level null is still NOT CONDITIONED ON OBSERVED EDGE
+DECISIVENESS. It samples fair coin play at 160 matches per cell and therefore
+produces its OWN decisiveness, which is nothing like the matrix it is being
+compared with: at band 0.10 the corrected null leaves a median of 45.0 decisive
+edges of 190 while the observed matrix has 152 (exp066_crossplay.txt, counts
+block, lines 46..67). A count of cycles is a function of how many edges are
+decisive at all, so comparing 152 decisive edges against a reference with
+45.0 is not a test of intransitivity; it is mostly a test of decisiveness, and
+the arithmetic error was hiding that behind a second one.
+
+THE NULL A FUTURE RUNG SHOULD REGISTER IS THE ORIENTATION NULL: keep every
+observed |margin| edge for edge and randomise only the SIGNS. That holds
+decisive_edges identical to the observed value at every band by construction,
+so the comparison is about orientation alone, which is what a cycle is.
+exp066_crossplay_null_audit.txt already computes it (ORIENTATION rows) and
+under it the observed counts sit far BELOW chance at every band. That null is
+unregistered and self-calibrated like everything else in this probe, which is
+exactly why it should be REGISTERED IN ADVANCE rather than adopted after the
+counts are known. This record does not adopt it and claims nothing from it.
+
+Both nulls above remain UNREGISTERED and neither is a reference this front is
+entitled to read a result off. FIX D removes an arithmetic defect. It does not
+promote the fixed instrument.
+
+
+-- G. WHAT THIS RECORD DOES NOT DO --
+
+It does not re-emit exp066_crossplay.txt. That record's null_match_level block
+is as-built, the audit beside it quotes those numbers, and rewriting a
+persisted exploratory record to match a later fix would destroy the evidence
+of the defect. A FUTURE crossplay/1 run emits the corrected null, because the
+fix is at the source; when that happens the two records will differ and this
+section is the reason.
+
+It does not amend the feed above its own appended note. The feed's N line
+carries four win rates because that is what the run of 2026-07-29 computed. A
+future run's line carries four {Kind, W, L, D} tuples.
+
+It does not claim an intransitivity result for the front. Whether cross-play
+cycling among CHAMPIONS is real is phase 1's question and needs champion versus
+champion play, which is not measured here.
+
+It does not loosen the relation. One relation is stated in section D and it is
+the stricter of the two available readings. Where a triple fails to close, the
+missing leg is named and the record stops there.
+
+It does not re-run an arm, modify a genome, or move a pre-registered threshold.
+B, R_line and D_min are untouched. It signs nothing.
+
+ONE BLEMISH IN THE APPENDED NOTE, LEFT ALONE BECAUSE THE FEED IS APPEND-ONLY.
+Addendum 3's line beginning 'THE CANDIDATE DOES NOT CLOSE' prints the missing
+leg with ~w applied to two label STRINGS, so it reads as two lists of character
+codes: [115,105,...] is "sitting_duck" and [100,50,48,48,52] is "d2004". The
+content is not wrong and it is not lost: the leg table three lines above it and
+the prose immediately below it both name that pair in words. The feed is
+APPEND-ONLY so the line stands as written. rc_note_named_verdict/3 now formats
+the missing legs through rc_e_miss_row/3, which uses ~s, so a future run prints
+them readably; that means a future append would not be byte-identical to the one
+of 2026-07-30, which is expected of a one-shot append.
+
+
+== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) ==
+{recovered,[{date,[50,48,50,54,45,48,55,45,51,48]},{status,[80,79,83,84,32,72,79,67,46,32,70,73,88,32,67,32,114,101,99,111,118,101,114,115,32,97,32,100,105,115,99,97,114,100,101,100,32,109,101,97,115,117,114,101,109,101,110,116,32,97,110,100,32,115,101,97,114,99,104,101,115,32,102,111,114,32,97,32,99,121,99,108,105,99,32,116,114,105,112,108,101,46,32,70,73,88,32,68,32,105,115,32,97,32,100,101,102,101,99,116,32,102,105,120,32,116,111,32,97,32,115,121,110,116,104,101,116,105,99,32,110,117,108,108,46,32,78,111,116,104,105,110,103,32,104,101,114,101,32,105,115,32,112,114,101,45,114,101,103,105,115,116,101,114,101,100,32,97,110,100,32,110,111,116,104,105,110,103,32,105,115,32,115,105,103,110,101,100,46]},{engine_pin,[97,53,101,56,98,99,102,99,53,54,52,54,56,50,55,101,57,98,101,52,57,97,57,54,50,57,102,56,97,54,97,57,54,55,56,99,56,49,52,98]},{produced_by,[101,120,112,48,54,54,95,115,105,110,103,108,101,95,112,111,112,117,108,97,116,105,111,110,95,102,108,111,111,114,95,116,101,115,116,115,58,114,101,99,111,118,101,114,101,100,47,49]},{archive_dir,[112,114,111,103,114,97,109,109,101,115,47,112,55,95,99,111,101,118,111,108,117,116,105,111,110,47,101,120,112,48,54,54,95,99,111,109,112,101,116,101,110,99,101,95,102,108,111,111,114,47]},{starts,80},{matches_per_ordered_cell,160},{relation,[65,32,98,101,97,116,115,32,66,32,105,102,102,32,87,40,65,44,66,41,32,62,32,48,46,53,32,111,118,101,114,32,116,104,101,32,49,54,48,32,109,97,116,99,104,101,115,32,111,102,32,116,104,101,32,111,114,100,101,114,101,100,32,99,101,108,108,59,32,97,32,119,105,110,32,114,101,113,117,105,114,101,115,32,66,32,100,101,97,100,32,97,110,100,32,65,32,97,108,105,118,101,59,32,100,114,97,119,115,32,99,111,117,110,116,32,97,115,32,78,79,84,32,98,101,97,116,105,110,103]},{pair_shape,{pair,id_a,id_b,provenance,{w_ab,l_ab,d_ab},{w_ba,l_ba,d_ba},transpose_exact,matches}},{pairs,[{pair,{script,sitting_duck},{script,spinner},new_post_hoc,{0.0,0.0,1.0},{0.0,0.0,1.0},true,160},{pair,{script,sitting_duck},{champ,s,2001},preregistered,{0.01875,0.9375,0.04375},{0.9375,0.01875,0.04375},true,160},{pair,{script,sitting_duck},{champ,s,2002},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2003},preregistered,{0.0,0.99375,0.00625},{0.99375,0.0,0.00625},true,160},{pair,{script,sitting_duck},{champ,s,2004},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2005},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2006},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2007},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2008},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2009},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2010},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2011},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2012},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2013},preregistered,{0.0,0.95,0.05},{0.95,0.0,0.05},true,160},{pair,{script,sitting_duck},{champ,s,2014},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2015},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2016},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2017},preregistered,{0.0,0.975,0.025},{0.975,0.0,0.025},true,160},{pair,{script,sitting_duck},{champ,s,2018},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2019},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,s,2020},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2001},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2002},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2003},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2004},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2005},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2006},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2007},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2008},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2009},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,l,2010},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,d,2001},preregistered,{0.41875,0.18125,0.4},{0.18125,0.41875,0.4},true,160},{pair,{script,sitting_duck},{champ,d,2002},preregistered,{0.04375,0.85,0.10625},{0.85,0.04375,0.10625},true,160},{pair,{script,sitting_duck},{champ,d,2003},preregistered,{0.14375,0.83125,0.025},{0.83125,0.14375,0.025},true,160},{pair,{script,sitting_duck},{champ,d,2004},preregistered,{0.00625,0.0125,0.98125},{0.0125,0.00625,0.98125},true,160},{pair,{script,sitting_duck},{champ,d,2005},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,sitting_duck},{champ,d,2006},preregistered,{0.1125,0.025,0.8625},{0.025,0.1125,0.8625},true,160},{pair,{script,sitting_duck},{champ,d,2007},preregistered,{0.1125,0.8875,0.0},{0.8875,0.1125,0.0},true,160},{pair,{script,sitting_duck},{champ,d,2008},preregistered,{0.66875,0.09375,0.2375},{0.09375,0.66875,0.2375},true,160},{pair,{script,sitting_duck},{champ,d,2009},preregistered,{0.30625,0.04375,0.65},{0.04375,0.30625,0.65},true,160},{pair,{script,sitting_duck},{champ,d,2010},preregistered,{0.0,0.325,0.675},{0.325,0.0,0.675},true,160},{pair,{script,spinner},{champ,s,2001},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,spinner},{champ,s,2002},preregistered,{0.05,0.95,0.0},{0.95,0.05,0.0},true,160},{pair,{script,spinner},{champ,s,2003},preregistered,{0.01875,0.95625,0.025},{0.95625,0.01875,0.025},true,160},{pair,{script,spinner},{champ,s,2004},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,spinner},{champ,s,2005},preregistered,{0.05625,0.9,0.04375},{0.9,0.05625,0.04375},true,160},{pair,{script,spinner},{champ,s,2006},preregistered,{0.03125,0.96875,0.0},{0.96875,0.03125,0.0},true,160},{pair,{script,spinner},{champ,s,2007},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,spinner},{champ,s,2008},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,spinner},{champ,s,2009},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,spinner},{champ,s,2010},preregistered,{0.0625,0.9375,0.0},{0.9375,0.0625,0.0},true,160},{pair,{script,spinner},{champ,s,2011},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,spinner},{champ,s,2012},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,spinner},{champ,s,2013},preregistered,{0.01875,0.98125,0.0},{0.98125,0.01875,0.0},true,160},{pair,{script,spinner},{champ,s,2014},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,spinner},{champ,s,2015},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,spinner},{champ,s,2016},preregistered,{0.01875,0.975,0.00625},{0.975,0.01875,0.00625},true,160},{pair,{script,spinner},{champ,s,2017},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,spinner},{champ,s,2018},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,spinner},{champ,s,2019},preregistered,{0.025,0.9625,0.0125},{0.9625,0.025,0.0125},true,160},{pair,{script,spinner},{champ,s,2020},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,spinner},{champ,l,2001},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,spinner},{champ,l,2002},preregistered,{0.06875,0.93125,0.0},{0.93125,0.06875,0.0},true,160},{pair,{script,spinner},{champ,l,2003},preregistered,{0.05625,0.94375,0.0},{0.94375,0.05625,0.0},true,160},{pair,{script,spinner},{champ,l,2004},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,spinner},{champ,l,2005},preregistered,{0.0375,0.9625,0.0},{0.9625,0.0375,0.0},true,160},{pair,{script,spinner},{champ,l,2006},preregistered,{0.025,0.975,0.0},{0.975,0.025,0.0},true,160},{pair,{script,spinner},{champ,l,2007},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,spinner},{champ,l,2008},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,spinner},{champ,l,2009},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,spinner},{champ,l,2010},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,spinner},{champ,d,2001},preregistered,{0.78125,0.14375,0.075},{0.14375,0.78125,0.075},true,160},{pair,{script,spinner},{champ,d,2002},preregistered,{0.40625,0.54375,0.05},{0.54375,0.40625,0.05},true,160},{pair,{script,spinner},{champ,d,2003},preregistered,{0.275,0.725,0.0},{0.725,0.275,0.0},true,160},{pair,{script,spinner},{champ,d,2004},preregistered,{0.1625,0.09375,0.74375},{0.09375,0.1625,0.74375},true,160},{pair,{script,spinner},{champ,d,2005},preregistered,{0.06875,0.74375,0.1875},{0.74375,0.06875,0.1875},true,160},{pair,{script,spinner},{champ,d,2006},preregistered,{0.25,0.10625,0.64375},{0.10625,0.25,0.64375},true,160},{pair,{script,spinner},{champ,d,2007},preregistered,{0.04375,0.95625,0.0},{0.95625,0.04375,0.0},true,160},{pair,{script,spinner},{champ,d,2008},preregistered,{0.63125,0.34375,0.025},{0.34375,0.63125,0.025},true,160},{pair,{script,spinner},{champ,d,2009},preregistered,{0.4625,0.2875,0.25},{0.2875,0.4625,0.25},true,160},{pair,{script,spinner},{champ,d,2010},preregistered,{0.0875,0.34375,0.56875},{0.34375,0.0875,0.56875},true,160},{pair,{script,rammer},{script,sitting_duck},new_post_hoc,{1.0,0.0,0.0},{0.0,1.0,0.0},true,160},{pair,{script,rammer},{script,spinner},new_post_hoc,{0.775,0.0,0.225},{0.0,0.775,0.225},true,160},{pair,{script,rammer},{champ,s,2001},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,rammer},{champ,s,2002},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,rammer},{champ,s,2003},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2004},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2005},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,rammer},{champ,s,2006},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2007},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,rammer},{champ,s,2008},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2009},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,rammer},{champ,s,2010},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2011},preregistered,{0.01875,0.98125,0.0},{0.98125,0.01875,0.0},true,160},{pair,{script,rammer},{champ,s,2012},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2013},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2014},preregistered,{0.06875,0.93125,0.0},{0.93125,0.06875,0.0},true,160},{pair,{script,rammer},{champ,s,2015},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2016},preregistered,{0.01875,0.98125,0.0},{0.98125,0.01875,0.0},true,160},{pair,{script,rammer},{champ,s,2017},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2018},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,rammer},{champ,s,2019},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,s,2020},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,rammer},{champ,l,2001},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,l,2002},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,rammer},{champ,l,2003},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,l,2004},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,rammer},{champ,l,2005},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,rammer},{champ,l,2006},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,l,2007},preregistered,{0.01875,0.98125,0.0},{0.98125,0.01875,0.0},true,160},{pair,{script,rammer},{champ,l,2008},preregistered,{0.00625,0.9875,0.00625},{0.9875,0.00625,0.00625},true,160},{pair,{script,rammer},{champ,l,2009},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,rammer},{champ,l,2010},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,rammer},{champ,d,2001},preregistered,{0.0875,0.9125,0.0},{0.9125,0.0875,0.0},true,160},{pair,{script,rammer},{champ,d,2002},preregistered,{0.14375,0.85625,0.0},{0.85625,0.14375,0.0},true,160},{pair,{script,rammer},{champ,d,2003},preregistered,{0.70625,0.2875,0.00625},{0.2875,0.70625,0.00625},true,160},{pair,{script,rammer},{champ,d,2004},preregistered,{0.2125,0.675,0.1125},{0.675,0.2125,0.1125},true,160},{pair,{script,rammer},{champ,d,2005},preregistered,{0.3125,0.6875,0.0},{0.6875,0.3125,0.0},true,160},{pair,{script,rammer},{champ,d,2006},preregistered,{0.3875,0.6125,0.0},{0.6125,0.3875,0.0},true,160},{pair,{script,rammer},{champ,d,2007},preregistered,{0.63125,0.36875,0.0},{0.36875,0.63125,0.0},true,160},{pair,{script,rammer},{champ,d,2008},preregistered,{0.0875,0.9125,0.0},{0.9125,0.0875,0.0},true,160},{pair,{script,rammer},{champ,d,2009},preregistered,{0.375,0.625,0.0},{0.625,0.375,0.0},true,160},{pair,{script,rammer},{champ,d,2010},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,circle_strafer},{script,sitting_duck},new_post_hoc,{1.0,0.0,0.0},{0.0,1.0,0.0},true,160},{pair,{script,circle_strafer},{script,spinner},new_post_hoc,{0.65,0.01875,0.33125},{0.01875,0.65,0.33125},true,160},{pair,{script,circle_strafer},{script,rammer},new_post_hoc,{0.99375,0.00625,0.0},{0.00625,0.99375,0.0},true,160},{pair,{script,circle_strafer},{script,predictive_gun},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2001},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2002},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2003},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2004},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2005},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2006},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2007},preregistered,{0.23125,0.76875,0.0},{0.76875,0.23125,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2008},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2009},preregistered,{0.19375,0.8,0.00625},{0.8,0.19375,0.00625},true,160},{pair,{script,circle_strafer},{champ,s,2010},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2011},preregistered,{0.20625,0.79375,0.0},{0.79375,0.20625,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2012},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2013},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2014},preregistered,{0.25625,0.74375,0.0},{0.74375,0.25625,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2015},preregistered,{0.125,0.875,0.0},{0.875,0.125,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2016},preregistered,{0.125,0.875,0.0},{0.875,0.125,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2017},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2018},preregistered,{0.125,0.875,0.0},{0.875,0.125,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2019},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,s,2020},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,l,2001},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,l,2002},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,l,2003},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,l,2004},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,l,2005},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,l,2006},preregistered,{0.01875,0.98125,0.0},{0.98125,0.01875,0.0},true,160},{pair,{script,circle_strafer},{champ,l,2007},preregistered,{0.225,0.775,0.0},{0.775,0.225,0.0},true,160},{pair,{script,circle_strafer},{champ,l,2008},preregistered,{0.1375,0.85625,0.00625},{0.85625,0.1375,0.00625},true,160},{pair,{script,circle_strafer},{champ,l,2009},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,circle_strafer},{champ,l,2010},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,circle_strafer},{champ,d,2001},preregistered,{0.01875,0.98125,0.0},{0.98125,0.01875,0.0},true,160},{pair,{script,circle_strafer},{champ,d,2002},preregistered,{0.15625,0.84375,0.0},{0.84375,0.15625,0.0},true,160},{pair,{script,circle_strafer},{champ,d,2003},preregistered,{0.05,0.95,0.0},{0.95,0.05,0.0},true,160},{pair,{script,circle_strafer},{champ,d,2004},preregistered,{0.03125,0.96875,0.0},{0.96875,0.03125,0.0},true,160},{pair,{script,circle_strafer},{champ,d,2005},preregistered,{0.075,0.91875,0.00625},{0.91875,0.075,0.00625},true,160},{pair,{script,circle_strafer},{champ,d,2006},preregistered,{0.025,0.9125,0.0625},{0.9125,0.025,0.0625},true,160},{pair,{script,circle_strafer},{champ,d,2007},preregistered,{0.0875,0.9125,0.0},{0.9125,0.0875,0.0},true,160},{pair,{script,circle_strafer},{champ,d,2008},preregistered,{0.0875,0.9125,0.0},{0.9125,0.0875,0.0},true,160},{pair,{script,circle_strafer},{champ,d,2009},preregistered,{0.075,0.91875,0.00625},{0.91875,0.075,0.00625},true,160},{pair,{script,circle_strafer},{champ,d,2010},preregistered,{0.0375,0.9625,0.0},{0.9625,0.0375,0.0},true,160},{pair,{script,predictive_gun},{script,sitting_duck},preregistered,{1.0,0.0,0.0},{0.0,1.0,0.0},true,160},{pair,{script,predictive_gun},{script,spinner},preregistered,{0.75625,0.0,0.24375},{0.0,0.75625,0.24375},true,160},{pair,{script,predictive_gun},{script,rammer},preregistered,{0.9875,0.0125,0.0},{0.0125,0.9875,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2001},preregistered,{0.025,0.975,0.0},{0.975,0.025,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2002},preregistered,{0.05625,0.9375,0.00625},{0.9375,0.05625,0.00625},true,160},{pair,{script,predictive_gun},{champ,s,2003},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2004},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2005},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2006},preregistered,{0.00625,0.99375,0.0},{0.99375,0.00625,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2007},preregistered,{0.41875,0.58125,0.0},{0.58125,0.41875,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2008},preregistered,{0.025,0.975,0.0},{0.975,0.025,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2009},preregistered,{0.4125,0.575,0.0125},{0.575,0.4125,0.0125},true,160},{pair,{script,predictive_gun},{champ,s,2010},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2011},preregistered,{0.4625,0.5375,0.0},{0.5375,0.4625,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2012},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2013},preregistered,{0.0,0.975,0.025},{0.975,0.0,0.025},true,160},{pair,{script,predictive_gun},{champ,s,2014},preregistered,{0.41875,0.58125,0.0},{0.58125,0.41875,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2015},preregistered,{0.58125,0.41875,0.0},{0.41875,0.58125,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2016},preregistered,{0.2,0.8,0.0},{0.8,0.2,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2017},preregistered,{0.0,1.0,0.0},{1.0,0.0,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2018},preregistered,{0.3875,0.60625,0.00625},{0.60625,0.3875,0.00625},true,160},{pair,{script,predictive_gun},{champ,s,2019},preregistered,{0.01875,0.98125,0.0},{0.98125,0.01875,0.0},true,160},{pair,{script,predictive_gun},{champ,s,2020},preregistered,{0.0125,0.9875,0.0},{0.9875,0.0125,0.0},true,160},{pair,{script,predictive_gun},{champ,l,2001},preregistered,{0.025,0.975,0.0},{0.975,0.025,0.0},true,160},{pair,{script,predictive_gun},{champ,l,2002},preregistered,{0.04375,0.95625,0.0},{0.95625,0.04375,0.0},true,160},{pair,{script,predictive_gun},{champ,l,2003},preregistered,{0.0625,0.9375,0.0},{0.9375,0.0625,0.0},true,160},{pair,{script,predictive_gun},{champ,l,2004},preregistered,{0.05625,0.9375,0.00625},{0.9375,0.05625,0.00625},true,160},{pair,{script,predictive_gun},{champ,l,2005},preregistered,{0.0625,0.9375,0.0},{0.9375,0.0625,0.0},true,160},{pair,{script,predictive_gun},{champ,l,2006},preregistered,{0.05,0.94375,0.00625},{0.94375,0.05,0.00625},true,160},{pair,{script,predictive_gun},{champ,l,2007},preregistered,{0.49375,0.50625,0.0},{0.50625,0.49375,0.0},true,160},{pair,{script,predictive_gun},{champ,l,2008},preregistered,{0.40625,0.59375,0.0},{0.59375,0.40625,0.0},true,160},{pair,{script,predictive_gun},{champ,l,2009},preregistered,{0.025,0.975,0.0},{0.975,0.025,0.0},true,160},{pair,{script,predictive_gun},{champ,l,2010},preregistered,{0.0375,0.9625,0.0},{0.9625,0.0375,0.0},true,160},{pair,{script,predictive_gun},{champ,d,2001},preregistered,{0.025,0.975,0.0},{0.975,0.025,0.0},true,160},{pair,{script,predictive_gun},{champ,d,2002},preregistered,{0.06875,0.93125,0.0},{0.93125,0.06875,0.0},true,160},{pair,{script,predictive_gun},{champ,d,2003},preregistered,{0.04375,0.95625,0.0},{0.95625,0.04375,0.0},true,160},{pair,{script,predictive_gun},{champ,d,2004},preregistered,{0.0375,0.9625,0.0},{0.9625,0.0375,0.0},true,160},{pair,{script,predictive_gun},{champ,d,2005},preregistered,{0.0625,0.925,0.0125},{0.925,0.0625,0.0125},true,160},{pair,{script,predictive_gun},{champ,d,2006},preregistered,{0.06875,0.93125,0.0},{0.93125,0.06875,0.0},true,160},{pair,{script,predictive_gun},{champ,d,2007},preregistered,{0.06875,0.93125,0.0},{0.93125,0.06875,0.0},true,160},{pair,{script,predictive_gun},{champ,d,2008},preregistered,{0.03125,0.96875,0.0},{0.96875,0.03125,0.0},true,160},{pair,{script,predictive_gun},{champ,d,2009},preregistered,{0.13125,0.8625,0.00625},{0.8625,0.13125,0.00625},true,160},{pair,{script,predictive_gun},{champ,d,2010},preregistered,{0.025,0.96875,0.00625},{0.96875,0.025,0.00625},true,160}]},{triple_shape,{tri,{id_a,id_b,id_c},all_pairs_measured,all_edges_present,cyclic,forward_orientation,provenance}},{triples_enumerated,14190},{triples_by_class,[{preregistered,160,5},{extended,250,8},{unmeasured,13780,0}]},{cyclic_triples,[{tri,{{script,rammer},{script,sitting_duck},{champ,d,2008}},true,true,true,true,extended},{tri,{{script,rammer},{script,spinner},{champ,d,2001}},true,true,true,true,extended},{tri,{{script,rammer},{script,spinner},{champ,d,2008}},true,true,true,true,extended},{tri,{{script,circle_strafer},{script,sitting_duck},{champ,d,2008}},true,true,true,true,extended},{tri,{{script,circle_strafer},{script,spinner},{champ,d,2001}},true,true,true,true,extended},{tri,{{script,circle_strafer},{script,spinner},{champ,d,2008}},true,true,true,true,extended},{tri,{{script,circle_strafer},{script,rammer},{champ,d,2003}},true,true,true,true,extended},{tri,{{script,circle_strafer},{script,rammer},{champ,d,2007}},true,true,true,true,extended},{tri,{{script,predictive_gun},{script,sitting_duck},{champ,d,2008}},true,true,true,true,preregistered},{tri,{{script,predictive_gun},{script,spinner},{champ,d,2001}},true,true,true,true,preregistered},{tri,{{script,predictive_gun},{script,spinner},{champ,d,2008}},true,true,true,true,preregistered},{tri,{{script,predictive_gun},{script,rammer},{champ,d,2003}},true,true,true,true,preregistered},{tri,{{script,predictive_gun},{script,rammer},{champ,d,2007}},true,true,true,true,preregistered}]},{nulls,[{champions,20},{matches_per_cell,160},{draws,200},{seed,660},{sign_as_built,[{at_band,0.05,[{ordered_median,425.0},{ordered_range,{341,498}},{cycles_median,285.5},{cycles_range,{237,318}},{decisive_median,190.0},{of_pairs,190}]},{at_band,0.1,[{ordered_median,425.0},{ordered_range,{341,498}},{cycles_median,285.5},{cycles_range,{237,318}},{decisive_median,190.0},{of_pairs,190}]},{at_band,0.15,[{ordered_median,425.0},{ordered_range,{341,498}},{cycles_median,285.5},{cycles_range,{237,318}},{decisive_median,190.0},{of_pairs,190}]}]},{sign_corrected,[{at_band,0.05,[{ordered_median,425.0},{ordered_range,{341,498}},{cycles_median,285.5},{cycles_range,{237,318}},{decisive_median,190.0},{of_pairs,190}]},{at_band,0.1,[{ordered_median,425.0},{ordered_range,{341,498}},{cycles_median,285.5},{cycles_range,{237,318}},{decisive_median,190.0},{of_pairs,190}]},{at_band,0.15,[{ordered_median,425.0},{ordered_range,{341,498}},{cycles_median,285.5},{cycles_range,{237,318}},{decisive_median,190.0},{of_pairs,190}]}]},{match_as_built,[{at_band,0.05,[{ordered_median,174.5},{ordered_range,{99,248}},{cycles_median,119.0},{cycles_range,{65,174}},{decisive_median,143.0},{of_pairs,190}]},{at_band,0.1,[{ordered_median,80.0},{ordered_range,{38,133}},{cycles_median,54.0},{cycles_range,{27,91}},{decisive_median,110.0},{of_pairs,190}]},{at_band,0.15,[{ordered_median,12.0},{ordered_range,{2,29}},{cycles_median,8.0},{cycles_range,{2,18}},{decisive_median,58.0},{of_pairs,190}]}]},{match_corrected,[{at_band,0.05,[{ordered_median,80.0},{ordered_range,{38,133}},{cycles_median,54.0},{cycles_range,{27,91}},{decisive_median,110.0},{of_pairs,190}]},{at_band,0.1,[{ordered_median,5.0},{ordered_range,{0,21}},{cycles_median,3.0},{cycles_range,{0,13}},{decisive_median,45.0},{of_pairs,190}]},{at_band,0.15,[{ordered_median,0.0},{ordered_range,{0,2}},{cycles_median,0.0},{cycles_range,{0,1}},{decisive_median,9.0},{of_pairs,190}]}]},{match_corrected_half_encoding,[{at_band,0.05,[{ordered_median,80.0},{ordered_range,{38,133}},{cycles_median,54.0},{cycles_range,{27,91}},{decisive_median,110.0},{of_pairs,190}]},{at_band,0.1,[{ordered_median,3.0},{ordered_range,{0,12}},{cycles_median,2.0},{cycles_range,{0,8}},{decisive_median,39.0},{of_pairs,190}]},{at_band,0.15,[{ordered_median,0.0},{ordered_range,{0,2}},{cycles_median,0.0},{cycles_range,{0,1}},{decisive_median,11.0},{of_pairs,190}]}]},{match_corrected_exact_integer,[{at_band,0.05,[{integer_threshold,8},{threshold_exact,true},{ordered_median,46.0},{ordered_range,{14,88}},{cycles_median,31.0},{cycles_range,{11,59}},{decisive_median,91.0},{edges_exactly_on_band_median,19.0},{of_pairs,190}]},{at_band,0.1,[{integer_threshold,16},{threshold_exact,true},{ordered_median,2.0},{ordered_range,{0,10}},{cycles_median,1.0},{cycles_range,{0,6}},{decisive_median,34.0},{edges_exactly_on_band_median,11.0},{of_pairs,190}]},{at_band,0.15,[{integer_threshold,24},{threshold_exact,true},{ordered_median,0.0},{ordered_range,{0,2}},{cycles_median,0.0},{cycles_range,{0,1}},{decisive_median,9.0},{edges_exactly_on_band_median,4.0},{of_pairs,190}]}]},{abs_margin_span,[{sign_as_built,{2.0,2.0}},{sign_corrected,{1.0,1.0}},{match_as_built,{0.0,0.6499999999999999}},{match_corrected,{0.0,0.32499999999999996}}]},{sign_identical,true},{match_identical,false},{corrected_encodings_identical,false}]}]}.
