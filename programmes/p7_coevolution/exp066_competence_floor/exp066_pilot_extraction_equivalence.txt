@@ -1,0 +1,427 @@
+== EXP-066: IS robo_pilot THE PHASE 0 CONTROLLER, OR A COPY THAT LOOKS LIKE IT? ==
+
+VERDICT: EQUIVALENT. Over 3200 replayed matches the extracted controller produced
+the SAME intent on every single turn, carried the SAME memory on every single turn,
+and reproduced all 20 arm S per-seed held-out rates and every individual match
+outcome exactly. The behaviour-identical claim is now a measurement.
+
+date        = 2026-07-30
+status      = NOT an experiment and NOT gated. This checks whether a code MOVE
+              was faithful, which is a claim about this repository and not about
+              neuroevolution. It signs no insight and re-runs no arm.
+engine_pin  = 8556d7fd9177acfaf21c21569628775f06625faa  (BUMPED, was a5e8bcfc5646827e9be49a9629f8a6a9678c814b)
+produced_by = experiments/exp066_pilot_extraction_equivalence_tests.erl
+driver      = scripts/exp066_pilot_extraction_equivalence_record.sh
+reads       = programmes/p7_coevolution/exp066_competence_floor/exp066_champions_s.eterm
+              programmes/p7_coevolution/exp066_competence_floor/exp066_floor_feed.txt
+
+WHY THIS EXISTS. The extraction commit (faber-tweann 8556d7f) calls robo_pilot
+BEHAVIOUR-IDENTICAL BY CONSTRUCTION: every body copied character for character
+from the phase 0 runner, only the pilot_ prefixes dropped. That is a claim about
+how carefully somebody copied. It is not a measurement. The commit says so itself
+and names this replay as owed. This is the replay.
+
+-- 0. THE PIN, AND WHY THE BUMP IS NOT A PROVENANCE BREAK --
+
+The pin IS the provenance of every phase 0 number, so it was moved deliberately
+and the move is recorded rather than left in a diff.
+
+  before : a5e8bcfc5646827e9be49a9629f8a6a9678c814b
+  after  : 8556d7fd9177acfaf21c21569628775f06625faa
+  delta  : TWO commits, f456618 (README only) and 8556d7f (the extraction).
+           The ENTIRE diff across both is three files: README.md,
+           src/robo_pilot.erl and test/robo_pilot_tests.erl. Nothing in the
+           match path is touched, which gate 1 below then checks rather
+           than takes on trust. Reproduce the delta with:
+             git -C <faber-tweann> diff --stat a5e8bcfc5646827e9be49a9629f8a6a9678c814b 8556d7fd9177acfaf21c21569628775f06625faa
+  method : scripts/exp066_bump_pin_for_pilot_equivalence.sh
+  rebar.config now declares : 8556d7fd9177acfaf21c21569628775f06625faa
+  this record's pin constant : 8556d7fd9177acfaf21c21569628775f06625faa  (agree: true)
+
+rebar.lock SILENTLY OVERRIDES a rebar.config ref bump. Editing the config and
+running a plain compile leaves the OLD engine in _build and every check below
+would then be a false green against the very code it was meant to replace. The
+bump therefore went through `rebar3 upgrade faber_tweann`, and the checked-out
+dependency HEAD was read back and confirmed at 8556d7fd9177acfaf21c21569628775f06625faa.
+
+NO EVOLUTIONARY ARM WAS RE-RUN. Everything here is replay of archived genomes.
+
+-- 1. exp066 gates/0 AT THE NEW PIN: ALL SEVEN, RE-RUN, NOT ASSUMED --
+
+Gate 1 recomputes robo_match_tests' golden match vector. Adding a module should
+not disturb the four engine modules, and this is the check that would notice if
+it had.
+
+  WHAT THAT SHA IS AND IS NOT, corrected 2026-07-30 after an independent read
+  flagged the first version of this line as an overclaim. It said the vector "is
+  what PROVES robo_sim, robo_net, robo_gauntlet and robo_match are the same
+  engine". It does not prove that. It is a single hash over ONE match driven by
+  ONE fixed net, so it is BEHAVIOURAL INERTNESS EVIDENCE ON ONE TRAJECTORY. A
+  change to any of the four that this one trajectory never exercises would pass
+  it. The honest claim is that the four modules behave identically on the
+  trajectory the vector covers, which is strong evidence and is not a proof of
+  identity. The stronger evidence for this particular question is section 3
+  below, which covers 3,200 matches rather than one.
+
+  PASS  golden match vector (robo_sim/net/gauntlet/match untouched)
+  PASS  topology width and weight counts
+  PASS  start generator: 120 distinct, min separation, offsets, disjoint splits
+  PASS  perception contract: a stale arena is DETECTABLE for the pilot
+  PASS  channel range diagnostic (dead channels are invisible to selection)
+  PASS  solo oscillation: accel and turn_body are non-constant alone
+  PASS  determinism: a re-run reproduces the champion bit-identically
+
+  golden match vector = DFCD8106EDC9AE214F6AE99BB5F4988FE441243284A6D3769634D778B3895E88
+  gates: 7 checks, 0 failing
+
+-- 2. PART A: TURN-BY-TURN INTENT EQUALITY --
+
+Both controllers are driven through the SAME match trajectory and their
+#intent{} records compared at EVERY turn, so a defect localises to one turn of
+one start of one champion instead of to 'somewhere'. The two pilot MEMORIES are
+threaded independently from the same observations and never copied from one
+another, and are compared separately: identical intents from different memories
+would mean the two controllers merely agree on the states these matches happen
+to visit, which is weaker than equivalence.
+
+  champions           = 20 (all of arm S, seeds 2001..2020)
+  starts              = 80 (ALL pre-registered held-out starts, not a sample)
+  seats               = 2 (both, always)
+  matches replayed    = 3200
+  turns compared      = 599859
+  intent divergences  = 0
+  state mismatches    = 0
+  first divergence    = none
+
+  per-seed:
+    seed 2001  matches 160  turns  33504  intent divergences 0  state mismatches 0
+    seed 2002  matches 160  turns  36808  intent divergences 0  state mismatches 0
+    seed 2003  matches 160  turns  32151  intent divergences 0  state mismatches 0
+    seed 2004  matches 160  turns  33724  intent divergences 0  state mismatches 0
+    seed 2005  matches 160  turns  30905  intent divergences 0  state mismatches 0
+    seed 2006  matches 160  turns  30834  intent divergences 0  state mismatches 0
+    seed 2007  matches 160  turns  19278  intent divergences 0  state mismatches 0
+    seed 2008  matches 160  turns  29142  intent divergences 0  state mismatches 0
+    seed 2009  matches 160  turns  19959  intent divergences 0  state mismatches 0
+    seed 2010  matches 160  turns  32038  intent divergences 0  state mismatches 0
+    seed 2011  matches 160  turns  20432  intent divergences 0  state mismatches 0
+    seed 2012  matches 160  turns  28994  intent divergences 0  state mismatches 0
+    seed 2013  matches 160  turns  45199  intent divergences 0  state mismatches 0
+    seed 2014  matches 160  turns  18869  intent divergences 0  state mismatches 0
+    seed 2015  matches 160  turns  19749  intent divergences 0  state mismatches 0
+    seed 2016  matches 160  turns  44967  intent divergences 0  state mismatches 0
+    seed 2017  matches 160  turns  27878  intent divergences 0  state mismatches 0
+    seed 2018  matches 160  turns  20425  intent divergences 0  state mismatches 0
+    seed 2019  matches 160  turns  30978  intent divergences 0  state mismatches 0
+    seed 2020  matches 160  turns  44025  intent divergences 0  state mismatches 0
+
+
+-- 3. PART B: THE FULL HELD-OUT ENDPOINT, THREE COLUMNS --
+
+THREE columns and not two, and that is the point. Comparing the feed against
+'my loop plus robo_pilot' could not say whether a disagreement was the pilot or
+the new loop. The MIDDLE column runs the runner's OWN heldout/3, unmodified, at
+this same pin. It reproducing the feed exonerates the loop and the engine, so
+anything left in the third column is the pilot's alone.
+
+Outcomes are compared MATCH BY MATCH, not only as rates: two controllers can
+reach the same win rate by winning DIFFERENT matches, and a rate-only check
+would call that equivalence. The margin column is carried for the same reason
+and is a CENSORING DIAGNOSTIC, never a competence ordering.
+
+  champions = 20, starts = 80, seats = 2, matches per column = 3200
+  W is wins out of 160; a WIN needs the predictive_gun tank DEAD and the
+  champion tank ALIVE. Draws count as not beating.
+
+  seed  |  feed W  runner W   pilot W |  feed L  runner L   pilot L |  feed D  runner D   pilot D |  feed/runner/pilot margin | mismatches
+  ------+------------------------------------------------------------------------------------------------------------------------------------
+  2001  |  0.9750   0.9750    0.9750 |  0.0250   0.0250    0.0250 |  0.0000   0.0000    0.0000 |   67.23  67.23  67.23 | 0
+  2002  |  0.9375   0.9375    0.9375 |  0.0563   0.0563    0.0563 |  0.0063   0.0063    0.0063 |   63.92  63.92  63.92 | 0
+  2003  |  1.0000   1.0000    1.0000 |  0.0000   0.0000    0.0000 |  0.0000   0.0000    0.0000 |   79.12  79.12  79.12 | 0
+  2004  |  0.9938   0.9938    0.9938 |  0.0063   0.0063    0.0063 |  0.0000   0.0000    0.0000 |   70.99  70.99  70.99 | 0
+  2005  |  0.9938   0.9938    0.9938 |  0.0063   0.0063    0.0063 |  0.0000   0.0000    0.0000 |   72.05  72.05  72.05 | 0
+  2006  |  0.9938   0.9938    0.9938 |  0.0063   0.0063    0.0063 |  0.0000   0.0000    0.0000 |   72.09  72.09  72.09 | 0
+  2007  |  0.5813   0.5813    0.5813 |  0.4188   0.4188    0.4188 |  0.0000   0.0000    0.0000 |   -1.49  -1.49  -1.49 | 0
+  2008  |  0.9750   0.9750    0.9750 |  0.0250   0.0250    0.0250 |  0.0000   0.0000    0.0000 |   71.92  71.92  71.92 | 0
+  2009  |  0.5750   0.5750    0.5750 |  0.4125   0.4125    0.4125 |  0.0125   0.0125    0.0125 |   -3.08  -3.08  -3.08 | 0
+  2010  |  0.9875   0.9875    0.9875 |  0.0125   0.0125    0.0125 |  0.0000   0.0000    0.0000 |   72.58  72.58  72.58 | 0
+  2011  |  0.5375   0.5375    0.5375 |  0.4625   0.4625    0.4625 |  0.0000   0.0000    0.0000 |   -5.50  -5.50  -5.50 | 0
+  2012  |  1.0000   1.0000    1.0000 |  0.0000   0.0000    0.0000 |  0.0000   0.0000    0.0000 |   78.22  78.22  78.22 | 0
+  2013  |  0.9750   0.9750    0.9750 |  0.0000   0.0000    0.0000 |  0.0250   0.0250    0.0250 |   75.13  75.13  75.13 | 0
+  2014  |  0.5813   0.5813    0.5813 |  0.4188   0.4188    0.4188 |  0.0000   0.0000    0.0000 |   -1.47  -1.47  -1.47 | 0
+  2015  |  0.4188   0.4188    0.4188 |  0.5813   0.5813    0.5813 |  0.0000   0.0000    0.0000 |  -15.89 -15.89 -15.89 | 0
+  2016  |  0.8000   0.8000    0.8000 |  0.2000   0.2000    0.2000 |  0.0000   0.0000    0.0000 |   46.69  46.69  46.69 | 0
+  2017  |  1.0000   1.0000    1.0000 |  0.0000   0.0000    0.0000 |  0.0000   0.0000    0.0000 |   79.78  79.78  79.78 | 0
+  2018  |  0.6062   0.6062    0.6062 |  0.3875   0.3875    0.3875 |  0.0063   0.0063    0.0063 |    2.11   2.11   2.11 | 0
+  2019  |  0.9812   0.9812    0.9812 |  0.0187   0.0187    0.0187 |  0.0000   0.0000    0.0000 |   70.97  70.97  70.97 | 0
+  2020  |  0.9875   0.9875    0.9875 |  0.0125   0.0125    0.0125 |  0.0000   0.0000    0.0000 |   71.20  71.20  71.20 | 0
+
+  median W over the 20 seeds:  feed 0.9750   runner 0.9750   robo_pilot 0.9750
+
+  runner column reproduces the feed  : true
+  robo_pilot column reproduces feed  : true
+  every individual match identical   : true
+
+-- 4. THE RED CHECK: THIS SUITE CAN GO RED --
+
+A green equivalence suite is worth nothing until it is shown it can fail, and
+this front has already been bitten by exactly that. CORRECTED 2026-07-30: an
+earlier version of this paragraph said robo_pilot_tests records a first red
+check left green because moving a constant by one unit was absorbed by integer
+division. That is not what it records. What it records is that a red check
+found the suite BLIND: swapping the channel blocks failed 5 tests and mistyping
+the own_speed shift failed 1, but mistyping TANK_R from 4608 to 4680 PASSED
+EVERYTHING, because the fixture stood in open ground where clearance exceeds
+WALL_SPAN, wall_danger saturates to a silent zero and the radius cancels out
+entirely. A near-wall fixture was added to close it.
+
+robo_pilot itself is never touched. Each row below is a COPY of it, renamed and
+corrupted in one named place, compiled to a scratch directory and pointed at by
+the harness. Part A over 6 starts (240 matches). A divergence is the PASS.
+
+  robo_pilot_red_p1_fire_clamp     divergences  240   first {seed,start,seat,turn} = {2001,1,a,0}
+  robo_pilot_red_p2_swap_16_17     divergences  240   first {seed,start,seat,turn} = {2001,1,a,5}
+  robo_pilot_red_p3_tank_r         divergences  190   first {seed,start,seat,turn} = {2001,1,a,17}
+
+  p1 corrupts the OUTPUT decode (fire clamp 30 -> 29) and bites at turn 0.
+  p2 exchanges sensor channels 16 and 17 and bites at turn 5, once a contact
+     has been seen twice and the velocity estimate stops being zero.
+  p3 mistypes TANK_R 4608 -> 4068. CORRECTED 2026-07-30, AGAINST THE SOURCE:
+     an earlier version of this line called 4068 the transposition
+     robo_pilot_tests records as having PASSED EVERYTHING. It is not. That test
+     records 4608 -> 4680, in the note above
+     robo_pilot_tests:wall_danger_is_observable_near_a_wall_test/0, which works
+     4680 through explicitly (clearance 5320, quotient 41, channel 215). The two
+     are different typos and not interchangeable: 4680 raises the radius by 72,
+     4068 lowers it by 540. The misattribution is recorded here rather than
+     quietly swapped, because it is the kind of number a record is read for.
+     What p3 does show stands: 4068 diverges in 190 of 240 matches, and the 50
+     that stay green are matches that never come near a wall, so a full-match
+     replay reaches a constant that an open-ground unit fixture cannot and the
+     50 say why one fixture was not enough. What it does NOT show is anything
+     about 4680 specifically, which this red check does not run.
+
+-- 5. WHAT THIS DOES NOT PROVE --
+
+Equivalence is established ON THE STATES THESE 3200 MATCHES VISIT, against the
+predictive_gun floor bot, for arm S genomes of topology [17,12,5]. That is the
+endpoint the front reports, so it is the right target, but it is not a proof over
+all inputs. A defect reachable only from a state no arm S champion drives into
+against this one opponent would survive this test. Part A's per-turn state
+comparison narrows that gap and does not close it.
+
+STILL STRANDED IN THE RUNNER, and it is the extraction that matters most: the
+120-start generator with its measured heading-offset correction, and the
+train/held-out/calibration split. robo_match:starts/0 in the engine returns SIX
+hand-written starts, which this research superseded. Two hosts disagreeing on the
+start set produce results that cannot be compared, so a foreign genome scored
+against engine starts is not scored against these numbers. robo_pilot being
+faithful does NOT make the mesh half of this front runnable on its own.
+
+ONE CHANGE WAS MADE TO THE RUNNER and it is named here rather than left in a
+diff: a single -export line was added to
+experiments/exp066_single_population_floor_tests.erl so this replay could call
+the runner's OWN pilot_act/4, pilot_init/0, channels/2, heldout/3, rates/1 and
+win_rate/1. No body was touched and no constant moved. A test that instead
+re-copied those bodies into a third file would have been comparing a copy against
+a copy, which is the exact failure it exists to detect.
+
+
+== MACHINE-READABLE TERM (single Erlang term, tuples and lists only) ==
+{pilot_extraction_equivalence,
+    [{date,<<"2026-07-30">>},
+     {status,
+         <<"NOT an experiment and NOT gated: a faithfulness check on a code move. Signs no insight and re-runs no evolutionary arm.">>},
+     {question,
+         <<"Is robo_pilot the phase 0 controller, or a copy that only looks like it?">>},
+     {engine_pin_before,<<"a5e8bcfc5646827e9be49a9629f8a6a9678c814b">>},
+     {engine_pin_after,<<"8556d7fd9177acfaf21c21569628775f06625faa">>},
+     {pin_bumped,true},
+     {pin_constant_matches_rebar_config,true},
+     {rebar_config_ref,<<"8556d7fd9177acfaf21c21569628775f06625faa">>},
+     {pin_bump_is_replay_only,true},
+     {pin_delta_commits,2},
+     {pin_delta_files,
+         [<<"README.md">>,<<"src/robo_pilot.erl">>,
+          <<"test/robo_pilot_tests.erl">>]},
+     {pin_delta_reproduces_from,
+         <<"git -C <faber-tweann> diff --stat a5e8bcfc 8556d7fd">>},
+     {lock_moved_via,<<"rebar3 upgrade faber_tweann">>},
+     {runner_change,
+         <<"one -export line added to experiments/exp066_single_population_floor_tests.erl; no body touched">>},
+     {produced_by,
+         <<"experiments/exp066_pilot_extraction_equivalence_tests.erl">>},
+     {driver,<<"scripts/exp066_pilot_extraction_equivalence_record.sh">>},
+     {reads,
+         [<<"programmes/p7_coevolution/exp066_competence_floor/exp066_champions_s.eterm">>,
+          <<"programmes/p7_coevolution/exp066_competence_floor/exp066_floor_feed.txt">>,
+          <<"rebar.config">>]},
+     %% CORRECTED 2026-07-30 after an independent read. This list previously
+     %% named _build/default/lib/faber_tweann/src/robo_pilot.erl, which the
+     %% harness NEVER OPENS: it calls the module, it does not read the file.
+     %% rebar.config is opened, by config_ref/0, and was missing. A reads list
+     %% that names a file nobody opened is the kind of small false statement a
+     %% later reader builds a wrong reproduction on.
+     {loads_as_module, <<"robo_pilot, from the faber_tweann dependency at the bumped pin">>},
+     {gates,
+         [{"golden match vector (robo_sim/net/gauntlet/match untouched)",true},
+          {"topology width and weight counts",true},
+          {"start generator: 120 distinct, min separation, offsets, disjoint splits",
+           true},
+          {"perception contract: a stale arena is DETECTABLE for the pilot",
+           true},
+          {"channel range diagnostic (dead channels are invisible to selection)",
+           true},
+          {"solo oscillation: accel and turn_body are non-constant alone",
+           true},
+          {"determinism: a re-run reproduces the champion bit-identically",
+           true}]},
+     {gates_all_pass,true},
+     {golden_match_vector,
+         <<"DFCD8106EDC9AE214F6AE99BB5F4988FE441243284A6D3769634D778B3895E88">>},
+     {part_a,
+         [{champions,20},
+          {starts,80},
+          {seats,2},
+          {matches,3200},
+          {turns_compared,599859},
+          {intent_divergences,0},
+          {state_mismatches,0},
+          {first_divergence,none},
+          {pass,true}]},
+     {part_b,
+         [{champions,20},
+          {starts,80},
+          {seats,2},
+          {matches,3200},
+          {rows,
+              [{seed,2001,
+                   {feed,0.975,0.025,0.0,67.23},
+                   {runner,0.975,0.025,0.0,67.2337890625},
+                   {robo_pilot,0.975,0.025,0.0,67.2337890625},
+                   {wins_of_160,156,156},
+                   {match_mismatches,0}},
+               {seed,2002,
+                   {feed,0.9375,0.0563,0.0063,63.92},
+                   {runner,0.9375,0.05625,0.00625,63.9194091796875},
+                   {robo_pilot,0.9375,0.05625,0.00625,63.9194091796875},
+                   {wins_of_160,150,150},
+                   {match_mismatches,0}},
+               {seed,2003,
+                   {feed,1.0,0.0,0.0,79.12},
+                   {runner,1.0,0.0,0.0,79.1161865234375},
+                   {robo_pilot,1.0,0.0,0.0,79.1161865234375},
+                   {wins_of_160,160,160},
+                   {match_mismatches,0}},
+               {seed,2004,
+                   {feed,0.9938,0.0063,0.0,70.99},
+                   {runner,0.99375,0.00625,0.0,70.98740234375},
+                   {robo_pilot,0.99375,0.00625,0.0,70.98740234375},
+                   {wins_of_160,159,159},
+                   {match_mismatches,0}},
+               {seed,2005,
+                   {feed,0.9938,0.0063,0.0,72.05},
+                   {runner,0.99375,0.00625,0.0,72.0484130859375},
+                   {robo_pilot,0.99375,0.00625,0.0,72.0484130859375},
+                   {wins_of_160,159,159},
+                   {match_mismatches,0}},
+               {seed,2006,
+                   {feed,0.9938,0.0063,0.0,72.09},
+                   {runner,0.99375,0.00625,0.0,72.08857421875},
+                   {robo_pilot,0.99375,0.00625,0.0,72.08857421875},
+                   {wins_of_160,159,159},
+                   {match_mismatches,0}},
+               {seed,2007,
+                   {feed,0.5813,0.4188,0.0,-1.49},
+                   {runner,0.58125,0.41875,0.0,-1.489501953125},
+                   {robo_pilot,0.58125,0.41875,0.0,-1.489501953125},
+                   {wins_of_160,93,93},
+                   {match_mismatches,0}},
+               {seed,2008,
+                   {feed,0.975,0.025,0.0,71.92},
+                   {runner,0.975,0.025,0.0,71.9222900390625},
+                   {robo_pilot,0.975,0.025,0.0,71.9222900390625},
+                   {wins_of_160,156,156},
+                   {match_mismatches,0}},
+               {seed,2009,
+                   {feed,0.575,0.4125,0.0125,-3.08},
+                   {runner,0.575,0.4125,0.0125,-3.0825927734375},
+                   {robo_pilot,0.575,0.4125,0.0125,-3.0825927734375},
+                   {wins_of_160,92,92},
+                   {match_mismatches,0}},
+               {seed,2010,
+                   {feed,0.9875,0.0125,0.0,72.58},
+                   {runner,0.9875,0.0125,0.0,72.5822265625},
+                   {robo_pilot,0.9875,0.0125,0.0,72.5822265625},
+                   {wins_of_160,158,158},
+                   {match_mismatches,0}},
+               {seed,2011,
+                   {feed,0.5375,0.4625,0.0,-5.5},
+                   {runner,0.5375,0.4625,0.0,-5.4984619140625},
+                   {robo_pilot,0.5375,0.4625,0.0,-5.4984619140625},
+                   {wins_of_160,86,86},
+                   {match_mismatches,0}},
+               {seed,2012,
+                   {feed,1.0,0.0,0.0,78.22},
+                   {runner,1.0,0.0,0.0,78.2236328125},
+                   {robo_pilot,1.0,0.0,0.0,78.2236328125},
+                   {wins_of_160,160,160},
+                   {match_mismatches,0}},
+               {seed,2013,
+                   {feed,0.975,0.0,0.025,75.13},
+                   {runner,0.975,0.0,0.025,75.12646484375},
+                   {robo_pilot,0.975,0.0,0.025,75.12646484375},
+                   {wins_of_160,156,156},
+                   {match_mismatches,0}},
+               {seed,2014,
+                   {feed,0.5813,0.4188,0.0,-1.47},
+                   {runner,0.58125,0.41875,0.0,-1.4661865234375},
+                   {robo_pilot,0.58125,0.41875,0.0,-1.4661865234375},
+                   {wins_of_160,93,93},
+                   {match_mismatches,0}},
+               {seed,2015,
+                   {feed,0.4188,0.5813,0.0,-15.89},
+                   {runner,0.41875,0.58125,0.0,-15.8852783203125},
+                   {robo_pilot,0.41875,0.58125,0.0,-15.8852783203125},
+                   {wins_of_160,67,67},
+                   {match_mismatches,0}},
+               {seed,2016,
+                   {feed,0.8,0.2,0.0,46.69},
+                   {runner,0.8,0.2,0.0,46.6919921875},
+                   {robo_pilot,0.8,0.2,0.0,46.6919921875},
+                   {wins_of_160,128,128},
+                   {match_mismatches,0}},
+               {seed,2017,
+                   {feed,1.0,0.0,0.0,79.78},
+                   {runner,1.0,0.0,0.0,79.77802734375},
+                   {robo_pilot,1.0,0.0,0.0,79.77802734375},
+                   {wins_of_160,160,160},
+                   {match_mismatches,0}},
+               {seed,2018,
+                   {feed,0.6062,0.3875,0.0063,2.11},
+                   {runner,0.60625,0.3875,0.00625,2.1075927734375},
+                   {robo_pilot,0.60625,0.3875,0.00625,2.1075927734375},
+                   {wins_of_160,97,97},
+                   {match_mismatches,0}},
+               {seed,2019,
+                   {feed,0.9812,0.0187,0.0,70.97},
+                   {runner,0.98125,0.01875,0.0,70.9651123046875},
+                   {robo_pilot,0.98125,0.01875,0.0,70.9651123046875},
+                   {wins_of_160,157,157},
+                   {match_mismatches,0}},
+               {seed,2020,
+                   {feed,0.9875,0.0125,0.0,71.2},
+                   {runner,0.9875,0.0125,0.0,71.199365234375},
+                   {robo_pilot,0.9875,0.0125,0.0,71.199365234375},
+                   {wins_of_160,158,158},
+                   {match_mismatches,0}}]},
+          {median_w,[{feed,0.975},{runner,0.975},{robo_pilot,0.975}]},
+          {runner_reproduces_feed,true},
+          {pilot_reproduces_feed,true},
+          {outcomes_identical,true},
+          {pass,true}]},
+     {red_check,
+         [{robo_pilot_red_p1_fire_clamp,240,{2001,1,a,0}},
+          {robo_pilot_red_p2_swap_16_17,240,{2001,1,a,5}},
+          {robo_pilot_red_p3_tank_r,190,{2001,1,a,17}}]},
+     {equivalent,true}]}.

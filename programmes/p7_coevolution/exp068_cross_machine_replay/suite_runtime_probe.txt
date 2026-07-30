@@ -1,0 +1,17 @@
+exp068 full-suite runtime probe
+date        : 2026-07-30T17:48:35+02:00
+host_otp    : 29/erts-17.0.2
+bound_s     : 1200
+finished    : no, bound reached
+elapsed_s   : 1200
+neuron_input_timeout_warnings : 0
+
+%% machine-readable
+{exp068_suite_runtime_probe, [
+  {date, "2026-07-30T17:48:35+02:00"},
+  {host_otp, "29/erts-17.0.2"},
+  {bound_s, 1200},
+  {finished_within_bound, false},
+  {elapsed_s, 1200},
+  {neuron_input_timeout_warnings, 0}
+]}.

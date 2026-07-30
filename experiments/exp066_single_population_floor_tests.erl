@@ -87,6 +87,18 @@
 -export([run/0, run/1, pilot/0, defaults/0, pilot_opts/0]).
 %% The start generator and the archive format, exposed for later phases.
 -export([inputs/0, starts/0, split/1, champion_id/1, champion_write/2]).
+%% THE OWED EQUIVALENCE REPLAY, and the ONLY reason this line exists. robo_pilot
+%% claims to be this runner's controller moved into the engine library, character
+%% for character. Testing that claim requires running THIS runner's own pilot
+%% beside the extracted one, and a test that instead re-copied these bodies into a
+%% third file would be comparing a copy against a copy and would prove nothing.
+%% exp066_pilot_extraction_equivalence_tests is the only caller.
+%%
+%% AN EXPORT LIST CANNOT CHANGE BEHAVIOUR. No body below is touched, no constant
+%% moves, and every number this runner has already produced stands. The addition
+%% is recorded in exp066_pilot_extraction_equivalence.txt rather than left for a
+%% reader to notice in a diff.
+-export([pilot_init/0, pilot_act/4, channels/2, heldout/3, rates/1, win_rate/1]).
 
 -include_lib("faber_tweann/include/robo_sim.hrl").
 
